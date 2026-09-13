@@ -171,6 +171,12 @@
         </div>
 
         <div class="topbar-right">
+          <!-- INDIKATOR DATABASE ONLINE CLOUD (SUPABASE) -->
+          <div id="db-status-badge" class="clock-badge" style="cursor: pointer;" onclick="syncWithSupabase(true)" title="Status Koneksi Database Online Supabase. Klik untuk sinkronisasi ulang.">
+            <span id="db-status-dot" class="pulse-live" style="background: #10B981;"></span>
+            <span id="db-status-text" style="font-size: 11.5px; font-weight: 700; color: #059669;">Supabase Cloud</span>
+          </div>
+
           <div class="clock-badge">
             <span class="pulse-live"></span>
             <span class="live-tag">LIVE</span>

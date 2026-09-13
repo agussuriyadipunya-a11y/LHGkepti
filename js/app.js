@@ -3,7 +3,94 @@
 // ==============================================================================
 'use strict';
 
-// LOCAL STORAGE DATABASE WRAPPER
+// ==============================================================================
+// SUPABASE ONLINE DATABASE INTEGRATION CONFIGURATION
+// ==============================================================================
+const SUPABASE_CONFIG = {
+  url: 'https://eimjtamfuyeyhqhfumur.supabase.co',
+  publishableKey: 'sb_publishable_QJjkH8m-pQeJQai4R2OQCw_trYdYVeq',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpbWp0YW1mdXlleWhxaGZ1bXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMTM1NDEsImV4cCI6MjEwNDg4OTU0MX0.yfvkJzKd1paoDELrcZZzcpUskO8tdcR83FhXjeTotCY'
+};
+
+// SUPABASE HTTP REST HELPER
+const SupabaseAPI = {
+  headers: {
+    'apikey': SUPABASE_CONFIG.anonKey,
+    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  },
+  isOnline: false,
+  checkConnection: async function() {
+    try {
+      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/lhg_users?select=count`, {
+        method: 'HEAD',
+        headers: this.headers
+      });
+      this.isOnline = resp.status !== 404 && resp.status < 500;
+      this.updateStatusBadge();
+      return this.isOnline;
+    } catch(e) {
+      this.isOnline = false;
+      this.updateStatusBadge();
+      return false;
+    }
+  },
+  updateStatusBadge: function() {
+    const dot = document.getElementById('db-status-dot');
+    const txt = document.getElementById('db-status-text');
+    if (!dot || !txt) return;
+    if (this.isOnline) {
+      dot.style.background = '#10B981';
+      txt.textContent = 'Supabase Cloud (Terkoneksi)';
+      txt.style.color = '#059669';
+    } else {
+      dot.style.background = '#F59E0B';
+      txt.textContent = 'Mode Lokal (Supabase Belum Tabel)';
+      txt.style.color = '#B45309';
+    }
+  },
+  select: async function(table) {
+    try {
+      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}?select=*`, {
+        headers: this.headers
+      });
+      if (resp.ok) {
+        this.isOnline = true;
+        this.updateStatusBadge();
+        return await resp.json();
+      }
+      return null;
+    } catch(e) {
+      return null;
+    }
+  },
+  upsert: async function(table, data) {
+    try {
+      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: { ...this.headers, 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify(data)
+      });
+      return resp.ok;
+    } catch(e) {
+      return false;
+    }
+  },
+  delete: async function(table, filterCol, filterVal) {
+    try {
+      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}`, {
+        method: 'DELETE',
+        headers: this.headers
+      });
+      return resp.ok;
+    } catch(e) {
+      return false;
+    }
+  }
+};
+
+// HYBRID LOCAL & CLOUD DATABASE WRAPPER
 const DB = {
   get: (key, def) => {
     def = def === undefined ? [] : def;
@@ -14,7 +101,11 @@ const DB = {
       return def;
     }
   },
-  set: (key, val) => localStorage.setItem(key, JSON.stringify(val))
+  set: (key, val) => {
+    localStorage.setItem(key, JSON.stringify(val));
+    // Asynchronous background sync to Supabase Online
+    syncKeyToSupabase(key, val);
+  }
 };
 
 // INITIAL MOCK DATA SETUP
@@ -2422,10 +2513,237 @@ function deleteBantuan(id) {
   showToast('Catatan bantuan telah dihapus.', 'warning');
 }
 
+// ==============================================================================
+// SUPABASE SYNC LOGIC (CLOUD DATA SYNCHRONIZATION)
+// ==============================================================================
+
+// Mapping local camelCase objects to database snake_case columns
+function toSupabaseRow(table, item) {
+  if (table === 'lhg_users') {
+    return {
+      username: item.username,
+      password: item.password,
+      nama: item.nama,
+      role: item.role,
+      status: item.status
+    };
+  }
+  if (table === 'lhg_anggota') {
+    return {
+      id: item.id,
+      nama: item.nama,
+      nik: item.nik,
+      no_kk: item.noKk || item.no_kk || null,
+      umur: item.umur || null,
+      ttl: item.ttl || null,
+      jk: item.jk || null,
+      alamat: item.alamat || null,
+      kelurahan: item.kelurahan || null,
+      disabilitas: item.disabilitas,
+      sub_disabilitas: item.subDisabilitas || item.sub_disabilitas || null,
+      wali: item.wali || null,
+      ibu: item.ibu || null,
+      hub_wali: item.hubWali || item.hub_wali || null,
+      tel_wali: item.telWali || item.tel_wali || null,
+      kontak_wa: item.kontakWA || item.kontak_wa || null,
+      status: item.status || 'Aktif',
+      no_anggota: item.noAnggota || item.no_anggota || item.id,
+      tgl_daftar: item.tglDaftar || item.tgl_daftar || null,
+      kelas: item.kelas || null,
+      sekolah: item.sekolah || null,
+      foto: item.foto || null
+    };
+  }
+  if (table === 'lhg_bantuan') {
+    return {
+      id: item.id,
+      anak_id: item.anakId || item.anak_id || null,
+      anak_nama: item.anakNama || item.anak_nama || null,
+      anak_nik: item.anakNik || item.anak_nik || null,
+      anak_disabilitas: item.anakDisabilitas || item.anak_disabilitas || null,
+      nama_bantuan: item.namaBantuan || item.nama_bantuan,
+      kategori: item.kategori,
+      tanggal: item.tanggal,
+      jumlah: item.jumlah || null,
+      petugas: item.petugas || null,
+      sumber: item.sumber || null,
+      keterangan: item.keterangan || null
+    };
+  }
+  if (table === 'lhg_kegiatan') {
+    return {
+      id: item.id,
+      judul: item.judul,
+      tanggal: item.tanggal,
+      lokasi: item.lokasi || null,
+      peserta: item.peserta || 0,
+      deskripsi: item.deskripsi || null,
+      status: item.status || 'Selesai'
+    };
+  }
+  if (table === 'lhg_surat_masuk') {
+    return {
+      id: item.id,
+      nomor: item.nomor,
+      tanggal: item.tanggal,
+      pengirim: item.pengirim,
+      perihal: item.perihal,
+      keterangan: item.keterangan || null,
+      status: item.status || 'Diproses'
+    };
+  }
+  if (table === 'lhg_surat_keluar') {
+    return {
+      id: item.id,
+      nomor: item.nomor,
+      tanggal: item.tanggal,
+      tujuan: item.tujuan,
+      perihal: item.perihal,
+      keterangan: item.keterangan || null,
+      status: item.status || 'Terkirim'
+    };
+  }
+  if (table === 'lhg_foto') {
+    return {
+      id: item.id,
+      judul: item.judul,
+      tanggal: item.tanggal || null,
+      kategori: item.kategori || null,
+      deskripsi: item.deskripsi || null,
+      url: item.url
+    };
+  }
+  return item;
+}
+
+// Convert database snake_case row to frontend camelCase
+function fromSupabaseRow(table, row) {
+  if (table === 'lhg_anggota') {
+    return {
+      id: row.id,
+      nama: row.nama,
+      nik: row.nik,
+      noKk: row.no_kk,
+      umur: row.umur,
+      ttl: row.ttl,
+      jk: row.jk,
+      alamat: row.alamat,
+      kelurahan: row.kelurahan,
+      disabilitas: row.disabilitas,
+      subDisabilitas: row.sub_disabilitas,
+      wali: row.wali,
+      ibu: row.ibu,
+      hubWali: row.hub_wali,
+      telWali: row.tel_wali,
+      kontakWA: row.kontak_wa,
+      status: row.status,
+      noAnggota: row.no_anggota || row.id,
+      tglDaftar: row.tgl_daftar,
+      kelas: row.kelas,
+      sekolah: row.sekolah,
+      foto: row.foto
+    };
+  }
+  if (table === 'lhg_bantuan') {
+    return {
+      id: row.id,
+      anakId: row.anak_id,
+      anakNama: row.anak_nama,
+      anakNik: row.anak_nik,
+      anakDisabilitas: row.anak_disabilitas,
+      namaBantuan: row.nama_bantuan,
+      kategori: row.kategori,
+      tanggal: row.tanggal,
+      jumlah: row.jumlah,
+      petugas: row.petugas,
+      sumber: row.sumber,
+      keterangan: row.keterangan
+    };
+  }
+  return row;
+}
+
+// Sync one key changes to Supabase Cloud
+async function syncKeyToSupabase(key, val) {
+  if (!Array.isArray(val)) return;
+  const table = key; // matching table name
+  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto'];
+  if (!validTables.includes(table)) return;
+
+  try {
+    const rows = val.map(item => toSupabaseRow(table, item));
+    if (rows.length > 0) {
+      await SupabaseAPI.upsert(table, rows);
+    }
+  } catch(e) {
+    // Fail silently to preserve offline capability
+  }
+}
+
+// Master bidirectional synchronization with Supabase
+async function syncWithSupabase(isManual) {
+  if (isManual) {
+    showToast('Memeriksa koneksi database online Supabase...', 'info');
+  }
+
+  const isOnline = await SupabaseAPI.checkConnection();
+  if (!isOnline) {
+    if (isManual) {
+      showToast('Koneksi Supabase belum aktif atau tabel belum dibuat. Menjalankan mode database lokal.', 'warning');
+    }
+    return;
+  }
+
+  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto'];
+  let syncedCount = 0;
+
+  for (const t of tables) {
+    try {
+      const cloudData = await SupabaseAPI.select(t);
+      if (cloudData !== null) {
+        if (cloudData.length > 0) {
+          // Download latest from cloud and cache in localStorage
+          const mapped = cloudData.map(r => fromSupabaseRow(t, r));
+          localStorage.setItem(t, JSON.stringify(mapped));
+          syncedCount++;
+        } else {
+          // Cloud table is empty: Push local initial data to cloud
+          const localData = JSON.parse(localStorage.getItem(t) || '[]');
+          if (localData.length > 0) {
+            const rows = localData.map(item => toSupabaseRow(t, item));
+            await SupabaseAPI.upsert(t, rows);
+            syncedCount++;
+          }
+        }
+      }
+    } catch(e) {
+      // Continue to next table
+    }
+  }
+
+  // Refresh current view if logged in
+  const curUser = getAuthUser();
+  if (curUser) {
+    applyRoleUI(curUser);
+    const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+    const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : 'dashboard';
+    if (activePage === 'dashboard') renderDashboard();
+    if (activePage === 'input-data') renderAnggotaTable();
+    if (activePage === 'bantuan') renderBantuanPage();
+    if (activePage === 'manajemen-user') renderManajemenUserTable();
+  }
+
+  if (isManual) {
+    showToast(`Sinkronisasi Supabase Online selesai! (${syncedCount} tabel)`, 'success');
+  }
+}
+
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   initData();
   updateClock();
   setInterval(updateClock, 1000);
   initAuth();
+  // Check and sync with Supabase Online in background
+  syncWithSupabase(false);
 });
