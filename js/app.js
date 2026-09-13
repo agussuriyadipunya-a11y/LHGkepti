@@ -108,139 +108,22 @@ const DB = {
   }
 };
 
-// INITIAL MOCK DATA SETUP
+// INITIAL MOCK DATA SETUP (CLEAN EMPTY DATABASE FOR PRODUCTION)
 function initData() {
-  if (localStorage.getItem('lhg_init_modern_v1')) return;
+  if (localStorage.getItem('lhg_init_clean_prod_v2')) return;
 
-  DB.set('lhg_anggota', [
-    { id: 'LHG-001', nama: 'MAYTA SANDITA', nik: '2172024005810003', noKk: '2172024005810001', umur: '12 Thn', ttl: 'Tanjungpinang, 05 Agustus 2014', jk: 'P', alamat: 'Jl. Merdeka No. 124', kelurahan: 'Tanjungpinang Kota', disabilitas: 'Tuna Daksa Kursi Roda', subDisabilitas: 'Tunadaksa Motorik Bawah', wali: 'Budi Santoso', ibu: 'Siti Aminah', hubWali: 'Ayah', telWali: '081234567890', kontakWA: '081234567890', status: 'Aktif', noAnggota: 'LHG-001', tglDaftar: '2026-08-05', kelas: '124' },
-    { id: 'LHG-002', nama: 'SRIYONO', nik: '3311031803710004', noKk: '3311031803710001', umur: '14 Thn', ttl: 'Tanjungpinang, 05 Agustus 2012', jk: 'L', alamat: 'Jl. Sei Jang No. 122', kelurahan: 'Sei Jang', disabilitas: 'Tuna Rungu', subDisabilitas: 'Tunarungu Total', wali: 'Ahmad Supardi', ibu: 'Sari Dewi', hubWali: 'Ibu', telWali: '082345678901', kontakWA: '082345678901', status: 'Aktif', noAnggota: 'LHG-002', tglDaftar: '2026-08-05', kelas: '122' },
-    { id: 'LHG-003', nama: 'MUHAMMAD BAKHRUL ILMI', nik: '2103071708021001', noKk: '2103071708021000', umur: '11 Thn', ttl: 'Tanjungpinang, 05 Agustus 2015', jk: 'L', alamat: 'Jl. Basuki Rahmat No. 123', kelurahan: 'Tanjung Ayun Sakti', disabilitas: 'Tuna Grahita', subDisabilitas: 'Tunagrahita Sedang', wali: 'Agus Pratama', ibu: 'Ratna Sari', hubWali: 'Ayah', telWali: '083456789012', kontakWA: '083456789012', status: 'Aktif', noAnggota: 'LHG-003', tglDaftar: '2026-08-05', kelas: '123' },
-    { id: 'LHG-004', nama: 'SUSANA SUMILA SIBA', nik: '210104480191004', noKk: '210104480191001', umur: '13 Thn', ttl: 'Tanjungpinang, 05 Agustus 2013', jk: 'P', alamat: 'Jl. Diponegoro No. 134', kelurahan: 'Bukit Cermin', disabilitas: 'Autis', subDisabilitas: 'Spektrum Autisme Ringan', wali: 'Hidayat', ibu: 'Nurul Azmi', hubWali: 'Ayah', telWali: '084567890123', kontakWA: '084567890123', status: 'Aktif', noAnggota: 'LHG-004', tglDaftar: '2026-08-05', kelas: '134' },
-    { id: 'LHG-005', nama: 'DEDI HAMZAH', nik: '3216170104890004', noKk: '3216170104890001', umur: '10 Thn', ttl: 'Tanjungpinang, 05 Agustus 2016', jk: 'L', alamat: 'Jl. Raja Ali Haji No. 131', kelurahan: 'Tanjungpinang Barat', disabilitas: 'Tuna Netra', subDisabilitas: 'Low Vision Total', wali: 'Hamzah Usman', ibu: 'Kurniawati', hubWali: 'Ibu', telWali: '085678901234', kontakWA: '085678901234', status: 'Aktif', noAnggota: 'LHG-005', tglDaftar: '2026-08-05', kelas: '131' },
-    { id: 'LHG-006', nama: 'DWI HARYADI', nik: '3374041503940004', noKk: '3374041503940001', umur: '12 Thn', ttl: 'Tanjungpinang, 05 Agustus 2014', jk: 'L', alamat: 'Jl. D.I. Panjaitan Km. 7', kelurahan: 'Melayu Kota Piring', disabilitas: 'Tuna Daksa Tongkat', subDisabilitas: 'Kelemahan Kaki Kiri', wali: 'Haryadi', ibu: 'Sunarti', hubWali: 'Ayah', telWali: '081298765432', kontakWA: '081298765432', status: 'Aktif', noAnggota: 'LHG-006', tglDaftar: '2026-08-05', kelas: '2215' },
-    { id: 'LHG-007', nama: 'JUNI NETTI MARDIANI', nik: '85708386080069', noKk: '85708386080001', umur: '15 Thn', ttl: 'Tanjungpinang, 05 Agustus 2011', jk: 'P', alamat: 'Jl. Potong Lembu No. 133', kelurahan: 'Kemboja', disabilitas: 'Tuna Rungu', subDisabilitas: 'Tunarungu Wicara', wali: 'Mardiani', ibu: 'Rohimah', hubWali: 'Ibu', telWali: '087765432109', kontakWA: '087765432109', status: 'Aktif', noAnggota: 'LHG-007', tglDaftar: '2026-08-05', kelas: '133' },
-    { id: 'LHG-008', nama: 'HARIANTO', nik: '3515012306810001', noKk: '3515012306810002', umur: '14 Thn', ttl: 'Tanjungpinang, 05 Agustus 2012', jk: 'L', alamat: 'Jl. Kamboja No. 2216', kelurahan: 'Kemboja', disabilitas: 'Down Syndrome', subDisabilitas: 'Trisomi 21', wali: 'Suryanto', ibu: 'Dewi Lestari', hubWali: 'Ayah', telWali: '085211223344', kontakWA: '085211223344', status: 'Aktif', noAnggota: 'LHG-008', tglDaftar: '2026-08-05', kelas: '2216' },
-    { id: 'LHG-009', nama: 'MD. RISKI OKTAVIANI', nik: '2172046910950001', noKk: '2172046910950002', umur: '10 Thn', ttl: 'Tanjungpinang, 10 Oktober 2016', jk: 'P', alamat: 'Jl. Pramuka No. 45', kelurahan: 'Tanjung Ayun Sakti', disabilitas: 'Tuna Daksa Kaku', subDisabilitas: 'Celebral Palsy Spastik', wali: 'Oktavianus', ibu: 'Marina', hubWali: 'Ayah', telWali: '081399887766', kontakWA: '081399887766', status: 'Aktif', noAnggota: 'LHG-009', tglDaftar: '2026-08-05', kelas: '-' },
-    { id: 'LHG-010', nama: 'MR. INNAS ANDHIYIA', nik: '3172052512800010', noKk: '3172052512800001', umur: '13 Thn', ttl: 'Tanjungpinang, 29 Juli 2013', jk: 'L', alamat: 'Jl. R.H. Fisabilillah', kelurahan: 'Batu IX', disabilitas: 'Autis', subDisabilitas: 'Autisme & Hiperaktif', wali: 'Andhiyia', ibu: 'Zubaidah', hubWali: 'Ayah', telWali: '081277665544', kontakWA: '081277665544', status: 'Aktif', noAnggota: 'LHG-010', tglDaftar: '2026-07-29', kelas: '2312' },
-    { id: 'LHG-011', nama: 'MR. KOTHANDARAMAN VINOTHKUMAR', nik: 'Y 6388892', noKk: '2172010101010001', umur: '14 Thn', ttl: 'Tanjungpinang, 29 Juli 2012', jk: 'L', alamat: 'Jl. Ganet No. 132', kelurahan: 'Pinang Kencana', disabilitas: 'Disabilitas Berat', subDisabilitas: 'Ganda Fisik & Intelektual', wali: 'Vinoth', ibu: 'Geetha', hubWali: 'Ayah', telWali: '081922334455', kontakWA: '081922334455', status: 'Aktif', noAnggota: 'LHG-011', tglDaftar: '2026-07-29', kelas: '132' },
-    { id: 'LHG-012', nama: 'MR. INDRA PRASETYAWAN', nik: '32080981010070004', noKk: '32080981010070001', umur: '11 Thn', ttl: 'Tanjungpinang, 29 Juli 2015', jk: 'L', alamat: 'Jl. Hang Tuah No. 2210', kelurahan: 'Kampung Baru', disabilitas: 'Tuna Daksa Tanpa Tangan', subDisabilitas: 'Amputasi Kongenital', wali: 'Prasetya', ibu: 'Indrawati', hubWali: 'Ayah', telWali: '082144556677', kontakWA: '082144556677', status: 'Aktif', noAnggota: 'LHG-012', tglDaftar: '2026-07-29', kelas: '2210' },
-    { id: 'LHG-013', nama: 'MR. TJHAI GIF', nik: '2172032006700003', noKk: '2172032006700001', umur: '15 Thn', ttl: 'Tanjungpinang, 27 Juli 2011', jk: 'L', alamat: 'Jl. Plantar II No. 2205', kelurahan: 'Tanjungpinang Kota', disabilitas: 'Tuna Daksa Kursi Roda', subDisabilitas: 'Paraplegia', wali: 'Tjhai', ibu: 'Meilani', hubWali: 'Ayah', telWali: '085366778899', kontakWA: '085366778899', status: 'Aktif', noAnggota: 'LHG-013', tglDaftar: '2026-07-27', kelas: '2205' }
-  ]);
+  // Clear previous dummy data caches
+  localStorage.removeItem('lhg_init');
+  localStorage.removeItem('lhg_init_modern_v1');
 
-  DB.set('lhg_kegiatan', [
-    { id: 1, judul: 'Pelatihan Keterampilan Merajut & Motorik', tanggal: '2026-08-10', lokasi: 'Sekretariat LHG Tanjungpinang', peserta: 18, deskripsi: 'Pelatihan motorik halus untuk kemandirian anak berkebutuhan khusus', status: 'Selesai' },
-    { id: 2, judul: 'Senam Pagi & Olahraga Bersama Anak Inklusi', tanggal: '2026-08-25', lokasi: 'Taman Laman Boenda Tanjungpinang', peserta: 32, deskripsi: 'Menumbuhkan kebugaran fisik dan keceriaan anak-anak', status: 'Selesai' },
-    { id: 3, judul: 'Workshop Seni Lukis Ekspresif', tanggal: '2026-09-02', lokasi: 'Gedung Kesenian Aisyah Sulaiman', peserta: 24, deskripsi: 'Eksplorasi bakat seni lukis anak disabilitas', status: 'Selesai' },
-    { id: 4, judul: 'Pemeriksaan Kesehatan & Terapi Gratis', tanggal: '2026-09-20', lokasi: 'Puskesmas Tanjungpinang Barat', peserta: 40, deskripsi: 'Pemeriksaan tumbuh kembang berkala', status: 'Akan Datang' }
-  ]);
+  DB.set('lhg_anggota', []);
+  DB.set('lhg_kegiatan', []);
+  DB.set('lhg_surat_masuk', []);
+  DB.set('lhg_surat_keluar', []);
+  DB.set('lhg_foto', []);
+  DB.set('lhg_bantuan', []);
 
-  DB.set('lhg_surat_masuk', [
-    { id: 1, nomor: 'SM/2026/041', tanggal: '2026-08-01', pengirim: 'Dinas Sosial Kota Tanjungpinang', perihal: 'Undangan Evaluasi Bantuan Alat Bantu Disabilitas', keterangan: 'Tindak lanjut penyaluran kursi roda', status: 'Selesai' },
-    { id: 2, nomor: 'SM/2026/048', tanggal: '2026-08-18', pengirim: 'BPJS Kesehatan Kantor Cabang Tanjungpinang', perihal: 'Akses Pelayanan Kesehatan Disabilitas Terpadu', keterangan: 'Jaminan kesehatan khusus anak inklusi', status: 'Diproses' },
-    { id: 3, nomor: 'SM/2026/055', tanggal: '2026-09-05', pengirim: 'Kementerian Sosial Republik Indonesia', perihal: 'Pemutakhiran Data Nasional Penyandang Disabilitas', keterangan: 'Pengisian form rekapitulasi data', status: 'Diproses' }
-  ]);
-
-  DB.set('lhg_surat_keluar', [
-    { id: 1, nomor: 'SK/LHG/2026/012', tanggal: '2026-08-03', tujuan: 'Walikota Tanjungpinang', perihal: 'Permohonan Dukungan Program Pelatihan Anak Disabilitas', keterangan: 'Program kerja caturwulan III', status: 'Terkirim' },
-    { id: 2, nomor: 'SK/LHG/2026/015', tanggal: '2026-08-20', tujuan: 'Dinas Pendidikan Kota Tanjungpinang', perihal: 'Rekomendasi Fasilitas Sekolah Ramah Disabilitas', keterangan: 'Peningkatan aksesibilitas SLB & SDN Inklusi', status: 'Terkirim' }
-  ]);
-
-  DB.set('lhg_foto', [
-    { id: 1, judul: 'Pelatihan Keterampilan Merajut', tanggal: '2026-08-10', kategori: 'Pelatihan', deskripsi: 'Dokumentasi pelatihan motorik halus anak disabilitas', url: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600&auto=format&fit=crop&q=80' },
-    { id: 2, judul: 'Senam Pagi Anak Inklusi', tanggal: '2026-08-25', kategori: 'Olahraga', deskripsi: 'Keseruan olahraga ceria bersama relawan LHG', url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80' },
-    { id: 3, judul: 'Workshop Seni Lukis Ekspresi', tanggal: '2026-09-02', kategori: 'Kesenian', deskripsi: 'Pameran karya lukis anak bertema Lentera Hati', url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80' },
-    { id: 4, judul: 'Penyerahan Bantuan Kursi Roda', tanggal: '2026-07-15', kategori: 'Sosial', deskripsi: 'Penyaluran kursi roda adaptif untuk anak binaan LHG', url: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=600&auto=format&fit=crop&q=80' }
-  ]);
-
-  DB.set('lhg_bantuan', [
-    {
-      id: 1,
-      anakId: 'LHG-001',
-      anakNama: 'MAYTA SANDITA',
-      anakNik: '2172024005810003',
-      anakDisabilitas: 'Tuna Daksa Kursi Roda',
-      namaBantuan: 'Kursi Roda Adaptif Anak Standar',
-      kategori: 'Alat Bantu',
-      tanggal: '2026-07-15',
-      jumlah: '1 Unit',
-      petugas: 'Petugas Lapangan LHG',
-      sumber: 'Dinas Sosial Kota Tanjungpinang',
-      keterangan: 'Penyerahan kursi roda baru untuk mobilitas sekolah anak binaan.'
-    },
-    {
-      id: 2,
-      anakId: 'LHG-002',
-      anakNama: 'SRIYONO',
-      anakNik: '3311031803710004',
-      anakDisabilitas: 'Tuna Rungu',
-      namaBantuan: 'Alat Bantu Dengar Digital (Hearing Aid)',
-      kategori: 'Alat Bantu',
-      tanggal: '2026-08-01',
-      jumlah: '1 Set (Kanan & Kiri)',
-      petugas: 'KAMARIDA',
-      sumber: 'Bantuan Donatur Peduli Inklusi',
-      keterangan: 'Alat bantu dengar digital lengkap dengan baterai cadangan.'
-    },
-    {
-      id: 3,
-      anakId: 'LHG-003',
-      anakNama: 'MUHAMMAD BAKHRUL ILMI',
-      anakNik: '2103071708021001',
-      anakDisabilitas: 'Tuna Grahita',
-      namaBantuan: 'Paket Sembako Gizi & Vitamin Pertumbuhan',
-      kategori: 'Sembako & Nutrisi',
-      tanggal: '2026-08-15',
-      jumlah: '1 Paket Lengkap',
-      petugas: 'Admin Pelayanan LHG',
-      sumber: 'Yayasan Lentera Hati Gurindam',
-      keterangan: 'Paket beras, susu khusus nutrisi, minyak, dan multivitamin.'
-    },
-    {
-      id: 4,
-      anakId: 'LHG-006',
-      anakNama: 'DWI HARYADI',
-      anakNik: '3374041503940004',
-      anakDisabilitas: 'Tuna Daksa Tongkat',
-      namaBantuan: 'Tongkat Ketiak Kruk Ergonomis',
-      kategori: 'Alat Bantu',
-      tanggal: '2026-08-20',
-      jumlah: '1 Pasang',
-      petugas: 'Petugas Pendataan Lapangan',
-      sumber: 'Dinas Sosial Provinsi Kepulauan Riau',
-      keterangan: 'Tongkat kruk alumunium ringan disesuaikan tinggi badan anak.'
-    },
-    {
-      id: 5,
-      anakId: 'LHG-007',
-      anakNama: 'JUNI NETTI MARDIANI',
-      anakNik: '85708386080069',
-      anakDisabilitas: 'Tuna Rungu',
-      namaBantuan: 'Perlengkapan Sekolah & Seragam Inklusi',
-      kategori: 'Pendidikan & Sekolah',
-      tanggal: '2026-08-28',
-      jumlah: '1 Set Tas & Seragam',
-      petugas: 'Admin Pelayanan LHG',
-      sumber: 'Program Bantuan Pendidikan Anak Disabilitas',
-      keterangan: 'Tas sekolah, alat tulis khusus, dan seragam sekolah SDLB.'
-    },
-    {
-      id: 6,
-      anakId: 'LHG-013',
-      anakNama: 'MR. TJHAI GIF',
-      anakNik: '2172032006700003',
-      anakDisabilitas: 'Tuna Daksa Kursi Roda',
-      namaBantuan: 'Santunan Dana Terapi & Kesehatan',
-      kategori: 'Santunan / Uang Tunai',
-      tanggal: '2026-09-01',
-      jumlah: 'Rp 1.000.000',
-      petugas: 'KAMARIDA',
-      sumber: 'CSR Perusahaan Mitra LHG Tanjungpinang',
-      keterangan: 'Bantuan biaya transportasi dan fisioterapi berkala ke rumah sakit.'
-    }
-  ]);
-
-  localStorage.setItem('lhg_init_modern_v1', '1');
+  localStorage.setItem('lhg_init_clean_prod_v2', '1');
   initUsersData();
 }
 
@@ -625,20 +508,30 @@ function renderDashboard() {
   // Recent 5 Children
   const actEl = document.getElementById('dashboard-activity');
   if (actEl) {
-    actEl.innerHTML = anggota.slice(0, 5).map(a => `
-      <div class="recent-item">
-        <div style="display: flex; align-items: center;">
-          <div class="recent-avatar-circle">${getInitials(a.nama)}</div>
-          <div class="recent-info">
-            <div class="recent-name">${a.nama}</div>
-            <div class="recent-meta">${a.kelurahan ? 'Kel. ' + a.kelurahan + ' • ' : ''}${a.disabilitas}</div>
-          </div>
+    if (anggota.length === 0) {
+      actEl.innerHTML = `
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 6px;">👶</div>
+          <p style="font-weight: 700; font-size: 13px; margin-bottom: 2px;">Belum Ada Data Anak</p>
+          <p style="font-size: 11.5px;">Gunakan menu "Input Data" untuk mendaftarkan anak binaan baru.</p>
         </div>
-        <button class="table-wa-link" onclick="viewAnggota('${a.id}')" title="Lihat Detail">
-          👁️ Detail
-        </button>
-      </div>
-    `).join('');
+      `;
+    } else {
+      actEl.innerHTML = anggota.slice(0, 5).map(a => `
+        <div class="recent-item">
+          <div style="display: flex; align-items: center;">
+            <div class="recent-avatar-circle">${getInitials(a.nama)}</div>
+            <div class="recent-info">
+              <div class="recent-name">${a.nama}</div>
+              <div class="recent-meta">${a.kelurahan ? 'Kel. ' + a.kelurahan + ' • ' : ''}${a.disabilitas}</div>
+            </div>
+          </div>
+          <button class="table-wa-link" onclick="viewAnggota('${a.id}')" title="Lihat Detail">
+            👁️ Detail
+          </button>
+        </div>
+      `).join('');
+    }
   }
 
   renderChart();
@@ -648,20 +541,29 @@ function renderDashboard() {
   anggota.forEach(a => { types[a.disabilitas] = (types[a.disabilitas] || 0) + 1; });
   const dbEl = document.getElementById('disability-breakdown');
   if (dbEl) {
-    dbEl.innerHTML = Object.entries(types).map(([k, v]) => {
-      const pct = Math.round((v / (anggota.length || 1)) * 100);
-      return `
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; margin-bottom: 2px;">
-            <span class="disability-pill ${getDisabilityBadgeClass(k)}">${k}</span>
-            <span style="color: var(--primary); font-weight: 800;">${v} Anak (${pct}%)</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width: ${pct}%;"></div>
-          </div>
+    if (Object.keys(types).length === 0) {
+      dbEl.innerHTML = `
+        <div style="text-align: center; padding: 24px 16px; color: var(--text-muted);">
+          <div style="font-size: 28px; margin-bottom: 4px;">📊</div>
+          <p style="font-size: 12px;">Distribusi ragam disabilitas akan muncul otomatis saat data diinput.</p>
         </div>
       `;
-    }).join('');
+    } else {
+      dbEl.innerHTML = Object.entries(types).map(([k, v]) => {
+        const pct = Math.round((v / (anggota.length || 1)) * 100);
+        return `
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 700; margin-bottom: 2px;">
+              <span class="disability-pill ${getDisabilityBadgeClass(k)}">${k}</span>
+              <span style="color: var(--primary); font-weight: 800;">${v} Anak (${pct}%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width: ${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 }
 
@@ -670,6 +572,10 @@ function renderChart() {
   if (!ctx) return;
   if (chartInst) { chartInst.destroy(); chartInst = null; }
 
+  const anggota = DB.get('lhg_anggota', []);
+  const totalCount = anggota.length;
+  const aktifCount = anggota.filter(a => a.status === 'Aktif').length;
+
   chartInst = new Chart(ctx, {
     type: 'line',
     data: {
@@ -677,7 +583,7 @@ function renderChart() {
       datasets: [
         {
           label: 'Total Terdaftar',
-          data: [5, 8, 10, 12, 13, 13],
+          data: totalCount === 0 ? [0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, totalCount, totalCount],
           borderColor: '#059669',
           backgroundColor: 'rgba(5, 150, 105, 0.08)',
           fill: true,
@@ -688,7 +594,7 @@ function renderChart() {
         },
         {
           label: 'Anak Aktif',
-          data: [5, 7, 9, 11, 13, 13],
+          data: totalCount === 0 ? [0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, aktifCount, aktifCount],
           borderColor: '#3B82F6',
           backgroundColor: 'transparent',
           tension: 0.35,
@@ -706,7 +612,7 @@ function renderChart() {
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 11 } }, beginAtZero: true }
+        y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 11 }, stepSize: 1 }, beginAtZero: true }
       }
     }
   });
