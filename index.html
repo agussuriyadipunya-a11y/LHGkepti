@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lentera Hati Gurindam - Pendataan Anak Disabilitas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=6.0">
+</head>
+<body class="app-body">
+
+  <!-- ==================== LOGIN SCREEN OVERLAY ==================== -->
+  <div id="login-screen" class="login-screen-overlay">
+    <div class="login-card-container">
+      <div class="login-brand-header">
+        <div class="login-logo-circle">
+          <img src="img/logo-circle.png" alt="Logo LHG" class="login-logo-img">
+        </div>
+        <h1 class="login-title">LENTERA HATI GURINDAM</h1>
+        <p class="login-subtitle">Sistem Informasi & Pelayanan Terpadu Anak Disabilitas Kota Tanjungpinang</p>
+        <div class="login-badge-tag">PORTAL MASUK RESMI</div>
+      </div>
+
+      <!-- LOGIN ERROR ALERT -->
+      <div id="login-error-alert" class="login-error-alert" style="display: none;">
+        <span>⚠️</span>
+        <span id="login-error-msg">Username atau kata sandi tidak sesuai!</span>
+      </div>
+
+      <!-- FORM LOGIN -->
+      <form id="form-login" onsubmit="handleLoginSubmit(event)">
+        <div class="form-field-login">
+          <label class="login-lbl">Username / NIK Akun</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">👤</span>
+            <input type="text" id="login-username" class="login-input" placeholder="Masukkan Username / NIK" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-field-login">
+          <label class="login-lbl">Kata Sandi (Password)</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🔒</span>
+            <input type="password" id="login-password" class="login-input" placeholder="Masukkan Kata Sandi" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" onclick="toggleLoginPassword()" title="Tampilkan / Sembunyikan Password">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn-login-submit">
+          <span>Masuk ke Sistem Aplikasi</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+
+
+      <div class="login-footer-text">
+        Yayasan Lentera Hati Gurindam &copy; 2026 &bull; Kota Tanjungpinang, Kepulauan Riau
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP ROOT ==================== -->
+  <div id="app-root" class="app-layout" style="display: none;">
+    
+    <!-- ==================== SIDEBAR KIRI MODERN ==================== -->
+    <aside id="sidebar" class="sidebar">
+      
+      <!-- HEADER SIDEBAR: LOGO RESMI UTUH -->
+      <div class="sidebar-header">
+        <div class="brand-box">
+          <div class="brand-logo-circle">
+            <img src="img/logo-circle.png" alt="Logo LHG" class="brand-logo-img">
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">LENTERA HATI</h1>
+            <p class="brand-subtitle">GURINDAM TANJUNGPINANG</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- NAVIGASI MENU BERDASARKAN ROLE -->
+      <nav class="sidebar-nav">
+        
+        <!-- SECTION 1: UTAMA -->
+        <div class="nav-section-label" data-nav-section="utama">UTAMA</div>
+        <button class="nav-item active" data-page="dashboard" data-allowed-roles="Superadmin,Admin" onclick="navigate('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Dashboard Ringkasan</span>
+        </button>
+        <button class="nav-item" data-page="input-data-form" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('input-data-form')">
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">Input Data</span>
+        </button>
+        <button class="nav-item" data-page="input-data" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('input-data')">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Data Anak Disabilitas</span>
+          <span class="nav-badge" id="nav-badge-anak">13</span>
+        </button>
+        <button class="nav-item" data-page="bantuan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('bantuan')">
+          <span class="nav-icon">🎁</span>
+          <span class="nav-label">Bantuan</span>
+          <span class="nav-badge" id="nav-badge-bantuan" style="background: #10B981;">0</span>
+        </button>
+
+        <!-- SECTION 2: LAYANAN DOKUMEN -->
+        <div class="nav-section-label" data-nav-section="dokumen" data-allowed-roles="Superadmin,Admin,Petugas">LAYANAN DOKUMEN</div>
+        <button class="nav-item" data-page="cetak-kta" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('cetak-kta')">
+          <span class="nav-icon">💳</span>
+          <span class="nav-label">Cetak KTA</span>
+        </button>
+        <button class="nav-item" data-page="form-pendaftaran" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('form-pendaftaran')">
+          <span class="nav-icon">📄</span>
+          <span class="nav-label">Form Pendaftaran</span>
+        </button>
+
+        <!-- SECTION 3: AKTIVITAS & ARSIP -->
+        <div class="nav-section-label" data-nav-section="arsip" data-allowed-roles="Superadmin,Admin">AKTIVITAS & ARSIP</div>
+        <button class="nav-item" data-page="laporan-kegiatan" data-allowed-roles="Superadmin,Admin" onclick="navigate('laporan-kegiatan')">
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">Laporan Kegiatan</span>
+        </button>
+        <button class="nav-item" data-page="surat-menyurat" data-allowed-roles="Superadmin,Admin" onclick="navigate('surat-menyurat')">
+          <span class="nav-icon">✉️</span>
+          <span class="nav-label">Surat Menyurat</span>
+        </button>
+        <button class="nav-item" data-page="foto-kegiatan" data-allowed-roles="Superadmin,Admin" onclick="navigate('foto-kegiatan')">
+          <span class="nav-icon">📸</span>
+          <span class="nav-label">Galeri Foto</span>
+        </button>
+
+        <!-- SECTION 4: PENGATURAN (KHUSUS SUPERADMIN) -->
+        <div class="nav-section-label" data-nav-section="pengaturan" data-allowed-roles="Superadmin">PENGATURAN</div>
+        <button class="nav-item" data-page="manajemen-user" data-allowed-roles="Superadmin" onclick="navigate('manajemen-user')">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Manajemen User</span>
+        </button>
+
+      </nav>
+
+      <!-- FOOTER SIDEBAR: PROFIL USER & LOGOUT -->
+      <div class="sidebar-footer">
+        <div class="admin-profile-card">
+          <div class="admin-avatar" id="sidebar-user-avatar">SA</div>
+          <div class="admin-info">
+            <span class="admin-name" id="sidebar-user-name">KAMARIDA</span>
+            <span class="admin-role" id="sidebar-user-role">Superadmin</span>
+          </div>
+          <button class="btn-logout-icon" onclick="handleLogout()" title="Keluar dari Akun">🚪</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- BACKDROP MOBILE -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+    <div class="main-wrapper">
+      
+      <!-- TOP HEADER BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-hamburger" onclick="toggleSidebar()" title="Buka Menu">☰</button>
+          <div>
+            <h2 id="topbar-page-title" class="topbar-title">Dashboard Ringkasan</h2>
+            <p id="topbar-page-desc" class="topbar-desc">Statistik dan data terpadu anak penyandang disabilitas Kota Tanjungpinang</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="clock-badge">
+            <span class="pulse-live"></span>
+            <span class="live-tag">LIVE</span>
+            <span id="header-clock" class="clock-text">Minggu, 13 September 2026 - 22:30:00</span>
+          </div>
+
+          <div class="user-role-pill superadmin" id="topbar-role-badge">
+            <span class="role-dot"></span>
+            <span id="topbar-role-text">Superadmin</span>
+          </div>
+
+          <button class="btn-top-add" onclick="navigate('input-data-form')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Input Data Anak</span>
+          </button>
+
+          <button class="btn-logout-header" onclick="handleLogout()" title="Keluar / Logout">
+            <span>🚪 Logout</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY (7 PAGES) -->
+      <main class="content-body">
+        
+        <!-- ================= PAGE 1: DASHBOARD ================= -->
+        <section id="page-dashboard" class="page active">
+          
+          <!-- 4 STAT METRICS ROW -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-cyan">👥</div>
+              <div class="metric-data">
+                <span class="metric-val" id="stat-total">13</span>
+                <span class="metric-lbl">TOTAL DATABASE ANAK</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-emerald">✅</div>
+              <div class="metric-data">
+                <span class="metric-val" id="stat-aktif">13</span>
+                <span class="metric-lbl">STATUS AKTIF TERBINA</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-indigo">📅</div>
+              <div class="metric-data">
+                <span class="metric-val" id="stat-kegiatan">4</span>
+                <span class="metric-lbl">PROGRAM KEGIATAN</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon-wrap icon-amber">✉️</div>
+              <div class="metric-data">
+                <span class="metric-val" id="stat-surat">5</span>
+                <span class="metric-lbl">SURAT MENYURAT RESMI</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DASHBOARD SPLIT 2 COLUMNS: CHART & RECENT -->
+          <div class="dash-row-grid">
+            
+            <!-- LEFT: CHART PANEL -->
+            <div class="card-panel chart-panel">
+              <div class="card-panel-header">
+                <div class="header-title-group">
+                  <span class="panel-icon">📈</span>
+                  <div>
+                    <h3 class="panel-heading">Tren Pendaftaran Bulanan</h3>
+                    <p class="panel-subheading">Data statistik pertumbuhan anak terdaftar</p>
+                  </div>
+                </div>
+                <span class="badge-year" id="chart-year-badge">Tahun 2026</span>
+              </div>
+              <div class="chart-canvas-box">
+                <canvas id="dashboardChart"></canvas>
+              </div>
+            </div>
+
+            <!-- RIGHT: RECENT CHECKIN LIST -->
+            <div class="card-panel recent-panel">
+              <div class="card-panel-header">
+                <div class="header-title-group">
+                  <span class="panel-icon">🕒</span>
+                  <div>
+                    <h3 class="panel-heading">Pendaftaran Terbaru</h3>
+                    <p class="panel-subheading">5 anak yang baru terdata di sistem</p>
+                  </div>
+                </div>
+                <button class="btn-link-action" onclick="navigate('input-data')">Lihat Semua ↗</button>
+              </div>
+              <div id="dashboard-activity" class="recent-list-box"></div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM DASHBOARD: SEBARAN 10 RAGAM DISABILITAS -->
+          <div class="card-panel" style="margin-top: 16px;">
+            <div class="card-panel-header">
+              <div class="header-title-group">
+                <span class="panel-icon">🩺</span>
+                <div>
+                  <h3 class="panel-heading">Distribusi Sebaran 10 Ragam Disabilitas</h3>
+                  <p class="panel-subheading">Pemetaan kategori kebutuhan khusus di Kota Tanjungpinang</p>
+                </div>
+              </div>
+            </div>
+            <div id="disability-breakdown" class="disability-grid-box"></div>
+          </div>
+
+        </section>
+
+
+        <!-- ================= PAGE 2: FORMULIR INPUT DATA ANAK (MANDIRI) ================= -->
+        <section id="page-input-data-form" class="page">
+          <div class="card-panel" style="max-width: 1040px; margin: 0 auto;">
+            <div class="card-panel-header">
+              <div class="header-title-group">
+                <span class="panel-icon">📝</span>
+                <div>
+                  <h3 class="panel-heading">Formulir Pendaftaran & Input Data Anak</h3>
+                  <p class="panel-subheading">Petugas dan Admin dapat langsung menginput data anak penyandang disabilitas ke database</p>
+                </div>
+              </div>
+              <button type="button" class="btn-sec" onclick="navigate('input-data')">
+                <span>👥 Buka Tabel Data Anak</span>
+              </button>
+            </div>
+
+            <form id="form-direct-input-anak" onsubmit="saveDirectInputAnak(event)" style="padding: 24px;">
+              <!-- SEKSI 1: IDENTITAS PRIBADI -->
+              <div class="form-section-banner">
+                <span class="section-badge-num">1</span>
+                <div>
+                  <h4 class="section-banner-title">Identitas Pribadi Calon Anggota Anak</h4>
+                  <p class="section-banner-desc">Lengkapi data kependudukan resmi anak sesuai dokumen kependudukan resmi</p>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-field">
+                  <label class="lbl">Nama Lengkap Anak *</label>
+                  <input type="text" id="direct-nama" class="pelangi-input" placeholder="Contoh: MUHAMMAD RIZKY" required>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Nomor Induk Kependudukan (NIK - 16 Digit) *</label>
+                  <input type="text" id="direct-nik" class="pelangi-input" placeholder="21710XXXXXXXXXXX" maxlength="16" required>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Nomor Kartu Keluarga (KK)</label>
+                  <input type="text" id="direct-noKk" class="pelangi-input" placeholder="21710XXXXXXXXXXX" maxlength="16">
+                </div>
+              </div>
+
+              <div class="form-grid-3" style="margin-top: 14px;">
+                <div class="form-field">
+                  <label class="lbl">Tempat & Tanggal Lahir *</label>
+                  <input type="text" id="direct-ttl" class="pelangi-input" placeholder="Tanjungpinang, 15 Mei 2012" required>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Jenis Kelamin *</label>
+                  <select id="direct-jk" class="pelangi-select" required>
+                    <option value="L">Laki-laki (👦)</option>
+                    <option value="P">Perempuan (👧)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Nomor WhatsApp / HP Aktif *</label>
+                  <input type="tel" id="direct-kontakWA" class="pelangi-input" placeholder="08XXXXXXXXXX" required>
+                </div>
+              </div>
+
+              <!-- SEKSI 2: KONDISI DISABILITAS & PENDIDIKAN -->
+              <div class="form-section-banner" style="margin-top: 26px;">
+                <span class="section-badge-num">2</span>
+                <div>
+                  <h4 class="section-banner-title">Ragam Disabilitas & Fasilitas Pendidikan</h4>
+                  <p class="section-banner-desc">Klasifikasi ragam kebutuhan khusus anak untuk penyesuaian program pembinaan</p>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-field">
+                  <label class="lbl">Ragam Kebutuhan Khusus / Disabilitas *</label>
+                  <select id="direct-disabilitas" class="pelangi-select" required onchange="handleDirectDisabilityChange(this.value)">
+                    <option value="">-- Pilih Ragam Disabilitas --</option>
+                    <option value="Tuna Rungu">Tuna Rungu (Gangguan Pendengaran)</option>
+                    <option value="Tuna Netra">Tuna Netra (Gangguan Penglihatan)</option>
+                    <option value="Tuna Grahita">Tuna Grahita (Hambatan Intelektual)</option>
+                    <option value="Autis">Autisme Spectrum Disorder (ASD)</option>
+                    <option value="Down Syndrome">Down Syndrome</option>
+                    <option value="Disabilitas Berat">Disabilitas Ganda / Berat</option>
+                    <option value="Tuna Daksa Kursi Roda">Tuna Daksa (Pengguna Kursi Roda)</option>
+                    <option value="Tuna Daksa Tongkat">Tuna Daksa (Alat Bantu Tongkat/Kruk)</option>
+                    <option value="Tuna Daksa Kaku">Tuna Daksa (Cerebral Palsy / Kaku)</option>
+                    <option value="Tuna Daksa Tanpa Tangan">Tuna Daksa (Fisik Anggota Gerak)</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Sub-Disabilitas / Diagnosa Khusus</label>
+                  <input type="text" id="direct-subDisabilitas" class="pelangi-input" placeholder="Contoh: Sensorik Rungu Wicara">
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Status Keaktifan Binaan</label>
+                  <select id="direct-status" class="pelangi-select">
+                    <option value="Aktif" selected>Aktif Terbina</option>
+                    <option value="Tidak Aktif">Tidak Aktif</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-2" style="margin-top: 14px;">
+                <div class="form-field">
+                  <label class="lbl">Sekolah / Lembaga Pendidikan</label>
+                  <input type="text" id="direct-sekolah" class="pelangi-input" placeholder="Contoh: SLB Negeri 1 Tanjungpinang">
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Tingkat / Kelas</label>
+                  <input type="text" id="direct-kelas" class="pelangi-input" placeholder="Contoh: Kelas 4 SDLB">
+                </div>
+              </div>
+
+              <!-- SEKSI 3: DOMISILI & ORANG TUA / WALI -->
+              <div class="form-section-banner" style="margin-top: 26px;">
+                <span class="section-badge-num">3</span>
+                <div>
+                  <h4 class="section-banner-title">Data Alamat Domisili & Orang Tua / Wali</h4>
+                  <p class="section-banner-desc">Informasi kontak orang tua atau wali untuk korespondensi resmi</p>
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-field">
+                  <label class="lbl">Alamat Lengkap Rumah</label>
+                  <textarea id="direct-alamat" class="pelangi-textarea" rows="2" placeholder="Jl. Merdeka No. 12, RT 02 / RW 04..."></textarea>
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Kelurahan / Wilayah Kota</label>
+                  <input type="text" id="direct-kelurahan" class="pelangi-input" placeholder="Contoh: Tanjungpinang Kota">
+                </div>
+              </div>
+
+              <div class="form-grid-3" style="margin-top: 14px;">
+                <div class="form-field">
+                  <label class="lbl">Nama Ayah (Wali)</label>
+                  <input type="text" id="direct-wali" class="pelangi-input" placeholder="Nama Ayah / Wali">
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Nama Ibu</label>
+                  <input type="text" id="direct-ibu" class="pelangi-input" placeholder="Nama Ibu Kandung">
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Hubungan Keluarga</label>
+                  <select id="direct-hubWali" class="pelangi-select">
+                    <option value="Orang Tua" selected>Orang Tua Kandung</option>
+                    <option value="Ayah">Ayah</option>
+                    <option value="Ibu">Ibu</option>
+                    <option value="Wali">Wali Asuh</option>
+                    <option value="Kakek/Nenek">Kakek / Nenek</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- ACTION BUTTONS -->
+              <div class="direct-input-actions" style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #E2E8F0; display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
+                <button type="button" class="btn-sec" onclick="resetDirectInputForm()">
+                  <span>🔄 Bersihkan Form</span>
+                </button>
+                <button type="submit" class="btn-top-add" style="padding: 12px 28px; font-size: 14px;">
+                  <span>💾 Simpan Data Anak</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 3: DATA ANAK DISABILITAS (TABEL) ================= -->
+        <section id="page-input-data" class="page">
+          <div class="card-panel table-panel">
+            
+            <div class="table-toolbar">
+              <div class="toolbar-left">
+                <div class="search-input-box">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="anggota-search" class="search-field" placeholder="Cari nama anak, NIK, No KK, kelurahan, disabilitas..." oninput="renderAnggotaTable(this.value)">
+                </div>
+                <select id="filter-disabilitas" class="filter-select" onchange="filterByDisabilitas(this.value)">
+                  <option value="">Semua Ragam Disabilitas</option>
+                  <option value="Tuna Rungu">Tuna Rungu</option>
+                  <option value="Tuna Netra">Tuna Netra</option>
+                  <option value="Tuna Grahita">Tuna Grahita</option>
+                  <option value="Autis">Autis</option>
+                  <option value="Down Syndrome">Down Syndrome</option>
+                  <option value="Disabilitas Berat">Disabilitas Berat</option>
+                  <option value="Tuna Daksa Kursi Roda">Tuna Daksa Kursi Roda</option>
+                  <option value="Tuna Daksa Tongkat">Tuna Daksa Tongkat</option>
+                  <option value="Tuna Daksa Kaku">Tuna Daksa Kaku</option>
+                  <option value="Tuna Daksa Tanpa Tangan">Tuna Daksa Tanpa Tangan</option>
+                </select>
+              </div>
+
+              <div class="toolbar-right">
+                <span id="table-total-count-text" class="table-count-text">Total: 13 Anak</span>
+                <button class="btn-top-add" onclick="openAddAnggota()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Data Anak</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>NAMA ANAK & KELURAHAN</th>
+                    <th>NOMOR NIK & KK</th>
+                    <th style="text-align: center;">USIA</th>
+                    <th style="text-align: center;">RAGAM DISABILITAS</th>
+                    <th>ORANG TUA & KONTAK WA</th>
+                    <th style="text-align: center;">KELAS</th>
+                    <th style="text-align: center;">STATUS</th>
+                    <th style="width: 120px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="anggota-tbody"></tbody>
+              </table>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 3: CETAK KTA ================= -->
+        <section id="page-cetak-kta" class="page">
+          <div class="card-panel" style="max-width: 880px; margin: 0 auto;">
+            <div class="card-panel-header">
+              <div class="header-title-group">
+                <span class="panel-icon">💳</span>
+                <div>
+                  <h3 class="panel-heading">Cetak ID Card / Kartu Tanda Anggota (KTA)</h3>
+                  <p class="panel-subheading">ID Card resmi Yayasan Lentera Hati Gurindam dengan data lengkap anak</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="kta-control-bar">
+              <label class="lbl-clean">Pilih Anggota yang Ingin Dicetak KTA:</label>
+              <div style="display: flex; gap: 10px; margin-top: 6px;">
+                <select id="kta-select" class="clean-select" style="flex: 1;" onchange="previewKTA()"></select>
+                <button class="btn-top-add" onclick="previewKTA()">Pratinjau KTA</button>
+              </div>
+            </div>
+
+            <div id="kta-preview-container" class="kta-preview-area">
+              <div class="empty-hint">Pilih data anak di atas untuk menampilkan pratinjau kartu tanda anggota.</div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 4: SURAT KETERANGAN HASIL PENDAFTARAN (PDF A4) ================= -->
+        <section id="page-form-pendaftaran" class="page">
+          <div class="card-panel" style="max-width: 960px; margin: 0 auto;">
+            <div class="card-panel-header">
+              <div class="header-title-group">
+                <span class="panel-icon">📄</span>
+                <div>
+                  <h3 class="panel-heading">Surat Keterangan Hasil Pendaftaran (PDF A4)</h3>
+                  <p class="panel-subheading">Generate dokumen PDF resmi bukti terdaftar anak pada Yayasan Lentera Hati Gurindam</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="kta-control-bar">
+              <label class="lbl-clean">Pilih Calon Peserta / Anak Terdaftar:</label>
+              <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
+                <select id="pdf-anggota-select" class="clean-select" style="flex: 1; min-width: 260px;" onchange="previewSuratPendaftaran()"></select>
+                <button class="btn-top-add" onclick="downloadSuratPendaftaranPDF()" title="Download Berkas PDF Resmi">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span>Download PDF</span>
+                </button>
+                <button class="btn-sec" onclick="printSuratPendaftaranPDF()" title="Cetak Surat Format A4">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+                  <span>Cetak A4</span>
+                </button>
+                <button class="btn-sec" onclick="printFormPendaftaran()" title="Cetak Blanko Fisik Formulir Kosong">
+                  <span>📝 Blanko Fisik</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- PREVIEW CONTAINER A4 PORTRAIT -->
+            <div id="pdf-preview-container" class="a4-preview-wrapper">
+              <!-- Content generated dynamically by previewSuratPendaftaran() -->
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE: BANTUAN PENERIMAAN ANAK ================= -->
+        <section id="page-bantuan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">🎁</span>
+                <div>
+                  <h3 class="panel-heading">Catatan Penerimaan Bantuan Anak Disabilitas</h3>
+                  <p class="panel-subheading">Semua rekap bantuan yang telah diserahkan kepada anak binaan lengkap dengan tanggal dan jenis bantuan</p>
+                </div>
+              </div>
+              <button class="btn-top-add" onclick="openAddBantuan()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Catat Bantuan Baru</span>
+              </button>
+            </div>
+
+            <!-- STAT KARTU RINGKASAN BANTUAN -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎁</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Total Penyerahan</div>
+                  <div id="stat-bantuan-total" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👶</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Penerima</div>
+                  <div id="stat-bantuan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🦯</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Alat Bantu Fisik</div>
+                  <div id="stat-bantuan-alat" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📦</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Sembako & Nutrisi</div>
+                  <div id="stat-bantuan-sembako" style="font-size: 22px; font-weight: 800; color: #4C1D95;">0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="bantuan-search-input" class="search-field" placeholder="Cari nama anak, jenis bantuan, atau sumber bantuan..." oninput="renderBantuanTable(this.value)">
+              </div>
+              <select id="bantuan-filter-kategori" class="filter-select" onchange="filterBantuanByKategori(this.value)">
+                <option value="">Semua Kategori Bantuan</option>
+                <option value="Alat Bantu">Alat Bantu (Kursi Roda/Tongkat/Hearing Aid)</option>
+                <option value="Sembako & Nutrisi">Sembako & Nutrisi</option>
+                <option value="Santunan / Uang Tunai">Santunan / Uang Tunai</option>
+                <option value="Pendidikan & Sekolah">Pendidikan & Sekolah</option>
+                <option value="Kesehatan & Obat">Kesehatan & Obat / Vitamin</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <!-- TABEL DATA BANTUAN -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>TANGGAL PENYERAHAN</th>
+                    <th>NAMA PENERIMA (ANAK)</th>
+                    <th>BANTUAN YANG DITERIMA</th>
+                    <th>KATEGORI</th>
+                    <th>SUMBER / PEMBERI</th>
+                    <th>PETUGAS PENYERAH</th>
+                    <th style="width: 120px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="bantuan-tbody">
+                  <!-- Generated dynamically by renderBantuanTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 5: LAPORAN KEGIATAN ================= -->
+        <section id="page-laporan-kegiatan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">📅</span>
+                <div>
+                  <h3 class="panel-heading">Laporan & Dokumentasi Agenda Kegiatan</h3>
+                  <p class="panel-subheading">Daftar agenda kegiatan kemandirian dan terapi anak</p>
+                </div>
+              </div>
+              <button class="btn-top-add" onclick="openAddLaporan()">
+                <span>➕</span> Tambah Laporan Agenda
+              </button>
+            </div>
+
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>NAMA KEGIATAN</th>
+                    <th>TANGGAL PELAKSANAAN</th>
+                    <th>LOKASI / TEMPAT</th>
+                    <th style="text-align: center;">PESERTA</th>
+                    <th style="text-align: center;">STATUS</th>
+                    <th style="width: 130px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="laporan-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 6: SURAT MENYURAT ================= -->
+        <section id="page-surat-menyurat" class="page">
+          <div class="card-panel">
+            
+            <div class="table-toolbar" style="margin-bottom: 14px;">
+              <div class="surat-tabs-group">
+                <button class="tab-pill active" onclick="switchSuratTab('masuk', this)">
+                  📥 Surat Masuk <span class="badge-tab-count" id="badge-sm-count">3</span>
+                </button>
+                <button class="tab-pill" onclick="switchSuratTab('keluar', this)">
+                  📤 Surat Keluar <span class="badge-tab-count" id="badge-sk-count">2</span>
+                </button>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-outline-action" onclick="openAddSurat('masuk')">➕ Catat Surat Masuk</button>
+                <button class="btn-top-add" onclick="openAddSurat('keluar')">➕ Buat Surat Keluar</button>
+              </div>
+            </div>
+
+            <div id="tab-surat-masuk" class="surat-tab-content active">
+              <div id="list-surat-masuk" class="surat-cards-list"></div>
+            </div>
+
+            <div id="tab-surat-keluar" class="surat-tab-content">
+              <div id="list-surat-keluar" class="surat-cards-list"></div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 7: FOTO KEGIATAN ================= -->
+        <section id="page-foto-kegiatan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">📸</span>
+                <div>
+                  <h3 class="panel-heading">Galeri Dokumentasi Foto Kegiatan</h3>
+                  <p class="panel-subheading">Kumpulan potret interaksi sosial, terapi, dan pelatihan anak</p>
+                </div>
+              </div>
+              <button class="btn-top-add" onclick="openAddFoto()">
+                <span>➕</span> Unggah Foto Kegiatan
+              </button>
+            </div>
+
+            <div id="photo-grid" class="photo-modern-grid"></div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 8: MANAJEMEN USER (KHUSUS SUPERADMIN) ================= -->
+        <section id="page-manajemen-user" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">⚙️</span>
+                <div>
+                  <h3 class="panel-heading">Manajemen Akun Pengguna & Hak Akses</h3>
+                  <p class="panel-subheading">Kelola akun login aplikasi dengan hak peran Superadmin, Admin, dan Petugas</p>
+                </div>
+              </div>
+              <button class="btn-top-add" onclick="openAddUser()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Tambah Pengguna Baru</span>
+              </button>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 24px 16px 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="user-search-input" class="search-field" placeholder="Cari username, NIK, atau nama pengguna..." oninput="renderManajemenUserTable(this.value)">
+              </div>
+              <select id="user-filter-role" class="filter-select" onchange="filterUsersByRole(this.value)">
+                <option value="">Semua Peran (Role)</option>
+                <option value="Superadmin">Superadmin</option>
+                <option value="Admin">Admin</option>
+                <option value="Petugas">Petugas</option>
+              </select>
+            </div>
+
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>USERNAME / NIK</th>
+                    <th>NAMA LENGKAP PENGGUNA</th>
+                    <th style="text-align: center;">HAK PERAN (ROLE)</th>
+                    <th style="text-align: center;">STATUS</th>
+                    <th>TANGGAL DIBUAT</th>
+                    <th style="text-align: center; width: 120px;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="user-tbody">
+                  <!-- Generated dynamically by renderManajemenUserTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- MODAL: ANGGOTA (TAMBAH / EDIT) -->
+  <div id="modal-anggota" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header-clean">
+        <div>
+          <h3 id="modal-anggota-title" class="modal-title">Tambah Data Anak Disabilitas</h3>
+          <p class="modal-subtitle">Silakan lengkapi data identitas anak dan orang tua/wali di bawah ini secara lengkap.</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-anggota')" title="Tutup">&times;</button>
+      </div>
+
+      <form id="form-anggota" onsubmit="event.preventDefault(); saveAnggota();">
+        <div class="modal-body-clean">
+          
+          <!-- BAGIAN 1: IDENTITAS PRIBADI ANAK -->
+          <div class="form-section-title">
+            <span class="sec-badge">1</span>
+            <span class="sec-title-text">Identitas Pribadi Anak</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Nama Lengkap Anak <span class="req">*</span></label>
+              <input type="text" name="nama" class="pelangi-input" placeholder="Masukkan nama lengkap anak..." required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Jenis Kelamin</label>
+              <select name="jk" class="pelangi-select">
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Nomor Induk Kependudukan (NIK) <span class="req">*</span></label>
+              <input type="text" name="nik" class="pelangi-input" placeholder="16 digit Nomor Induk Kependudukan" required maxlength="16">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Nomor Kartu Keluarga (KK)</label>
+              <input type="text" name="noKk" class="pelangi-input" placeholder="16 digit Nomor Kartu Keluarga (KK)" maxlength="16">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Tempat, Tanggal Lahir</label>
+              <input type="text" name="ttl" class="pelangi-input" placeholder="Contoh: Tanjungpinang, 01 Januari 2012">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Kontak WA <span style="font-size: 11px; font-weight: 600; color: #059669;">(Klik tombol untuk langsung chat WA)</span></label>
+              <div class="input-wa-group">
+                <input type="text" name="kontakWA" id="input-kontak-wa" class="pelangi-input" placeholder="Contoh: 081234567890">
+                <button type="button" class="btn-open-wa" onclick="openWhatsApp(document.getElementById('input-kontak-wa').value)" title="Buka WhatsApp Langsung (Aplikasi / Web)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                  Chat WA
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Alamat Lengkap Domisili</label>
+              <input type="text" name="alamat" class="pelangi-input" placeholder="Contoh: Jl. Merdeka No. 12, RT 02 / RW 04">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Kelurahan <span class="req">*</span></label>
+              <select name="kelurahan" class="pelangi-select" required>
+                <option value="">-- Pilih Kelurahan --</option>
+                <option value="Tanjungpinang Barat">Tanjungpinang Barat</option>
+                <option value="Tanjungpinang Kota">Tanjungpinang Kota</option>
+                <option value="Tanjungpinang Timur">Tanjungpinang Timur</option>
+                <option value="Kemboja">Kemboja</option>
+                <option value="Bukit Cermin">Bukit Cermin</option>
+                <option value="Kampung Baru">Kampung Baru</option>
+                <option value="Senggarang">Senggarang</option>
+                <option value="Kampung Bugis">Kampung Bugis</option>
+                <option value="Penyengat">Penyengat</option>
+                <option value="Kampung Bulang">Kampung Bulang</option>
+                <option value="Melayu Kota Piring">Melayu Kota Piring</option>
+                <option value="Batu IX">Batu IX</option>
+                <option value="Pinang Kencana">Pinang Kencana</option>
+                <option value="Air Raja">Air Raja</option>
+                <option value="Dompak">Dompak</option>
+                <option value="Tanjung Ayun Sakti">Tanjung Ayun Sakti</option>
+                <option value="Sei Jang">Sei Jang</option>
+                <option value="Tanjung Unggat">Tanjung Unggat</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- BAGIAN 2: RAGAM DISABILITAS -->
+          <div class="form-section-title">
+            <span class="sec-badge">2</span>
+            <span class="sec-title-text">Ragam & Kategori Disabilitas</span>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Ragam Disabilitas <span class="req">*</span></label>
+              <select name="disabilitas" class="pelangi-select" required>
+                <option value="">-- Pilih Ragam Disabilitas --</option>
+                <option value="Tuna Rungu">Tuna Rungu</option>
+                <option value="Tuna Netra">Tuna Netra</option>
+                <option value="Tuna Grahita">Tuna Grahita</option>
+                <option value="Autis">Autis</option>
+                <option value="Down Syndrome">Down Syndrome</option>
+                <option value="Disabilitas Berat">Disabilitas Berat</option>
+                <option value="Tuna Daksa Kursi Roda">Tuna Daksa Kursi Roda</option>
+                <option value="Tuna Daksa Tongkat">Tuna Daksa Tongkat</option>
+                <option value="Tuna Daksa Kaku">Tuna Daksa Kaku</option>
+                <option value="Tuna Daksa Tanpa Tangan">Tuna Daksa Tanpa Tangan</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Sub Disabilitas / Diagnosa Khusus</label>
+              <input type="text" name="subDisabilitas" class="pelangi-input" placeholder="Contoh: Keterangan tambahan diagnosa...">
+            </div>
+          </div>
+
+          <!-- BAGIAN 3: DATA ORANG TUA / WALI -->
+          <div class="form-section-title">
+            <span class="sec-badge">3</span>
+            <span class="sec-title-text">Data Orang Tua / Wali</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Nama Orang Tua (Ayah)</label>
+              <input type="text" name="wali" class="pelangi-input" placeholder="Masukkan nama ayah / kepala keluarga...">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Hubungan Keluarga</label>
+              <select name="hubWali" class="pelangi-select">
+                <option value="Ayah">Ayah</option>
+                <option value="Ibu">Ibu</option>
+                <option value="Orang Tua">Orang Tua Kandung</option>
+                <option value="Wali">Wali / Kerabat</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Nama Orang Tua (Ibu) / Wali</label>
+              <input type="text" name="ibu" class="pelangi-input" placeholder="Masukkan nama ibu / wali...">
+            </div>
+            <div class="form-field">
+              <label class="lbl">No. HP / Telepon Orang Tua</label>
+              <input type="text" name="telWali" class="pelangi-input" placeholder="08xxxxxxxxxx">
+            </div>
+          </div>
+
+          <!-- BAGIAN 4: PENDIDIKAN & STATUS -->
+          <div class="form-section-title">
+            <span class="sec-badge">4</span>
+            <span class="sec-title-text">Pendidikan & Status Keaktifan</span>
+          </div>
+          <div class="form-grid-3">
+            <div class="form-field">
+              <label class="lbl">Sekolah / Lembaga Pendidikan</label>
+              <input type="text" name="sekolah" class="pelangi-input" placeholder="Contoh: SLB Negeri / SDN 001">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Kelas / Tingkat</label>
+              <input type="text" name="kelas" class="pelangi-input" placeholder="Contoh: Kelas 3 / Terapi">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Status Keaktifan</label>
+              <select name="status" class="pelangi-select">
+                <option value="Aktif">Aktif</option>
+                <option value="Tidak Aktif">Tidak Aktif</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-anggota')">Batal</button>
+          <button type="submit" class="btn-prim btn-prim-lg">
+            <span>💾</span> Simpan Data Anggota
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW DETAIL -->
+  <div id="modal-view" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <h3 class="modal-title">Detail Informasi Lengkap</h3>
+        <button class="btn-close-modal" onclick="closeModal('modal-view')">&times;</button>
+      </div>
+      <div class="modal-body-clean" id="view-content"></div>
+      <div class="modal-footer-clean">
+        <button type="button" class="btn-sec" onclick="closeModal('modal-view')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LAPORAN KEGIATAN -->
+  <div id="modal-laporan" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <h3 class="modal-title">Tambah Laporan Kegiatan</h3>
+        <button class="btn-close-modal" onclick="closeModal('modal-laporan')">&times;</button>
+      </div>
+      <form id="form-laporan" onsubmit="event.preventDefault(); saveLaporan();">
+        <div class="modal-body-clean">
+          <div class="form-field">
+            <label class="lbl">Nama / Judul Kegiatan *</label>
+            <input type="text" name="judul" class="pelangi-input" placeholder="Contoh: Pelatihan Kerajinan Tangan" required>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Tanggal Pelaksanaan *</label>
+              <input type="date" name="tanggal" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Jumlah Peserta (Orang)</label>
+              <input type="number" name="peserta" class="pelangi-input" placeholder="25" min="0">
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Lokasi Pelaksanaan</label>
+            <input type="text" name="lokasi" class="pelangi-input" placeholder="Contoh: Aula Dinas Sosial Tanjungpinang">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Deskripsi & Catatan Kegiatan</label>
+            <textarea name="deskripsi" class="pelangi-textarea" placeholder="Rincian hasil kegiatan..."></textarea>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Status Kegiatan</label>
+            <select name="status_laporan" class="pelangi-select">
+              <option value="Selesai">Selesai</option>
+              <option value="Sedang Berjalan">Sedang Berjalan</option>
+              <option value="Akan Datang">Akan Datang</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-laporan')">Batal</button>
+          <button type="submit" class="btn-prim">Simpan Laporan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SURAT MENYURAT -->
+  <div id="modal-surat" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <h3 id="modal-surat-title" class="modal-title">Tambah Surat</h3>
+        <button class="btn-close-modal" onclick="closeModal('modal-surat')">&times;</button>
+      </div>
+      <form id="form-surat" onsubmit="event.preventDefault(); saveSurat();">
+        <input type="hidden" name="surat_type" id="surat-type" value="masuk">
+        <div class="modal-body-clean">
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Nomor Surat *</label>
+              <input type="text" name="nomor_surat" class="pelangi-input" placeholder="Contoh: 045/LHG/IX/2026" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Tanggal Surat</label>
+              <input type="date" name="tgl_surat" class="pelangi-input">
+            </div>
+          </div>
+          <div class="form-field" id="surat-pengirim-group">
+            <label class="lbl">Instansi Pengirim *</label>
+            <input type="text" name="pengirim" class="pelangi-input" placeholder="Contoh: Dinas Sosial Kota Tanjungpinang">
+          </div>
+          <div class="form-field" id="surat-tujuan-group" style="display:none;">
+            <label class="lbl">Tujuan Surat *</label>
+            <input type="text" name="tujuan" class="pelangi-input" placeholder="Contoh: Walikota Tanjungpinang">
+          </div>
+          <div class="form-field">
+            <label class="lbl">Perihal Surat *</label>
+            <input type="text" name="perihal" class="pelangi-input" placeholder="Contoh: Permohonan Bantuan Alat Bantu Disabilitas" required>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Keterangan Tambahan</label>
+            <textarea name="ket_surat" class="pelangi-textarea" placeholder="Ringkasan isi surat..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-surat')">Batal</button>
+          <button type="submit" class="btn-prim">Simpan Surat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CATAT BANTUAN ANAK -->
+  <div id="modal-bantuan" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title" id="modal-bantuan-title">Catat Penyerahan Bantuan Anak</h3>
+          <p class="modal-subtitle">Rekam riwayat bantuan yang telah diterima oleh anak binaan secara lengkap dan akurat.</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-bantuan')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-bantuan" onsubmit="event.preventDefault(); saveBantuan();">
+        <input type="hidden" id="bantuan-edit-id" value="">
+        <div class="modal-body-clean">
+          
+          <!-- PILIH ANAK PENERIMA -->
+          <div class="form-field">
+            <label class="lbl">Pilih Anak Penerima Bantuan <span class="req">*</span></label>
+            <select id="bantuan-select-anak" class="pelangi-select" required onchange="onBantuanAnakChange(this.value)">
+              <option value="">-- Pilih Anak Terdaftar di Database --</option>
+            </select>
+          </div>
+
+          <div id="bantuan-anak-preview-box" style="display: none; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: #475569;">
+            <span id="bantuan-anak-preview-info"></span>
+          </div>
+
+          <!-- RINCIAN BANTUAN -->
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Bantuan yang Diberikan <span class="req">*</span></label>
+              <input type="text" id="bantuan-nama" class="pelangi-input" placeholder="Contoh: Kursi Roda Standar / Paket Sembako / Seragam Sekolah" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Kategori Bantuan <span class="req">*</span></label>
+              <select id="bantuan-kategori" class="pelangi-select" required>
+                <option value="Alat Bantu">Alat Bantu Fisik (Kursi Roda, Tongkat, Alat Bantu Dengar)</option>
+                <option value="Sembako & Nutrisi">Sembako & Nutrisi / Makanan Tambahan</option>
+                <option value="Santunan / Uang Tunai">Santunan / Bantuan Uang Tunai</option>
+                <option value="Pendidikan & Sekolah">Peralatan Pendidikan / Seragam / Sekolah</option>
+                <option value="Kesehatan & Obat">Layanan Kesehatan / Vitamin / Obat</option>
+                <option value="Lainnya">Bantuan Lainnya</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Tanggal Penyerahan <span class="req">*</span></label>
+              <input type="date" id="bantuan-tanggal" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Jumlah / Kuantitas</label>
+              <input type="text" id="bantuan-jumlah" class="pelangi-input" placeholder="Contoh: 1 Unit / 2 Paket / Rp 500.000">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Petugas Penyerah</label>
+              <input type="text" id="bantuan-petugas" class="pelangi-input" placeholder="Nama Petugas LHG">
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Sumber / Donatur / Instansi Pemberi</label>
+            <input type="text" id="bantuan-sumber" class="pelangi-input" placeholder="Contoh: Dinas Sosial Kota Tanjungpinang / Donatur Hamba Allah / Yayasan LHG">
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Keterangan / Catatan Penyerahan</label>
+            <textarea id="bantuan-keterangan" class="pelangi-textarea" rows="2" placeholder="Catatan kondisi bantuan saat diterima, lokasi penyerahan, atau respon anak/wali..."></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-bantuan')">Batal</button>
+          <button type="submit" class="btn-prim">
+            <span>💾</span> Simpan Catatan Bantuan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FOTO KEGIATAN -->
+  <div id="modal-foto" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <h3 class="modal-title">Tambah Dokumentasi Foto</h3>
+        <button class="btn-close-modal" onclick="closeModal('modal-foto')">&times;</button>
+      </div>
+      <form id="form-foto" onsubmit="event.preventDefault(); saveFoto();">
+        <div class="modal-body-clean">
+          <div class="form-field">
+            <label class="lbl">Judul Foto *</label>
+            <input type="text" name="judul_foto" class="pelangi-input" placeholder="Contoh: Senam Pagi Bersama Anak Inklusi" required>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="lbl">Kategori Kegiatan</label>
+              <select name="kat_foto" class="pelangi-select">
+                <option value="Pelatihan">Pelatihan</option>
+                <option value="Kemandirian">Kemandirian</option>
+                <option value="Olahraga">Olahraga</option>
+                <option value="Kesenian">Kesenian</option>
+                <option value="Sosial">Bantuan Sosial</option>
+                <option value="Kesehatan">Kesehatan</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Tanggal Pengambilan</label>
+              <input type="date" name="tgl_foto" class="pelangi-input">
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="lbl">URL Foto (Tautan Gambar) *</label>
+            <input type="url" name="url_foto" class="pelangi-input" placeholder="https://picsum.photos/seed/kegiatan/600/400" required>
+          </div>
+          <div class="form-field">
+            <label class="lbl">Keterangan Singkat</label>
+            <textarea name="deskripsi_foto" class="pelangi-textarea" placeholder="Deskripsi momen pada foto..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-foto')">Batal</button>
+          <button type="submit" class="btn-prim">Simpan Foto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MANAJEMEN USER -->
+  <div id="modal-user" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title" id="modal-user-title">Tambah Pengguna Baru</h3>
+          <p class="modal-subtitle">Atur identitas akun, hak peran (Role), dan kata sandi login pengguna.</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-user')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-user" onsubmit="event.preventDefault(); saveUser();">
+        <input type="hidden" id="user-edit-username" value="">
+        <div class="modal-body-clean">
+          <div class="form-field">
+            <label class="lbl">Username / NIK Akun *</label>
+            <input type="text" id="user-username" class="pelangi-input" placeholder="Contoh: 2172041908850002 atau petugas1" required>
+            <small id="user-username-hint" style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Username/NIK unik untuk masuk ke sistem.</small>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Nama Lengkap Pemegang Akun *</label>
+            <input type="text" id="user-nama" class="pelangi-input" placeholder="Nama Lengkap Petugas / Admin" required>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Hak Peran (Role) *</label>
+              <select id="user-role" class="pelangi-select" required>
+                <option value="Petugas">Petugas (Data Anak, KTA, Form)</option>
+                <option value="Admin">Admin (Semua Kecuali Kelola User)</option>
+                <option value="Superadmin">Superadmin (Akses Penuh Seluruh Sistem)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Status Keaktifan Akun *</label>
+              <select id="user-status" class="pelangi-select" required>
+                <option value="Aktif">Aktif</option>
+                <option value="Nonaktif">Nonaktif</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl" id="lbl-user-password">Kata Sandi (Password) *</label>
+            <input type="text" id="user-password" class="pelangi-input" placeholder="Masukkan Kata Sandi" required>
+            <small id="user-password-hint" style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Kata sandi digunakan untuk login ke aplikasi.</small>
+          </div>
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-user')">Batal</button>
+          <button type="submit" class="btn-prim">Simpan Akun Pengguna</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX VIEWER -->
+  <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+    <div class="lightbox-box" onclick="event.stopPropagation()">
+      <button class="lightbox-close-btn" onclick="closeLightbox()">&times;</button>
+      <img id="lightbox-img" src="" alt="Preview Foto">
+      <div class="lightbox-caption-box">
+        <p id="lightbox-caption" class="lightbox-caption-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="js/html2pdf.bundle.min.js"></script>
+  <script src="js/app.js?v=7.0"></script>
+</body>
+</html>
