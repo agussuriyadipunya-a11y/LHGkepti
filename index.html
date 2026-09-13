@@ -350,6 +350,30 @@
                 </div>
               </div>
 
+              <!-- UPLOAD PAS FOTO UNTUK ID CARD -->
+              <div class="form-photo-upload-card" style="display: flex; align-items: center; gap: 20px; background: #F0FDF4; border: 1.5px dashed #86EFAC; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+                <div id="direct-photo-preview-box" style="width: 80px; height: 95px; border-radius: 8px; border: 2px solid #10B981; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                  <span id="direct-photo-placeholder-icon" style="font-size: 32px;">📷</span>
+                  <span id="direct-photo-placeholder-text" style="font-size: 9px; font-weight: 800; color: #059669; margin-top: 2px;">PAS FOTO</span>
+                  <img id="direct-photo-img" src="" alt="Preview Foto" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div style="flex: 1;">
+                  <label class="lbl" style="font-size: 13px; font-weight: 800; color: #065F46; margin-bottom: 4px; display: block;">Pas Foto Anak untuk ID Card (KTA)</label>
+                  <p style="font-size: 11.5px; color: #047857; margin-bottom: 10px; line-height: 1.4;">
+                    Unggah pas foto anak resmi untuk langsung dicetak pada ID Card / KTA. Format JPG/PNG (Maks 2MB).
+                  </p>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" id="direct-foto" accept="image/*" style="display: none;" onchange="handleDirectPhotoSelect(event)">
+                    <button type="button" class="btn-top-add" style="padding: 7px 16px; font-size: 12px; background: #059669;" onclick="document.getElementById('direct-foto').click()">
+                      <span>📁 Pilih / Ambil Foto</span>
+                    </button>
+                    <button type="button" id="btn-direct-remove-photo" class="btn-sec" style="display: none; padding: 7px 14px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="removeDirectPhoto()">
+                      <span>🗑️ Hapus Foto</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div class="form-grid-3">
                 <div class="form-field">
                   <label class="lbl">Nama Lengkap Anak *</label>
@@ -870,6 +894,30 @@
           <div class="form-section-title">
             <span class="sec-badge">1</span>
             <span class="sec-title-text">Identitas Pribadi Anak</span>
+          </div>
+
+          <!-- UPLOAD PAS FOTO UNTUK ID CARD DI MODAL -->
+          <div class="form-photo-upload-card" style="display: flex; align-items: center; gap: 18px; background: #F0FDF4; border: 1.5px dashed #86EFAC; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;">
+            <div id="modal-photo-preview-box" style="width: 70px; height: 85px; border-radius: 8px; border: 2px solid #10B981; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+              <span id="modal-photo-placeholder-icon" style="font-size: 28px;">📷</span>
+              <span id="modal-photo-placeholder-text" style="font-size: 8.5px; font-weight: 800; color: #059669; margin-top: 2px;">PAS FOTO</span>
+              <img id="modal-photo-img" src="" alt="Preview Foto" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="flex: 1;">
+              <label class="lbl" style="font-size: 12.5px; font-weight: 800; color: #065F46; margin-bottom: 3px; display: block;">Pas Foto Anak untuk ID Card (KTA)</label>
+              <p style="font-size: 11px; color: #047857; margin-bottom: 8px; line-height: 1.35;">
+                Pas foto akan otomatis tercetak di ID Card resmi anak. Format JPG/PNG.
+              </p>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="modal-foto" accept="image/*" style="display: none;" onchange="handleModalPhotoSelect(event)">
+                <button type="button" class="btn-top-add" style="padding: 6px 14px; font-size: 11.5px; background: #059669;" onclick="document.getElementById('modal-foto').click()">
+                  <span>📁 Pilih / Ambil Foto</span>
+                </button>
+                <button type="button" id="btn-modal-remove-photo" class="btn-sec" style="display: none; padding: 6px 12px; font-size: 11.5px; color: #DC2626; border-color: #FECACA;" onclick="removeModalPhoto()">
+                  <span>🗑️ Hapus Foto</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="form-grid-2">

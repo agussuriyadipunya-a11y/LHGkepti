@@ -751,11 +751,243 @@ function renderAnggotaTable(search) {
   `).join('');
 }
 
+// ================= UPLOAD FOTO & PREVIEW HELPERS =================
+let currentDirectPhotoBase64 = null;
+let currentModalPhotoBase64 = null;
+
+function handleDirectPhotoSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('File harus berupa gambar (JPG/PNG)!', 'error');
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    showToast('Ukuran foto terlalu besar! Maksimal 3MB.', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    // Compress/resize image before saving to optimize localStorage and Supabase sync
+    compressImage(e.target.result, 400, 500, 0.85, function(compressedBase64) {
+      currentDirectPhotoBase64 = compressedBase64;
+      updateDirectPhotoUI(compressedBase64);
+      showToast('Pas foto berhasil dimuat! Siap dicetak di ID Card.', 'success');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateDirectPhotoUI(base64) {
+  const imgEl = document.getElementById('direct-photo-img');
+  const iconEl = document.getElementById('direct-photo-placeholder-icon');
+  const textEl = document.getElementById('direct-photo-placeholder-text');
+  const btnRemove = document.getElementById('btn-direct-remove-photo');
+
+  if (base64) {
+    if (imgEl) { imgEl.src = base64; imgEl.style.display = 'block'; }
+    if (iconEl) iconEl.style.display = 'none';
+    if (textEl) textEl.style.display = 'none';
+    if (btnRemove) btnRemove.style.display = 'inline-block';
+  } else {
+    if (imgEl) { imgEl.src = ''; imgEl.style.display = 'none'; }
+    if (iconEl) iconEl.style.display = 'block';
+    if (textEl) textEl.style.display = 'block';
+    if (btnRemove) btnRemove.style.display = 'none';
+  }
+}
+
+function removeDirectPhoto() {
+  currentDirectPhotoBase64 = null;
+  const inputEl = document.getElementById('direct-foto');
+  if (inputEl) inputEl.value = '';
+  updateDirectPhotoUI(null);
+  showToast('Pas foto dihapus dari form.', 'info');
+}
+
+function handleModalPhotoSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('File harus berupa gambar (JPG/PNG)!', 'error');
+    return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    showToast('Ukuran foto terlalu besar! Maksimal 3MB.', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    compressImage(e.target.result, 400, 500, 0.85, function(compressedBase64) {
+      currentModalPhotoBase64 = compressedBase64;
+      updateModalPhotoUI(compressedBase64);
+      showToast('Pas foto berhasil dipilih!', 'success');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateModalPhotoUI(base64) {
+  const imgEl = document.getElementById('modal-photo-img');
+  const iconEl = document.getElementById('modal-photo-placeholder-icon');
+  const textEl = document.getElementById('modal-photo-placeholder-text');
+  const btnRemove = document.getElementById('btn-modal-remove-photo');
+
+  if (base64) {
+    if (imgEl) { imgEl.src = base64; imgEl.style.display = 'block'; }
+    if (iconEl) iconEl.style.display = 'none';
+    if (textEl) textEl.style.display = 'none';
+    if (btnRemove) btnRemove.style.display = 'inline-block';
+  } else {
+    if (imgEl) { imgEl.src = ''; imgEl.style.display = 'none'; }
+    if (iconEl) iconEl.style.display = 'block';
+    if (textEl) textEl.style.display = 'block';
+    if (btnRemove) btnRemove.style.display = 'none';
+  }
+}
+
+function removeModalPhoto() {
+  currentModalPhotoBase64 = null;
+  const inputEl = document.getElementById('modal-foto');
+  if (inputEl) inputEl.value = '';
+  updateModalPhotoUI(null);
+  showToast('Pas foto dihapus dari form.', 'info');
+}
+
+// Utility to compress images so database sync is ultra-fast
+function compressImage(base64, maxW, maxH, quality, callback) {
+  const img = new Image();
+  img.onload = function() {
+    let w = img.width;
+    let h = img.height;
+    if (w > maxW || h > maxH) {
+      const ratio = Math.min(maxW / w, maxH / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.onerror = function() {
+    callback(base64);
+  };
+  img.src = base64;
+}
+
+// ================= DIRECT INPUT FORM (MENU INPUT DATA) =================
+function initDirectInputPage() {
+  // Reset form
+  resetDirectInputForm();
+}
+
+function resetDirectInputForm() {
+  const f = document.getElementById('form-direct-input-anak');
+  if (f) f.reset();
+  removeDirectPhoto();
+}
+
+function handleDirectDisabilityChange(val) {
+  const subEl = document.getElementById('direct-subDisabilitas');
+  if (!subEl) return;
+  const presets = {
+    'Tuna Rungu': 'Gangguan Pendengaran & Wicara',
+    'Tuna Netra': 'Hambatan Penglihatan / Low Vision',
+    'Tuna Grahita': 'Hambatan Perkembangan Intelektual',
+    'Autis': 'Autisme Spectrum Disorder (ASD)',
+    'Down Syndrome': 'Kelainan Genetik Trisomi 21',
+    'Disabilitas Berat': 'Hambatan Ganda / Kebutuhan Bantuan Khusus',
+    'Tuna Daksa Kursi Roda': 'Mobilitas Menggunakan Kursi Roda',
+    'Tuna Daksa Tongkat': 'Mobilitas Menggunakan Tongkat / Kruk',
+    'Tuna Daksa Kaku': 'Cerebral Palsy / Kekakuan Otot',
+    'Tuna Daksa Tanpa Tangan': 'Hambatan Fisik Anggota Gerak Atas'
+  };
+  if (presets[val] && (!subEl.value || Object.values(presets).includes(subEl.value))) {
+    subEl.value = presets[val];
+  }
+}
+
+function saveDirectInputAnak(event) {
+  if (event) event.preventDefault();
+  const nama = document.getElementById('direct-nama').value.trim();
+  const nik = document.getElementById('direct-nik').value.trim();
+  const noKk = (document.getElementById('direct-noKk') ? document.getElementById('direct-noKk').value.trim() : '');
+  const ttl = document.getElementById('direct-ttl').value.trim();
+  const jk = document.getElementById('direct-jk').value;
+  const kontakWA = document.getElementById('direct-kontakWA').value.trim();
+  const disabilitas = document.getElementById('direct-disabilitas').value;
+  const subDisabilitas = (document.getElementById('direct-subDisabilitas') ? document.getElementById('direct-subDisabilitas').value.trim() : '');
+  const status = (document.getElementById('direct-status') ? document.getElementById('direct-status').value : 'Aktif');
+  const sekolah = (document.getElementById('direct-sekolah') ? document.getElementById('direct-sekolah').value.trim() : '');
+  const kelas = (document.getElementById('direct-kelas') ? document.getElementById('direct-kelas').value.trim() : '1');
+  const alamat = (document.getElementById('direct-alamat') ? document.getElementById('direct-alamat').value.trim() : '');
+  const kelurahan = (document.getElementById('direct-kelurahan') ? document.getElementById('direct-kelurahan').value.trim() : '');
+  const wali = (document.getElementById('direct-wali') ? document.getElementById('direct-wali').value.trim() : '');
+  const ibu = (document.getElementById('direct-ibu') ? document.getElementById('direct-ibu').value.trim() : '');
+  const hubWali = (document.getElementById('direct-hubWali') ? document.getElementById('direct-hubWali').value : 'Orang Tua');
+
+  if (!nama || !nik || !disabilitas) {
+    showToast('Harap isi field Nama, NIK, dan Ragam Disabilitas!', 'error');
+    return;
+  }
+
+  const anggota = DB.get('lhg_anggota');
+  const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
+  const newRecord = {
+    id: no,
+    noAnggota: no,
+    nama: nama.toUpperCase(),
+    nik: nik,
+    noKk: noKk,
+    ttl: ttl,
+    jk: jk,
+    kontakWA: kontakWA,
+    disabilitas: disabilitas,
+    subDisabilitas: subDisabilitas,
+    status: status,
+    sekolah: sekolah,
+    kelas: kelas || '101',
+    alamat: alamat,
+    kelurahan: kelurahan,
+    wali: wali,
+    ibu: ibu,
+    hubWali: hubWali,
+    telWali: kontakWA,
+    umur: '12 Thn',
+    tglDaftar: new Date().toISOString().split('T')[0],
+    foto: currentDirectPhotoBase64 || null
+  };
+
+  anggota.unshift(newRecord);
+  DB.set('lhg_anggota', anggota);
+  resetDirectInputForm();
+
+  renderAnggotaTable();
+  renderDashboard();
+  if (typeof renderCetakKTA === 'function') renderCetakKTA();
+  if (typeof renderFormPendaftaranPage === 'function') renderFormPendaftaranPage(no);
+
+  showToast(`Data anak "${newRecord.nama}" berhasil disimpan & foto siap dicetak di ID Card!`, 'success');
+  
+  // Arahkan user langsung ke halaman Cetak KTA atau Data Anak
+  setTimeout(() => {
+    cetakKTAFor(no);
+  }, 700);
+}
+
 // ================= MODAL TAMBAH & EDIT ANGGOTA =================
 function openAddAnggota() {
   editId = null;
   setText('modal-anggota-title', 'Tambah Data Anak Disabilitas');
-  document.getElementById('form-anggota').reset();
+  const f = document.getElementById('form-anggota');
+  if (f) f.reset();
+  currentModalPhotoBase64 = null;
+  updateModalPhotoUI(null);
   document.getElementById('modal-anggota').classList.add('open');
 }
 
@@ -768,6 +1000,11 @@ function openEditAnggota(id) {
   ['nama', 'nik', 'noKk', 'ttl', 'jk', 'kontakWA', 'alamat', 'kelurahan', 'disabilitas', 'subDisabilitas', 'wali', 'ibu', 'hubWali', 'telWali', 'sekolah', 'kelas', 'status'].forEach(k => {
     if (f[k]) f[k].value = a[k] || '';
   });
+
+  // Load existing photo
+  currentModalPhotoBase64 = a.foto || null;
+  updateModalPhotoUI(currentModalPhotoBase64);
+
   document.getElementById('modal-anggota').classList.add('open');
 }
 
@@ -802,16 +1039,23 @@ function saveAnggota() {
     sekolah: f.sekolah.value,
     kelas: f.kelas.value || '101',
     status: f.status.value,
-    umur: '12 Thn'
+    umur: '12 Thn',
+    foto: currentModalPhotoBase64 || null
   };
 
   if (editId) {
     const idx = anggota.findIndex(a => a.id === editId);
-    if (idx > -1) Object.assign(anggota[idx], fd);
+    if (idx > -1) {
+      // Retain previous photo if none selected in modal
+      if (!fd.foto && anggota[idx].foto && currentModalPhotoBase64 !== null) {
+        fd.foto = anggota[idx].foto;
+      }
+      Object.assign(anggota[idx], fd);
+    }
     showToast('Data anak berhasil diperbarui!');
   } else {
     const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
-    anggota.unshift({ ...fd, id: no, noAnggota: no, tglDaftar: new Date().toISOString().split('T')[0], foto: null });
+    anggota.unshift({ ...fd, id: no, noAnggota: no, tglDaftar: new Date().toISOString().split('T')[0] });
     showToast('Data anak baru berhasil ditambahkan!');
   }
 
@@ -849,9 +1093,13 @@ function viewAnggota(id) {
 
   document.getElementById('view-content').innerHTML = `
     <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #E2E8F0;">
-      <div class="recent-avatar-circle" style="width: 48px; height: 48px; font-size: 16px; background: #ECFDF5; color: #059669; border: 2px solid #A7F3D0;">
-        ${getInitials(a.nama)}
-      </div>
+      ${a.foto ? `
+        <img src="${a.foto}" alt="${a.nama}" style="width: 52px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #059669; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+      ` : `
+        <div class="recent-avatar-circle" style="width: 48px; height: 48px; font-size: 16px; background: #ECFDF5; color: #059669; border: 2px solid #A7F3D0;">
+          ${getInitials(a.nama)}
+        </div>
+      `}
       <div>
         <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; text-transform: uppercase;">${a.nama}</h3>
         <div style="font-size: 12px; color: #059669; font-weight: 700;">Nomor KTA: ${a.noAnggota || a.id}</div>
