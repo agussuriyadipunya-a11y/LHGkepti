@@ -2659,4 +2659,62 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   // Check and sync with Supabase Online in background
   syncWithSupabase(false);
+  // Register PWA Service Worker
+  registerPWA();
 });
+
+// ==============================================================================
+// PWA INSTALLATION & SERVICE WORKER LOGIC
+// ==============================================================================
+let deferredInstallPrompt = null;
+
+function registerPWA() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('Service Worker Registered successfully:', reg.scope);
+      })
+      .catch(err => {
+        console.warn('Service Worker Registration failed:', err);
+      });
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent browser default mini-infobar
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  console.log('App is installable as PWA');
+
+  // Highlight install buttons
+  const btnLogin = document.getElementById('btn-install-app-login');
+  const btnTop = document.getElementById('btn-install-app-topbar');
+  if (btnLogin) btnLogin.style.display = 'flex';
+  if (btnTop) btnTop.style.display = 'inline-flex';
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  showToast('Aplikasi Lentera Hati Gurindam berhasil diinstall!', 'success');
+  const btnLogin = document.getElementById('btn-install-app-login');
+  const btnTop = document.getElementById('btn-install-app-topbar');
+  if (btnLogin) btnLogin.style.display = 'none';
+  if (btnTop) btnTop.style.display = 'none';
+});
+
+function triggerInstallApp() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('Memulai instalasi aplikasi...', 'success');
+      } else {
+        showToast('Instalasi dibatalkan oleh pengguna.', 'info');
+      }
+      deferredInstallPrompt = null;
+    });
+  } else {
+    // If browser doesn't support beforeinstallprompt or already installed
+    showToast('Untuk menginstall: Buka menu titik tiga browser (⋮) lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".', 'info');
+  }
+}
