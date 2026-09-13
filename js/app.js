@@ -110,20 +110,22 @@ const DB = {
 
 // INITIAL MOCK DATA SETUP (CLEAN EMPTY DATABASE FOR PRODUCTION)
 function initData() {
-  if (localStorage.getItem('lhg_init_clean_prod_v2')) return;
+  // Always ensure dummy data is cleared if old caches exist
+  if (!localStorage.getItem('lhg_init_clean_v3')) {
+    localStorage.removeItem('lhg_init');
+    localStorage.removeItem('lhg_init_modern_v1');
+    localStorage.removeItem('lhg_init_clean_prod_v2');
 
-  // Clear previous dummy data caches
-  localStorage.removeItem('lhg_init');
-  localStorage.removeItem('lhg_init_modern_v1');
+    localStorage.setItem('lhg_anggota', JSON.stringify([]));
+    localStorage.setItem('lhg_bantuan', JSON.stringify([]));
+    localStorage.setItem('lhg_kegiatan', JSON.stringify([]));
+    localStorage.setItem('lhg_surat_masuk', JSON.stringify([]));
+    localStorage.setItem('lhg_surat_keluar', JSON.stringify([]));
+    localStorage.setItem('lhg_foto', JSON.stringify([]));
 
-  DB.set('lhg_anggota', []);
-  DB.set('lhg_kegiatan', []);
-  DB.set('lhg_surat_masuk', []);
-  DB.set('lhg_surat_keluar', []);
-  DB.set('lhg_foto', []);
-  DB.set('lhg_bantuan', []);
+    localStorage.setItem('lhg_init_clean_v3', '1');
+  }
 
-  localStorage.setItem('lhg_init_clean_prod_v2', '1');
   initUsersData();
 }
 
@@ -2613,13 +2615,18 @@ async function syncWithSupabase(isManual) {
           localStorage.setItem(t, JSON.stringify(mapped));
           syncedCount++;
         } else {
-          // Cloud table is empty: Push local initial data to cloud
-          const localData = JSON.parse(localStorage.getItem(t) || '[]');
-          if (localData.length > 0) {
-            const rows = localData.map(item => toSupabaseRow(t, item));
-            await SupabaseAPI.upsert(t, rows);
-            syncedCount++;
+          // Cloud table is empty: If it's operational data, ensure local cache is also empty (clean slate)
+          if (t !== 'lhg_users') {
+            localStorage.setItem(t, JSON.stringify([]));
+          } else {
+            // If users table in cloud is empty, seed default accounts
+            const localUsers = JSON.parse(localStorage.getItem(t) || '[]');
+            if (localUsers.length > 0) {
+              const rows = localUsers.map(item => toSupabaseRow(t, item));
+              await SupabaseAPI.upsert(t, rows);
+            }
           }
+          syncedCount++;
         }
       }
     } catch(e) {
