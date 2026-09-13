@@ -130,8 +130,32 @@ function initData() {
 }
 
 // ================= USER DATABASE & AUTHENTICATION =================
+function getDeletedUsers() {
+  try {
+    const raw = localStorage.getItem('lhg_deleted_users');
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function addDeletedUser(username) {
+  if (!username) return;
+  const list = getDeletedUsers();
+  if (!list.includes(username)) {
+    list.push(username);
+    localStorage.setItem('lhg_deleted_users', JSON.stringify(list));
+  }
+}
+
+function removeDeletedUser(username) {
+  if (!username) return;
+  const list = getDeletedUsers().filter(u => u !== username);
+  localStorage.setItem('lhg_deleted_users', JSON.stringify(list));
+}
+
 function initUsersData() {
-  const users = DB.get('lhg_users', []);
   const defaultSuperadmin = {
     username: '2172041908850002',
     password: '19081985',
@@ -141,40 +165,50 @@ function initUsersData() {
     createdAt: '2024-01-01'
   };
 
-  if (!users || users.length === 0) {
-    DB.set('lhg_users', [
-      defaultSuperadmin,
-      {
-        username: 'admin',
-        password: 'admin123',
-        nama: 'Admin Pelayanan LHG',
-        role: 'Admin',
-        status: 'Aktif',
-        createdAt: '2024-02-01'
-      },
-      {
-        username: 'petugas',
-        password: 'petugas123',
-        nama: 'Petugas Pendataan Lapangan',
-        role: 'Petugas',
-        status: 'Aktif',
-        createdAt: '2024-03-01'
-      }
-    ]);
-  } else {
-    // Ensure the requested Superadmin exists
-    const idx = users.findIndex(u => u.username === '2172041908850002');
-    if (idx === -1) {
-      users.unshift(defaultSuperadmin);
-      DB.set('lhg_users', users);
-    } else {
-      // Ensure credentials match user instruction
-      users[idx].password = '19081985';
-      users[idx].role = 'Superadmin';
-      users[idx].status = 'Aktif';
-      DB.set('lhg_users', users);
+  const isSetupDone = localStorage.getItem('lhg_users_setup_v3');
+  const deletedUsers = getDeletedUsers();
+  let users = DB.get('lhg_users', []);
+
+  if (!isSetupDone) {
+    // Hanya saat inisialisasi awal sekali jika data users benar-benar kosong
+    if (!users || users.length === 0) {
+      users = [
+        defaultSuperadmin,
+        {
+          username: 'admin',
+          password: 'admin123',
+          nama: 'Admin Pelayanan LHG',
+          role: 'Admin',
+          status: 'Aktif',
+          createdAt: '2024-02-01'
+        },
+        {
+          username: 'petugas',
+          password: 'petugas123',
+          nama: 'Petugas Pendataan Lapangan',
+          role: 'Petugas',
+          status: 'Aktif',
+          createdAt: '2024-03-01'
+        }
+      ];
     }
+    localStorage.setItem('lhg_users_setup_v3', '1');
   }
+
+  // Jangan pernah memunculkan akun yang sudah dihapus
+  users = users.filter(u => !deletedUsers.includes(u.username));
+
+  // Pastikan Superadmin utama selalu ada
+  const idx = users.findIndex(u => u.username === '2172041908850002');
+  if (idx === -1) {
+    users.unshift(defaultSuperadmin);
+  } else {
+    users[idx].password = '19081985';
+    users[idx].role = 'Superadmin';
+    users[idx].status = 'Aktif';
+  }
+
+  localStorage.setItem('lhg_users', JSON.stringify(users));
 }
 
 function getAuthUser() {
@@ -221,6 +255,16 @@ function handleLoginSubmit(e) {
     if (errBox) {
       errBox.style.display = 'flex';
       errMsg.textContent = 'Harap isi username / NIK dan kata sandi!';
+    }
+    return;
+  }
+
+  // Cek apakah akun pernah dihapus dari sistem
+  const deletedUsers = getDeletedUsers();
+  if (deletedUsers.includes(u)) {
+    if (errBox) {
+      errBox.style.display = 'flex';
+      errMsg.textContent = 'Akun ini telah dihapus dan tidak dapat mengakses aplikasi lagi!';
     }
     return;
   }
@@ -826,9 +870,15 @@ function viewAnggota(id) {
   document.getElementById('modal-view').classList.add('open');
 }
 
-function deleteAnggota(id) {
+async function deleteAnggota(id) {
   if (!confirm('Apakah Anda yakin ingin menghapus data anak ini?')) return;
-  DB.set('lhg_anggota', DB.get('lhg_anggota').filter(a => a.id !== id));
+  const list = DB.get('lhg_anggota').filter(a => a.id !== id);
+  localStorage.setItem('lhg_anggota', JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete('lhg_anggota', 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus anggota dari cloud:', e);
+  }
   renderAnggotaTable();
   renderDashboard();
   if (typeof renderCetakKTA === 'function') renderCetakKTA();
@@ -1663,9 +1713,15 @@ function saveLaporan() {
   showToast('Laporan kegiatan berhasil disimpan!');
 }
 
-function deleteLaporan(id) {
+async function deleteLaporan(id) {
   if (!confirm('Hapus laporan kegiatan ini?')) return;
-  DB.set('lhg_kegiatan', DB.get('lhg_kegiatan').filter(x => x.id !== id));
+  const list = DB.get('lhg_kegiatan').filter(x => x.id !== id);
+  localStorage.setItem('lhg_kegiatan', JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete('lhg_kegiatan', 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus laporan dari cloud:', e);
+  }
   renderLaporan();
   renderDashboard();
   showToast('Laporan dihapus', 'warning');
@@ -1756,10 +1812,16 @@ function saveSurat() {
   showToast('Data surat berhasil disimpan!');
 }
 
-function deleteSurat(type, id) {
+async function deleteSurat(type, id) {
   if (!confirm('Hapus surat ini?')) return;
   const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
-  DB.set(key, DB.get(key).filter(x => x.id !== id));
+  const list = DB.get(key).filter(x => x.id !== id);
+  localStorage.setItem(key, JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete(key, 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus surat dari cloud:', e);
+  }
   renderSurat();
   renderDashboard();
   showToast('Surat dihapus', 'warning');
@@ -2071,6 +2133,7 @@ function saveUser() {
   const users = DB.get('lhg_users', []);
 
   if (isEditing) {
+    removeDeletedUser(username);
     const idx = users.findIndex(x => x.username === userEditTarget);
     if (idx > -1) {
       users[idx].nama = nama;
@@ -2104,6 +2167,7 @@ function saveUser() {
       return;
     }
 
+    removeDeletedUser(username);
     users.push({
       username: username,
       password: password,
@@ -2120,7 +2184,7 @@ function saveUser() {
   renderManajemenUserTable();
 }
 
-function deleteUser(username) {
+async function deleteUser(username) {
   const currentUser = getAuthUser();
   if (currentUser && currentUser.username === username) {
     showToast('Anda tidak dapat menghapus akun Anda sendiri!', 'error');
@@ -2130,12 +2194,25 @@ function deleteUser(username) {
     showToast('Akun Superadmin utama tidak dapat dihapus!', 'error');
     return;
   }
-  if (!confirm(`Hapus akun pengguna ${username}? Tindakan ini tidak dapat dibatalkan.`)) return;
+  if (!confirm(`Hapus akun pengguna "${username}"? Akun ini akan dihapus secara permanen dan tidak dapat login ke aplikasi lagi.`)) return;
 
+  // 1. Simpan ke daftar akun terhapus (tombstone) agar tidak pernah muncul lagi
+  addDeletedUser(username);
+
+  // 2. Hapus dari database lokal
   const users = DB.get('lhg_users', []).filter(x => x.username !== username);
-  DB.set('lhg_users', users);
+  localStorage.setItem('lhg_users', JSON.stringify(users));
+
+  // 3. Hapus langsung dari Supabase Cloud agar tidak kembali saat refresh atau sync
+  try {
+    await SupabaseAPI.delete('lhg_users', 'username', username);
+  } catch (e) {
+    console.warn('Gagal menghapus user dari Supabase:', e);
+  }
+
+  // 4. Perbarui tampilan tabel pengguna
   renderManajemenUserTable();
-  showToast(`Pengguna ${username} berhasil dihapus!`, 'warning');
+  showToast(`Pengguna ${username} berhasil dihapus secara permanen!`, 'warning');
 }
 
 // ==============================================================================
@@ -2412,10 +2489,15 @@ function saveBantuan() {
   renderBantuanTable();
 }
 
-function deleteBantuan(id) {
+async function deleteBantuan(id) {
   if (!confirm('Apakah Anda yakin ingin menghapus catatan bantuan ini?')) return;
   let list = getBantuanList().filter(x => x.id !== id);
-  DB.set('lhg_bantuan', list);
+  localStorage.setItem('lhg_bantuan', JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete('lhg_bantuan', 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus bantuan dari cloud:', e);
+  }
   renderBantuanStats();
   renderBantuanTable();
   showToast('Catatan bantuan telah dihapus.', 'warning');
@@ -2526,6 +2608,16 @@ function toSupabaseRow(table, item) {
 
 // Convert database snake_case row to frontend camelCase
 function fromSupabaseRow(table, row) {
+  if (table === 'lhg_users') {
+    return {
+      username: row.username,
+      password: row.password,
+      nama: row.nama,
+      role: row.role,
+      status: row.status,
+      createdAt: row.created_at ? row.created_at.split('T')[0] : (row.createdAt || '-')
+    };
+  }
   if (table === 'lhg_anggota') {
     return {
       id: row.id,
@@ -2610,19 +2702,67 @@ async function syncWithSupabase(isManual) {
       const cloudData = await SupabaseAPI.select(t);
       if (cloudData !== null) {
         if (cloudData.length > 0) {
-          // Download latest from cloud and cache in localStorage
-          const mapped = cloudData.map(r => fromSupabaseRow(t, r));
-          localStorage.setItem(t, JSON.stringify(mapped));
+          if (t === 'lhg_users') {
+            const deleted = getDeletedUsers();
+
+            // 1. Hapus akun di Supabase yang sudah pernah dihapus oleh user
+            for (const r of cloudData) {
+              if (deleted.includes(r.username)) {
+                await SupabaseAPI.delete('lhg_users', 'username', r.username);
+              }
+            }
+
+            // 2. Ambil hanya akun yang aktif / tidak terhapus
+            const activeCloud = cloudData.filter(r => !deleted.includes(r.username));
+            const localUsers = JSON.parse(localStorage.getItem('lhg_users') || '[]')
+              .filter(u => !deleted.includes(u.username));
+
+            // 3. Gabungkan cloud dan local (data local & perubahan tidak akan tertimpa ke default)
+            const userMap = new Map();
+            activeCloud.forEach(r => {
+              userMap.set(r.username, fromSupabaseRow('lhg_users', r));
+            });
+            localUsers.forEach(u => {
+              userMap.set(u.username, u);
+            });
+
+            // 4. Pastikan Superadmin utama selalu ada
+            if (!userMap.has('2172041908850002')) {
+              userMap.set('2172041908850002', {
+                username: '2172041908850002',
+                password: '19081985',
+                nama: 'KAMARIDA',
+                role: 'Superadmin',
+                status: 'Aktif',
+                createdAt: '2024-01-01'
+              });
+            }
+
+            const finalUsers = Array.from(userMap.values());
+            localStorage.setItem('lhg_users', JSON.stringify(finalUsers));
+
+            // Sync semua akun aktif ke cloud
+            const rowsToUpsert = finalUsers.map(item => toSupabaseRow('lhg_users', item));
+            if (rowsToUpsert.length > 0) {
+              await SupabaseAPI.upsert('lhg_users', rowsToUpsert);
+            }
+          } else {
+            // Download latest from cloud and cache in localStorage
+            const mapped = cloudData.map(r => fromSupabaseRow(t, r));
+            localStorage.setItem(t, JSON.stringify(mapped));
+          }
           syncedCount++;
         } else {
           // Cloud table is empty: If it's operational data, ensure local cache is also empty (clean slate)
           if (t !== 'lhg_users') {
             localStorage.setItem(t, JSON.stringify([]));
           } else {
-            // If users table in cloud is empty, seed default accounts
+            // If users table in cloud is empty, seed active local users
             const localUsers = JSON.parse(localStorage.getItem(t) || '[]');
-            if (localUsers.length > 0) {
-              const rows = localUsers.map(item => toSupabaseRow(t, item));
+            const deleted = getDeletedUsers();
+            const activeUsers = localUsers.filter(u => !deleted.includes(u.username));
+            if (activeUsers.length > 0) {
+              const rows = activeUsers.map(item => toSupabaseRow(t, item));
               await SupabaseAPI.upsert(t, rows);
             }
           }
