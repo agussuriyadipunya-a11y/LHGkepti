@@ -315,8 +315,17 @@ function handleLoginSubmit(e) {
   }
 }
 
-function handleLogout() {
-  if (!confirm('Apakah Anda yakin ingin keluar dari sistem?')) return;
+async function handleLogout() {
+  const confirmed = await showModernConfirm({
+    title: 'Keluar dari Sistem',
+    message: 'Apakah Anda yakin ingin keluar dari sistem aplikasi?',
+    subtext: 'Sesi akun Anda akan diakhiri dan Anda harus masuk kembali untuk melanjutkan.',
+    confirmText: 'Ya, Keluar',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'logout'
+  });
+  if (!confirmed) return;
   localStorage.removeItem('lhg_auth_user');
   const loginScreen = document.getElementById('login-screen');
   const appRoot = document.getElementById('app-root');
@@ -1272,7 +1281,16 @@ function viewAnggota(id) {
 }
 
 async function deleteAnggota(id) {
-  if (!confirm('Apakah Anda yakin ingin menghapus data anak ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Data Anak',
+    message: 'Apakah Anda yakin ingin menghapus data anak ini?',
+    subtext: 'Data yang telah dihapus tidak dapat dipulihkan kembali.',
+    confirmText: 'Ya, Hapus Data',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   const list = DB.get('lhg_anggota').filter(a => a.id !== id);
   localStorage.setItem('lhg_anggota', JSON.stringify(list));
   try {
@@ -2115,7 +2133,16 @@ function saveLaporan() {
 }
 
 async function deleteLaporan(id) {
-  if (!confirm('Hapus laporan kegiatan ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Laporan',
+    message: 'Apakah Anda yakin ingin menghapus laporan kegiatan ini?',
+    subtext: 'Laporan yang dihapus tidak dapat dipulihkan kembali.',
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   const list = DB.get('lhg_kegiatan').filter(x => x.id !== id);
   localStorage.setItem('lhg_kegiatan', JSON.stringify(list));
   try {
@@ -2214,7 +2241,16 @@ function saveSurat() {
 }
 
 async function deleteSurat(type, id) {
-  if (!confirm('Hapus surat ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Surat',
+    message: 'Apakah Anda yakin ingin menghapus data surat ini?',
+    subtext: 'Arsip surat yang dihapus tidak dapat dipulihkan kembali.',
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
   const list = DB.get(key).filter(x => x.id !== id);
   localStorage.setItem(key, JSON.stringify(list));
@@ -2571,7 +2607,16 @@ function saveArsip() {
 }
 
 async function deleteArsip(id) {
-  if (!confirm('Apakah Anda yakin ingin menghapus arsip berkas ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Berkas Arsip',
+    message: 'Apakah Anda yakin ingin menghapus arsip berkas ini?',
+    subtext: 'Dokumen dan file arsip akan dihapus dari sistem.',
+    confirmText: 'Ya, Hapus Arsip',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   let list = getArsipList().filter(x => x.id !== id);
   localStorage.setItem('lhg_arsip', JSON.stringify(list));
   try {
@@ -2973,6 +3018,123 @@ function showToast(msg, type) {
   setTimeout(() => t.remove(), 3500);
 }
 
+// ================= MODERN CONFIRM & DIALOG SYSTEM =================
+let _lhgConfirmResolver = null;
+
+function showModernConfirm({
+  title = 'Konfirmasi',
+  message = 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+  subtext = '',
+  confirmText = 'Ya, Lanjutkan',
+  cancelText = 'Batal',
+  type = 'danger',
+  icon = 'logout'
+} = {}) {
+  return new Promise((resolve) => {
+    _lhgConfirmResolver = resolve;
+
+    const overlay = document.getElementById('lhg-confirm-dialog');
+    if (!overlay) {
+      resolve(window.confirm ? window.confirm(message) : true);
+      return;
+    }
+
+    const titleEl = document.getElementById('lhg-confirm-title');
+    const descEl = document.getElementById('lhg-confirm-desc');
+    const subtextEl = document.getElementById('lhg-confirm-subtext');
+    const confirmBtnText = document.getElementById('lhg-confirm-btn-text');
+    const confirmBtnIcon = document.getElementById('lhg-confirm-btn-icon');
+    const cancelBtn = document.getElementById('lhg-confirm-btn-cancel');
+    const iconInner = document.getElementById('lhg-confirm-icon');
+
+    // Reset themes
+    overlay.className = 'lhg-confirm-overlay lhg-confirm-theme-' + (type || 'primary');
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = message;
+
+    if (subtextEl) {
+      if (subtext) {
+        subtextEl.innerHTML = subtext;
+        subtextEl.style.display = 'inline-block';
+      } else {
+        subtextEl.style.display = 'none';
+        subtextEl.innerHTML = '';
+      }
+    }
+
+    if (confirmBtnText) confirmBtnText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+
+    // SVG icons definitions
+    const ICONS = {
+      logout: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+      delete: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+      warning: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+      question: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+      success: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+      info: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+    };
+
+    const BTN_ICONS = {
+      logout: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:5px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+      delete: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:5px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
+      success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:5px;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+    };
+
+    if (iconInner) {
+      iconInner.innerHTML = ICONS[icon] || ICONS.question;
+    }
+
+    if (confirmBtnIcon) {
+      confirmBtnIcon.innerHTML = BTN_ICONS[icon] || '';
+    }
+
+    overlay.style.display = 'flex';
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+
+    if (cancelBtn) {
+      cancelBtn.focus();
+    }
+  });
+}
+
+function lhgConfirmOk() {
+  closeModernConfirm(true);
+}
+
+function lhgConfirmCancel() {
+  closeModernConfirm(false);
+}
+
+function closeModernConfirm(result) {
+  const overlay = document.getElementById('lhg-confirm-dialog');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    if (_lhgConfirmResolver) {
+      _lhgConfirmResolver(result);
+      _lhgConfirmResolver = null;
+    }
+  }, 220);
+}
+
+// Global keyboard shortcut for confirmation dialog
+document.addEventListener('keydown', (e) => {
+  const overlay = document.getElementById('lhg-confirm-dialog');
+  if (overlay && overlay.classList.contains('show')) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      lhgConfirmCancel();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      lhgConfirmOk();
+    }
+  }
+});
+
 // ================= MENU FORMULIR INPUT DATA ANAK (MANDIRI) =================
 function initDirectInputPage() {
   // Dedicated page initialization
@@ -3004,7 +3166,7 @@ function resetDirectInputForm() {
   showToast('Formulir telah dikosongkan.', 'info');
 }
 
-function saveDirectInputAnak(e) {
+async function saveDirectInputAnak(e) {
   if (e) e.preventDefault();
   const nama = document.getElementById('direct-nama').value.trim();
   const nik = document.getElementById('direct-nik').value.trim();
@@ -3072,8 +3234,18 @@ function saveDirectInputAnak(e) {
 
   showToast(`Data anak ${nama.toUpperCase()} (${no}) berhasil disimpan!`, 'success');
 
-  // Confirmation to directly open PDF or go to table
-  if (confirm(`Data anak ${nama.toUpperCase()} berhasil terdaftar di sistem!\n\nApakah Anda ingin langsung melihat Surat Keterangan Pendaftaran (PDF)?`)) {
+  // Modern confirmation to directly open PDF or go to table
+  const viewPdf = await showModernConfirm({
+    title: 'Pendaftaran Berhasil!',
+    message: `Data anak ${nama.toUpperCase()} berhasil disimpan di sistem.`,
+    subtext: 'Apakah Anda ingin langsung melihat & mencetak Surat Keterangan Pendaftaran (PDF)?',
+    confirmText: 'Buka Surat PDF',
+    cancelText: 'Kembali ke Data',
+    type: 'primary',
+    icon: 'success'
+  });
+
+  if (viewPdf) {
     openSuratFor(no);
   } else {
     navigate('input-data');
@@ -3274,7 +3446,16 @@ async function deleteUser(username) {
     showToast('Akun Superadmin utama tidak dapat dihapus!', 'error');
     return;
   }
-  if (!confirm(`Hapus akun pengguna "${username}"? Akun ini akan dihapus secara permanen dan tidak dapat login ke aplikasi lagi.`)) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Akun Pengguna',
+    message: `Hapus akun pengguna "${username}"?`,
+    subtext: 'Akun ini akan dihapus permanen dan tidak dapat login ke aplikasi lagi.',
+    confirmText: 'Ya, Hapus Akun',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
 
   // 1. Simpan ke daftar akun terhapus (tombstone) agar tidak pernah muncul lagi
   addDeletedUser(username);
@@ -3705,7 +3886,16 @@ function saveBantuan() {
 }
 
 async function deleteBantuan(id) {
-  if (!confirm('Apakah Anda yakin ingin menghapus catatan bantuan ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Catatan Bantuan',
+    message: 'Apakah Anda yakin ingin menghapus catatan bantuan ini?',
+    subtext: 'Catatan penyaluran bantuan akan dihapus dari sistem.',
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   let list = getBantuanList().filter(x => x.id !== id);
   localStorage.setItem('lhg_bantuan', JSON.stringify(list));
   try {
@@ -4091,7 +4281,16 @@ function saveRencanaKegiatan() {
 }
 
 async function deleteRencanaKegiatan(id) {
-  if (!confirm('Apakah Anda yakin ingin menghapus rencana kegiatan ini?')) return;
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Rencana Kegiatan',
+    message: 'Apakah Anda yakin ingin menghapus rencana kegiatan ini?',
+    subtext: 'Rencana program kerja yayasan akan dihapus dari agenda.',
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
   let list = getRencanaKegiatanList().filter(x => x.id !== id);
   localStorage.setItem('lhg_rencana_kegiatan', JSON.stringify(list));
   try {
