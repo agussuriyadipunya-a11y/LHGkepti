@@ -154,6 +154,10 @@
           <span class="nav-icon">📸</span>
           <span class="nav-label">Galeri Foto</span>
         </button>
+        <button class="nav-item" data-page="arsip-berkas" data-allowed-roles="Superadmin,Admin" onclick="navigate('arsip-berkas')">
+          <span class="nav-icon">📁</span>
+          <span class="nav-label">Arsip Berkas</span>
+        </button>
 
         <!-- SECTION 4: PENGATURAN (KHUSUS SUPERADMIN) -->
         <div class="nav-section-label" data-nav-section="pengaturan" data-allowed-roles="Superadmin">PENGATURAN</div>
@@ -815,6 +819,95 @@
         </section>
 
 
+        <!-- ================= PAGE: ARSIP BERKAS YAYASAN ================= -->
+        <section id="page-arsip-berkas" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">📁</span>
+                <div>
+                  <h3 class="panel-heading">Pusat Dokumen & Arsip Berkas Yayasan</h3>
+                  <p class="panel-subheading">Penyimpanan dan pengelolaan berkas legalitas, SK, laporan, MoU, serta arsip penting organisasi</p>
+                </div>
+              </div>
+              <button class="btn-top-add" onclick="openAddArsip()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Simpan Arsip Berkas</span>
+              </button>
+            </div>
+
+            <!-- STAT KARTU RINGKASAN ARSIP -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📁</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Total Arsip Berkas</div>
+                  <div id="stat-arsip-total" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📜</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Legalitas & Perizinan</div>
+                  <div id="stat-arsip-legalitas" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">⚖️</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Surat Keputusan (SK)</div>
+                  <div id="stat-arsip-sk" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📑</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Laporan, MoU & Lainnya</div>
+                  <div id="stat-arsip-lainnya" style="font-size: 22px; font-weight: 800; color: #4C1D95;">0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="arsip-search-input" class="search-field" placeholder="Cari nama berkas, nomor dokumen, penerbit, atau lokasi fisik..." oninput="renderArsipTable(this.value)">
+              </div>
+              <select id="arsip-filter-kategori" class="filter-select" onchange="filterArsipByKategori(this.value)">
+                <option value="">Semua Kategori Berkas</option>
+                <option value="Legalitas & Perizinan">Legalitas & Perizinan (Akta, Kemenkumham, NPWP, NIB)</option>
+                <option value="Surat Keputusan (SK)">Surat Keputusan (SK Pengurus & Kebijakan)</option>
+                <option value="Laporan & LPJ">Laporan Pertanggungjawaban (LPJ & Audit)</option>
+                <option value="Kerjasama & MoU">Kerjasama & MoU (Kemitraan & Donatur)</option>
+                <option value="Aset & Inventaris">Aset & Inventaris Yayasan</option>
+                <option value="Administrasi & Lainnya">Administrasi & Dokumen Lainnya</option>
+              </select>
+            </div>
+
+            <!-- TABEL DATA ARSIP BERKAS -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th style="width: 170px;">NOMOR & TANGGAL</th>
+                    <th>NAMA / JUDUL DOKUMEN RESMI</th>
+                    <th>KATEGORI</th>
+                    <th>LOKASI FISIK SIMPAN</th>
+                    <th style="text-align: center;">BERKAS DIGITAL</th>
+                    <th style="width: 130px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="arsip-tbody">
+                  <!-- Generated dynamically by renderArsipTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
         <!-- ================= PAGE 8: MANAJEMEN USER (KHUSUS SUPERADMIN) ================= -->
         <section id="page-manajemen-user" class="page">
           <div class="card-panel">
@@ -1380,6 +1473,114 @@
     </div>
   </div>
 
+  <!-- MODAL: ARSIP BERKAS YAYASAN (TAMBAH / EDIT) -->
+  <div id="modal-arsip" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title" id="modal-arsip-title">Simpan Arsip Berkas Yayasan</h3>
+          <p class="modal-subtitle">Rekam dan amankan dokumen resmi, SK, legalitas, dan berkas penting organisasi yayasan.</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-arsip')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-arsip" onsubmit="event.preventDefault(); saveArsip();">
+        <input type="hidden" id="arsip-edit-id" value="">
+        <div class="modal-body-clean">
+          
+          <div class="form-field">
+            <label class="lbl">Nama / Judul Dokumen Resmi <span class="req">*</span></label>
+            <input type="text" id="arsip-nama" class="pelangi-input" placeholder="Contoh: Akta Pendirian Yayasan Lentera Hati Gurindam / SK Menkumham RI" required>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Kategori Arsip <span class="req">*</span></label>
+              <select id="arsip-kategori" class="pelangi-select" required>
+                <option value="Legalitas & Perizinan">Legalitas & Perizinan (Akta, Kemenkumham, NPWP, NIB)</option>
+                <option value="Surat Keputusan (SK)">Surat Keputusan (SK Pengurus & Kebijakan)</option>
+                <option value="Laporan & LPJ">Laporan Pertanggungjawaban (LPJ & Audit)</option>
+                <option value="Kerjasama & MoU">Kerjasama & MoU (Kemitraan & Donatur)</option>
+                <option value="Aset & Inventaris">Aset & Inventaris Yayasan</option>
+                <option value="Administrasi & Lainnya">Administrasi & Dokumen Lainnya</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Nomor / Kode Dokumen</label>
+              <input type="text" id="arsip-nomor" class="pelangi-input" placeholder="Contoh: AHU-0012345.AH.01.04.Tahun 2024 / 012/SK/YLHG/2026">
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Tanggal Dokumen / Ditetapkan</label>
+              <input type="date" id="arsip-tanggal" class="pelangi-input">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Instansi / Lembaga Penerbit</label>
+              <input type="text" id="arsip-penerbit" class="pelangi-input" placeholder="Contoh: Kemenkumham RI / Notaris Herman S.H. / Dinas Sosial">
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Lokasi Penyimpanan Fisik di Kantor <span class="req">*</span></label>
+            <input type="text" id="arsip-lokasi" class="pelangi-input" placeholder="Contoh: Lemari Arsip 1 - Bantex Biru No. 02 / Brankas Dokumen Legal" required>
+            <small style="color: #64748B; font-size: 11px; margin-top: 3px; display: block;">Tuliskan rak/lemari/map bantex fisik tempat berkas asli disimpan agar mudah ditemukan.</small>
+          </div>
+
+          <!-- LAMPIRAN DIGITAL -->
+          <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 14px; margin-top: 16px;">
+            <label class="lbl" style="font-weight: 700; color: #1E293B; margin-bottom: 6px; display: block;">Lampiran Berkas Digital (Opsional)</label>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label class="lbl" style="font-size: 11px;">Upload Dokumen (PDF / JPG / PNG max 5MB):</label>
+                <input type="file" id="arsip-file-input" class="pelangi-input" accept=".pdf,image/*" onchange="handleArsipFileInput(event)" style="padding-top: 6px;">
+                <input type="hidden" id="arsip-file-base64" value="">
+                <input type="hidden" id="arsip-file-name" value="">
+                <div id="arsip-file-preview-info" style="font-size: 11px; color: #059669; margin-top: 4px; display: none;"></div>
+              </div>
+              <div class="form-field">
+                <label class="lbl" style="font-size: 11px;">Atau Masukkan Tautan / Link Cloud (Google Drive):</label>
+                <input type="url" id="arsip-file-url" class="pelangi-input" placeholder="https://drive.google.com/file/d/...">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Keterangan / Ringkasan Dokumen</label>
+            <textarea id="arsip-keterangan" class="pelangi-textarea" rows="2" placeholder="Catatan perihal isi dokumen, masa berlaku, atau informasi penting lainnya..."></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-arsip')">Batal</button>
+          <button type="submit" class="btn-prim">
+            <span>💾</span> Simpan Arsip Berkas
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL / VIEW ARSIP -->
+  <div id="modal-view-arsip" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title" id="view-arsip-nama">Detail Dokumen Arsip</h3>
+          <p class="modal-subtitle" id="view-arsip-nomor">Nomor Dokumen</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-view-arsip')" title="Tutup">&times;</button>
+      </div>
+      <div class="modal-body-clean" id="view-arsip-body" style="font-size: 13px;">
+        <!-- Filled dynamically by viewArsip() -->
+      </div>
+      <div class="modal-footer-clean">
+        <button type="button" class="btn-sec" onclick="closeModal('modal-view-arsip')">Tutup</button>
+        <div id="view-arsip-actions" style="display: flex; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- LIGHTBOX VIEWER -->
   <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
     <div class="lightbox-box" onclick="event.stopPropagation()">
@@ -1395,6 +1596,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=8.0"></script>
+  <script src="js/app.js?v=9.0"></script>
 </body>
 </html>

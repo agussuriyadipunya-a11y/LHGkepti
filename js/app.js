@@ -122,8 +122,13 @@ function initData() {
     localStorage.setItem('lhg_surat_masuk', JSON.stringify([]));
     localStorage.setItem('lhg_surat_keluar', JSON.stringify([]));
     localStorage.setItem('lhg_foto', JSON.stringify([]));
+    localStorage.setItem('lhg_arsip', JSON.stringify([]));
 
     localStorage.setItem('lhg_init_clean_v3', '1');
+  }
+
+  if (!localStorage.getItem('lhg_arsip')) {
+    localStorage.setItem('lhg_arsip', JSON.stringify([]));
   }
 
   initUsersData();
@@ -380,8 +385,8 @@ function applyRoleUI(user) {
 
 function hasPermission(role, page) {
   const permissions = {
-    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'manajemen-user'],
-    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan'],
+    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
     Petugas: ['input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran']
   };
   const list = permissions[role] || [];
@@ -464,6 +469,7 @@ function navigate(page) {
     'laporan-kegiatan': ['Laporan Kegiatan', 'Dokumentasi pelaksanaan agenda kegiatan kemandirian dan terapi anak'],
     'surat-menyurat': ['Surat Menyurat', 'Arsip administrasi surat masuk dan surat keluar resmi organisasi'],
     'foto-kegiatan': ['Galeri Foto Kegiatan', 'Dokumentasi foto kegiatan dan interaksi anak binaan di lapangan'],
+    'arsip-berkas': ['Arsip Berkas Yayasan', 'Pusat dokumen resmi, surat keputusan, legalitas, dan arsip berkas yayasan'],
     'manajemen-user': ['Manajemen User & Hak Akses', 'Kelola akun login aplikasi dengan hak peran Superadmin, Admin, dan Petugas']
   };
 
@@ -480,6 +486,7 @@ function navigate(page) {
   if (page === 'laporan-kegiatan') renderLaporan();
   if (page === 'surat-menyurat') renderSurat();
   if (page === 'foto-kegiatan') renderFoto();
+  if (page === 'arsip-berkas') renderArsip();
   if (page === 'manajemen-user') renderManajemenUserTable();
 }
 
@@ -2130,6 +2137,392 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
 }
 
+// ==============================================================================
+// ARSIP BERKAS YAYASAN MODULE
+// ==============================================================================
+let activeArsipKategori = '';
+
+function getArsipList() {
+  return DB.get('lhg_arsip', []);
+}
+
+function filterArsipByKategori(cat) {
+  activeArsipKategori = cat;
+  const search = document.getElementById('arsip-search-input')?.value || '';
+  renderArsipTable(search);
+}
+
+function renderArsip(search) {
+  renderArsipStats();
+  renderArsipTable(search);
+}
+
+function renderArsipStats() {
+  const list = getArsipList();
+  const total = list.length;
+  const legalitas = list.filter(a => a.kategori === 'Legalitas & Perizinan').length;
+  const sk = list.filter(a => a.kategori === 'Surat Keputusan (SK)').length;
+  const lainnya = total - legalitas - sk;
+
+  setText('stat-arsip-total', total);
+  setText('stat-arsip-legalitas', legalitas);
+  setText('stat-arsip-sk', sk);
+  setText('stat-arsip-lainnya', Math.max(0, lainnya));
+}
+
+function renderArsipTable(search) {
+  search = (search || '').toLowerCase().trim();
+  let list = getArsipList();
+
+  if (activeArsipKategori) {
+    list = list.filter(a => a.kategori === activeArsipKategori);
+  }
+
+  if (search) {
+    list = list.filter(a => {
+      const nama = (a.nama || '').toLowerCase();
+      const nomor = (a.nomor || '').toLowerCase();
+      const penerbit = (a.penerbit || '').toLowerCase();
+      const lokasi = (a.lokasiFisik || '').toLowerCase();
+      const ket = (a.keterangan || '').toLowerCase();
+      return nama.includes(search) || nomor.includes(search) || penerbit.includes(search) || lokasi.includes(search) || ket.includes(search);
+    });
+  }
+
+  // Urutkan tanggal terbaru / ID terbaru di atas
+  list.sort((a, b) => new Date(b.tanggal || b.id || 0) - new Date(a.tanggal || a.id || 0));
+
+  const tbody = document.getElementById('arsip-tbody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 38px; margin-bottom: 8px;">📁</div>
+          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Berkas yang Diarsipkan</p>
+          <p style="font-size: 12px;">Klik tombol "Simpan Arsip Berkas" di atas untuk menambahkan dokumen resmi yayasan.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const badgeKategoriMap = {
+    'Legalitas & Perizinan': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '📜' },
+    'Surat Keputusan (SK)': { bg: '#FEF3C7', color: '#B45309', border: '#FCD34D', icon: '⚖️' },
+    'Laporan & LPJ': { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', icon: '📊' },
+    'Kerjasama & MoU': { bg: '#F3E8FF', color: '#6D28D9', border: '#DDD6FE', icon: '🤝' },
+    'Aset & Inventaris': { bg: '#FFFBEB', color: '#D97706', border: '#FDE68A', icon: '🏛️' },
+    'Administrasi & Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '📁' }
+  };
+
+  tbody.innerHTML = list.map((a, idx) => {
+    const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
+    const hasDigital = a.fileUrl || a.fileBase64;
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+        <td style="white-space: nowrap;">
+          <div style="font-weight: 700; color: #1E293B; font-size: 12.5px;">${a.nomor || '<span style="color:#94A3B8; font-style:italic;">Tanpa Nomor</span>'}</div>
+          <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</div>
+        </td>
+        <td>
+          <div style="font-weight: 800; font-size: 13.5px; color: #0F172A;">${a.nama}</div>
+          ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${a.penerbit}</strong></div>` : ''}
+          ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan}"</div>` : ''}
+        </td>
+        <td>
+          <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+            ${katStyle.icon} ${a.kategori}
+          </span>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 14px;">📍</span>
+            <span style="font-weight: 600; font-size: 12.5px; color: #334155;">${a.lokasiFisik || '-'}</span>
+          </div>
+        </td>
+        <td style="text-align: center;">
+          ${hasDigital ? `
+            <button type="button" class="btn-sec" onclick="viewArsip(${a.id})" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; border-color: #A7F3D0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+              <span>📎</span> ${a.fileName ? 'Lihat File' : 'Buka Link'}
+            </button>
+          ` : `
+            <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Hanya Fisik</span>
+          `}
+        </td>
+        <td style="text-align: center;">
+          <div style="display: flex; gap: 4px; justify-content: center;">
+            <button class="btn-action-icon view" onclick="viewArsip(${a.id})" title="Pratinjau Detail Berkas">👁️</button>
+            <button class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
+            <button class="btn-action-icon delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function handleArsipFileInput(event) {
+  const file = event.target.files[0];
+  const infoEl = document.getElementById('arsip-file-preview-info');
+  const base64El = document.getElementById('arsip-file-base64');
+  const nameEl = document.getElementById('arsip-file-name');
+
+  if (!file) {
+    base64El.value = '';
+    nameEl.value = '';
+    if (infoEl) infoEl.style.display = 'none';
+    return;
+  }
+
+  // Batas ukuran 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Ukuran file terlalu besar! Maksimal 5MB.', 'error');
+    event.target.value = '';
+    base64El.value = '';
+    nameEl.value = '';
+    if (infoEl) infoEl.style.display = 'none';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    base64El.value = e.target.result;
+    nameEl.value = file.name;
+    if (infoEl) {
+      infoEl.style.display = 'block';
+      const sizeKb = Math.round(file.size / 1024);
+      infoEl.innerHTML = `✅ <strong>${file.name}</strong> (${sizeKb} KB) siap disimpan.`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function openAddArsip() {
+  document.getElementById('form-arsip').reset();
+  document.getElementById('arsip-edit-id').value = '';
+  document.getElementById('arsip-file-base64').value = '';
+  document.getElementById('arsip-file-name').value = '';
+  const infoEl = document.getElementById('arsip-file-preview-info');
+  if (infoEl) {
+    infoEl.style.display = 'none';
+    infoEl.innerHTML = '';
+  }
+
+  setText('modal-arsip-title', 'Simpan Arsip Berkas Yayasan');
+
+  // Set default tanggal hari ini
+  const today = new Date().toISOString().split('T')[0];
+  const tglInput = document.getElementById('arsip-tanggal');
+  if (tglInput) tglInput.value = today;
+
+  document.getElementById('modal-arsip').classList.add('open');
+}
+
+function openEditArsip(id) {
+  const list = getArsipList();
+  const a = list.find(x => x.id === id);
+  if (!a) return;
+
+  document.getElementById('form-arsip').reset();
+  document.getElementById('arsip-edit-id').value = a.id;
+  document.getElementById('arsip-nama').value = a.nama || '';
+  document.getElementById('arsip-kategori').value = a.kategori || 'Legalitas & Perizinan';
+  document.getElementById('arsip-nomor').value = a.nomor || '';
+  document.getElementById('arsip-tanggal').value = a.tanggal || '';
+  document.getElementById('arsip-penerbit').value = a.penerbit || '';
+  document.getElementById('arsip-lokasi').value = a.lokasiFisik || '';
+  document.getElementById('arsip-file-url').value = a.fileUrl || '';
+  document.getElementById('arsip-file-base64').value = a.fileBase64 || '';
+  document.getElementById('arsip-file-name').value = a.fileName || '';
+  document.getElementById('arsip-keterangan').value = a.keterangan || '';
+
+  const infoEl = document.getElementById('arsip-file-preview-info');
+  if (infoEl) {
+    if (a.fileName) {
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = `📎 Berkas tersimpan: <strong>${a.fileName}</strong>. Pilih file baru jika ingin mengganti.`;
+    } else {
+      infoEl.style.display = 'none';
+    }
+  }
+
+  setText('modal-arsip-title', 'Edit Arsip Berkas Yayasan');
+  document.getElementById('modal-arsip').classList.add('open');
+}
+
+function saveArsip() {
+  const editId = document.getElementById('arsip-edit-id').value;
+  const nama = document.getElementById('arsip-nama').value.trim();
+  const kategori = document.getElementById('arsip-kategori').value;
+  const nomor = document.getElementById('arsip-nomor').value.trim();
+  const tanggal = document.getElementById('arsip-tanggal').value;
+  const penerbit = document.getElementById('arsip-penerbit').value.trim();
+  const lokasiFisik = document.getElementById('arsip-lokasi').value.trim();
+  const fileUrl = document.getElementById('arsip-file-url').value.trim();
+  const fileBase64 = document.getElementById('arsip-file-base64').value;
+  const fileName = document.getElementById('arsip-file-name').value;
+  const keterangan = document.getElementById('arsip-keterangan').value.trim();
+
+  if (!nama || !lokasiFisik) {
+    showToast('Harap lengkapi judul dokumen dan lokasi penyimpanan fisik!', 'error');
+    return;
+  }
+
+  let list = getArsipList();
+  const user = getAuthUser();
+  const uploader = user ? (user.nama || user.username) : 'Pengurus Yayasan';
+
+  if (editId) {
+    const idx = list.findIndex(x => x.id === parseInt(editId));
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        nama: nama,
+        kategori: kategori,
+        nomor: nomor,
+        tanggal: tanggal,
+        penerbit: penerbit,
+        lokasiFisik: lokasiFisik,
+        fileUrl: fileUrl,
+        fileBase64: fileBase64 || list[idx].fileBase64,
+        fileName: fileName || list[idx].fileName,
+        keterangan: keterangan
+      };
+      DB.set('lhg_arsip', list);
+      showToast('Arsip berkas berhasil diperbarui!', 'success');
+    }
+  } else {
+    const newRecord = {
+      id: Date.now(),
+      nama: nama,
+      kategori: kategori,
+      nomor: nomor,
+      tanggal: tanggal,
+      penerbit: penerbit,
+      lokasiFisik: lokasiFisik,
+      fileUrl: fileUrl,
+      fileBase64: fileBase64,
+      fileName: fileName,
+      keterangan: keterangan,
+      uploadedBy: uploader
+    };
+    list.unshift(newRecord);
+    DB.set('lhg_arsip', list);
+    showToast('Arsip berkas berhasil disimpan!', 'success');
+  }
+
+  closeModal('modal-arsip');
+  renderArsip();
+}
+
+async function deleteArsip(id) {
+  if (!confirm('Apakah Anda yakin ingin menghapus arsip berkas ini?')) return;
+  let list = getArsipList().filter(x => x.id !== id);
+  localStorage.setItem('lhg_arsip', JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete('lhg_arsip', 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus arsip dari cloud:', e);
+  }
+  renderArsip();
+  showToast('Arsip berkas telah dihapus.', 'warning');
+}
+
+function viewArsip(id) {
+  const list = getArsipList();
+  const a = list.find(x => x.id === id);
+  if (!a) return;
+
+  setText('view-arsip-nama', a.nama);
+  setText('view-arsip-nomor', a.nomor ? `Nomor: ${a.nomor}` : 'Dokumen Tanpa Nomor');
+
+  const body = document.getElementById('view-arsip-body');
+  const actions = document.getElementById('view-arsip-actions');
+  if (!body) return;
+
+  body.innerHTML = `
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 12.5px;">
+        <div>
+          <span style="color: #64748B; font-size: 11px; display: block;">Kategori Dokumen:</span>
+          <strong style="color: #0F172A;">${a.kategori}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11px; display: block;">Tanggal Dokumen:</span>
+          <strong style="color: #0F172A;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11px; display: block;">Instansi / Penerbit:</span>
+          <strong style="color: #0F172A;">${a.penerbit || '-'}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11px; display: block;">Lokasi Fisik di Kantor:</span>
+          <strong style="color: #059669;">📍 ${a.lokasiFisik}</strong>
+        </div>
+      </div>
+      ${a.keterangan ? `
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
+          <span style="color: #64748B; font-size: 11px; display: block;">Ringkasan / Catatan:</span>
+          <p style="color: #334155; margin-top: 3px; font-size: 12px; line-height: 1.6;">${a.keterangan}</p>
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- PREVIEW DIGITAL FILE / LINK -->
+    <div style="margin-top: 10px;">
+      <span style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">Lampiran Digital:</span>
+      ${a.fileBase64 ? `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #F0FDF4; border: 1px solid #86EFAC; padding: 12px 16px; border-radius: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">📄</span>
+            <div>
+              <div style="font-weight: 700; color: #065F46; font-size: 13px;">${a.fileName || 'Berkas Dokumen'}</div>
+              <div style="font-size: 11px; color: #047857;">File tersimpan di sistem</div>
+            </div>
+          </div>
+          <a href="${a.fileBase64}" download="${a.fileName || 'arsip-dokumen'}" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>⬇️</span> Unduh File
+          </a>
+        </div>
+      ` : ''}
+
+      ${a.fileUrl ? `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #EFF6FF; border: 1px solid #93C5FD; padding: 12px 16px; border-radius: 10px; margin-top: ${a.fileBase64 ? '8px' : '0'};">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">🌐</span>
+            <div style="min-width: 0;">
+              <div style="font-weight: 700; color: #1E40AF; font-size: 13px;">Tautan Dokumen Cloud / Google Drive</div>
+              <div style="font-size: 11px; color: #3B82F6; word-break: break-all;">${a.fileUrl}</div>
+            </div>
+          </div>
+          <a href="${a.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <span>↗️</span> Buka Tautan
+          </a>
+        </div>
+      ` : ''}
+
+      ${!a.fileBase64 && !a.fileUrl ? `
+        <div style="background: #F8FAFC; border: 1px dashed #CBD5E1; padding: 16px; border-radius: 10px; text-align: center; color: #64748B; font-size: 12px;">
+          <span>📦</span> Tidak ada lampiran digital yang diunggah. Dokumen fisik asli tersimpan di: <strong>${a.lokasiFisik}</strong>.
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  if (actions) {
+    actions.innerHTML = `
+      <button type="button" class="btn-prim" onclick="closeModal('modal-view-arsip'); openEditArsip(${a.id})">
+        <span>✏️</span> Edit Berkas
+      </button>
+    `;
+  }
+
+  document.getElementById('modal-view-arsip').classList.add('open');
+}
+
 // TOAST NOTIFICATIONS
 function showToast(msg, type) {
   type = type || 'success';
@@ -2851,6 +3244,21 @@ function toSupabaseRow(table, item) {
       url: item.url
     };
   }
+  if (table === 'lhg_arsip') {
+    return {
+      id: item.id,
+      nomor: item.nomor || null,
+      nama: item.nama,
+      kategori: item.kategori,
+      tanggal: item.tanggal || null,
+      lokasi_fisik: item.lokasiFisik || item.lokasi_fisik || null,
+      penerbit: item.penerbit || null,
+      keterangan: item.keterangan || null,
+      file_url: item.fileUrl || item.file_url || null,
+      file_name: item.fileName || item.file_name || null,
+      uploaded_by: item.uploadedBy || item.uploaded_by || null
+    };
+  }
   return item;
 }
 
@@ -2908,6 +3316,21 @@ function fromSupabaseRow(table, row) {
       keterangan: row.keterangan
     };
   }
+  if (table === 'lhg_arsip') {
+    return {
+      id: row.id,
+      nomor: row.nomor,
+      nama: row.nama,
+      kategori: row.kategori,
+      tanggal: row.tanggal,
+      lokasiFisik: row.lokasi_fisik,
+      penerbit: row.penerbit,
+      keterangan: row.keterangan,
+      fileUrl: row.file_url,
+      fileName: row.file_name,
+      uploadedBy: row.uploaded_by
+    };
+  }
   return row;
 }
 
@@ -2915,7 +3338,7 @@ function fromSupabaseRow(table, row) {
 async function syncKeyToSupabase(key, val) {
   if (!Array.isArray(val)) return;
   const table = key; // matching table name
-  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto'];
+  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip'];
   if (!validTables.includes(table)) return;
 
   try {
@@ -2942,7 +3365,7 @@ async function syncWithSupabase(isManual) {
     return;
   }
 
-  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto'];
+  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip'];
   let syncedCount = 0;
 
   for (const t of tables) {
@@ -3031,6 +3454,7 @@ async function syncWithSupabase(isManual) {
     if (activePage === 'dashboard') renderDashboard();
     if (activePage === 'input-data') renderAnggotaTable();
     if (activePage === 'bantuan') renderBantuanPage();
+    if (activePage === 'arsip-berkas') renderArsip();
     if (activePage === 'manajemen-user') renderManajemenUserTable();
   }
 
