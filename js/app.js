@@ -2228,7 +2228,9 @@ function renderArsipTable(search) {
           <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</div>
         </td>
         <td>
-          <div style="font-weight: 800; font-size: 13.5px; color: #0F172A;">${a.nama}</div>
+          <div style="font-weight: 800; font-size: 13.5px; color: #047857; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="viewArsip(${a.id})" title="Klik untuk membuka jendela data arsip lengkap">
+            <span>📄</span> <span style="text-decoration: underline;">${a.nama}</span>
+          </div>
           ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${a.penerbit}</strong></div>` : ''}
           ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan}"</div>` : ''}
         </td>
@@ -2238,23 +2240,27 @@ function renderArsipTable(search) {
           </span>
         </td>
         <td>
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="viewArsip(${a.id})" title="Lihat detail lokasi fisik di jendela">
             <span style="font-size: 14px;">📍</span>
-            <span style="font-weight: 600; font-size: 12.5px; color: #334155;">${a.lokasiFisik || '-'}</span>
+            <span style="font-weight: 600; font-size: 12px; color: #065F46; background: #ECFDF5; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0;">${a.lokasiFisik || '-'}</span>
           </div>
         </td>
         <td style="text-align: center;">
           ${hasDigital ? `
-            <button type="button" class="btn-sec" onclick="viewArsip(${a.id})" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; border-color: #A7F3D0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-              <span>📎</span> ${a.fileName ? 'Lihat File' : 'Buka Link'}
+            <button type="button" class="btn-sec" onclick="viewArsip(${a.id})" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; border-color: #A7F3D0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat pratinjau berkas digital di jendela">
+              <span>📎</span> ${a.fileName ? 'Buka Dokumen' : 'Buka Link'}
             </button>
           ` : `
-            <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Hanya Fisik</span>
+            <span style="font-size: 11px; color: #64748B; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #E2E8F0; display: inline-flex; align-items: center; gap: 4px;">
+              <span>📦</span> Fisik
+            </span>
           `}
         </td>
         <td style="text-align: center;">
-          <div style="display: flex; gap: 4px; justify-content: center;">
-            <button class="btn-action-icon view" onclick="viewArsip(${a.id})" title="Pratinjau Detail Berkas">👁️</button>
+          <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+            <button type="button" onclick="viewArsip(${a.id})" title="Buka Jendela Data Lengkap" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">
+              <span>👁️</span> <span>View</span>
+            </button>
             <button class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
             <button class="btn-action-icon delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
           </div>
@@ -2436,91 +2442,264 @@ function viewArsip(id) {
   const a = list.find(x => x.id === id);
   if (!a) return;
 
+  const badgeKategoriMap = {
+    'Legalitas & Perizinan': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '📜' },
+    'Surat Keputusan (SK)': { bg: '#FEF3C7', color: '#B45309', border: '#FCD34D', icon: '⚖️' },
+    'Laporan & LPJ': { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', icon: '📊' },
+    'Kerjasama & MoU': { bg: '#F3E8FF', color: '#6D28D9', border: '#DDD6FE', icon: '🤝' },
+    'Aset & Inventaris': { bg: '#FFFBEB', color: '#D97706', border: '#FDE68A', icon: '🏛️' },
+    'Administrasi & Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '📁' }
+  };
+  const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
+
   setText('view-arsip-nama', a.nama);
-  setText('view-arsip-nomor', a.nomor ? `Nomor: ${a.nomor}` : 'Dokumen Tanpa Nomor');
+  setText('view-arsip-nomor', a.nomor ? `Nomor Dokumen: ${a.nomor}` : 'Dokumen Tanpa Nomor Resmi');
 
   const body = document.getElementById('view-arsip-body');
   const actions = document.getElementById('view-arsip-actions');
+  const leftActions = document.getElementById('view-arsip-left-actions');
   if (!body) return;
 
+  const isPdf = a.fileBase64 && (a.fileBase64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf')));
+  const isImg = a.fileBase64 && (a.fileBase64.startsWith('data:image/') || (a.fileName && /\.(jpg|jpeg|png|webp)$/i.test(a.fileName)));
+
   body.innerHTML = `
-    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 12.5px;">
-        <div>
-          <span style="color: #64748B; font-size: 11px; display: block;">Kategori Dokumen:</span>
-          <strong style="color: #0F172A;">${a.kategori}</strong>
+    <!-- KOTAK UTAMA: LOKASI FISIK PENYIMPANAN DI KANTOR -->
+    <div style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 48px; height: 48px; border-radius: 12px; background: #059669; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          📍
         </div>
         <div>
-          <span style="color: #64748B; font-size: 11px; display: block;">Tanggal Dokumen:</span>
+          <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.6px;">Lokasi Penyimpanan Fisik Berkas di Kantor:</div>
+          <div style="font-size: 17px; font-weight: 800; color: #064E3B; margin-top: 2px;">${a.lokasiFisik}</div>
+          <div style="font-size: 11.5px; color: #047857; margin-top: 3px;">💡 Ambil map atau bantex fisik di lemari tersebut jika memerlukan berkas bertandatangan dan berstempel asli.</div>
+        </div>
+      </div>
+      <div style="text-align: right; flex-shrink: 0;">
+        <span style="background: white; border: 1px solid #86EFAC; padding: 6px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 700; color: #059669; display: inline-flex; align-items: center; gap: 6px;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981;"></span> Tersedia
+        </span>
+      </div>
+    </div>
+
+    <!-- RINCIAN DATA LENGKAP -->
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+      <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Informasi Detail Berkas Yayasan</div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 13px;">
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Nama / Judul Dokumen:</span>
+          <strong style="color: #0F172A; font-size: 14px;">${a.nama}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Kategori Klasifikasi:</span>
+          <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;">
+            ${katStyle.icon} ${a.kategori}
+          </span>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Nomor / Kode Resmi:</span>
+          <strong style="color: #0F172A; font-family: monospace; font-size: 13px;">${a.nomor || '<span style="color:#94A3B8; font-weight: normal; font-style: italic;">(Tidak ada nomor resmi)</span>'}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Tanggal Dokumen / Pengesahan:</span>
           <strong style="color: #0F172A;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</strong>
         </div>
         <div>
-          <span style="color: #64748B; font-size: 11px; display: block;">Instansi / Penerbit:</span>
-          <strong style="color: #0F172A;">${a.penerbit || '-'}</strong>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Instansi / Lembaga Penerbit:</span>
+          <strong style="color: #0F172A;">🏛️ ${a.penerbit || '-'}</strong>
         </div>
         <div>
-          <span style="color: #64748B; font-size: 11px; display: block;">Lokasi Fisik di Kantor:</span>
-          <strong style="color: #059669;">📍 ${a.lokasiFisik}</strong>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Petugas yang Mencatat:</span>
+          <span style="color: #334155; font-size: 12.5px;">👤 <strong>${a.uploadedBy || 'Pengurus Yayasan'}</strong></span>
         </div>
       </div>
+
       ${a.keterangan ? `
-        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
-          <span style="color: #64748B; font-size: 11px; display: block;">Ringkasan / Catatan:</span>
-          <p style="color: #334155; margin-top: 3px; font-size: 12px; line-height: 1.6;">${a.keterangan}</p>
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #CBD5E1;">
+          <span style="color: #64748B; font-size: 11.5px; font-weight: 700; display: block; margin-bottom: 4px;">Uraian & Ringkasan Dokumen:</span>
+          <p style="color: #1E293B; font-size: 13px; line-height: 1.6; margin: 0; background: white; padding: 12px 14px; border-radius: 8px; border: 1px solid #E2E8F0;">${a.keterangan}</p>
         </div>
       ` : ''}
     </div>
 
-    <!-- PREVIEW DIGITAL FILE / LINK -->
+    <!-- PRATINJAU DOKUMEN DIGITAL (INTERACTIVE VIEWER) -->
     <div style="margin-top: 10px;">
-      <span style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 8px;">Lampiran Digital:</span>
-      ${a.fileBase64 ? `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: #F0FDF4; border: 1px solid #86EFAC; padding: 12px 16px; border-radius: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">📄</span>
-            <div>
-              <div style="font-weight: 700; color: #065F46; font-size: 13px;">${a.fileName || 'Berkas Dokumen'}</div>
-              <div style="font-size: 11px; color: #047857;">File tersimpan di sistem</div>
-            </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <span style="font-weight: 800; font-size: 13px; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Pratinjau / Lampiran Berkas Digital</span>
+        ${a.fileBase64 ? `
+          <div style="display: flex; gap: 8px;">
+            <a href="${a.fileBase64}" download="${a.fileName || 'dokumen-arsip'}" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>⬇️</span> Unduh Berkas
+            </a>
           </div>
-          <a href="${a.fileBase64}" download="${a.fileName || 'arsip-dokumen'}" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-            <span>⬇️</span> Unduh File
-          </a>
-        </div>
-      ` : ''}
+        ` : ''}
+      </div>
 
-      ${a.fileUrl ? `
-        <div style="display: flex; align-items: center; justify-content: space-between; background: #EFF6FF; border: 1px solid #93C5FD; padding: 12px 16px; border-radius: 10px; margin-top: ${a.fileBase64 ? '8px' : '0'};">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">🌐</span>
-            <div style="min-width: 0;">
-              <div style="font-weight: 700; color: #1E40AF; font-size: 13px;">Tautan Dokumen Cloud / Google Drive</div>
-              <div style="font-size: 11px; color: #3B82F6; word-break: break-all;">${a.fileUrl}</div>
-            </div>
+      ${isPdf ? `
+        <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; overflow: hidden;">
+          <div style="background: #F1F5F9; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #CBD5E1;">
+            <span style="font-size: 12px; font-weight: 700; color: #334155;">📄 Dokumen PDF: <strong>${a.fileName}</strong></span>
+            <a href="${a.fileBase64}" target="_blank" class="btn-sec" style="padding: 4px 10px; font-size: 11px; text-decoration: none;">↗️ Buka di Tab Baru</a>
           </div>
-          <a href="${a.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
-            <span>↗️</span> Buka Tautan
-          </a>
+          <iframe src="${a.fileBase64}" style="width: 100%; height: 460px; border: none; display: block;"></iframe>
         </div>
-      ` : ''}
-
-      ${!a.fileBase64 && !a.fileUrl ? `
-        <div style="background: #F8FAFC; border: 1px dashed #CBD5E1; padding: 16px; border-radius: 10px; text-align: center; color: #64748B; font-size: 12px;">
-          <span>📦</span> Tidak ada lampiran digital yang diunggah. Dokumen fisik asli tersimpan di: <strong>${a.lokasiFisik}</strong>.
+      ` : isImg ? `
+        <div style="background: #0F172A; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="color: #94A3B8; font-size: 11px; margin-bottom: 8px;">Pratinjau Foto Dokumen: ${a.fileName}</div>
+          <img src="${a.fileBase64}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px;" alt="${a.nama}">
         </div>
-      ` : ''}
+      ` : a.fileUrl ? `
+        <div style="background: #EFF6FF; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 44px; height: 44px; border-radius: 10px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                🌐
+              </div>
+              <div>
+                <div style="font-weight: 800; color: #1E40AF; font-size: 14px;">Tautan Dokumen Cloud / Google Drive</div>
+                <div style="font-size: 12px; color: #2563EB; margin-top: 2px; word-break: break-all;">${a.fileUrl}</div>
+              </div>
+            </div>
+            <a href="${a.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-prim" style="text-decoration: none; padding: 8px 18px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>↗️</span> Buka di Google Drive
+            </a>
+          </div>
+        </div>
+      ` : `
+        <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 22px; text-align: center; color: #64748B;">
+          <div style="font-size: 32px; margin-bottom: 6px;">📦</div>
+          <div style="font-weight: 800; color: #334155; font-size: 13.5px;">Dokumen Diarsipkan Secara Fisik</div>
+          <div style="font-size: 12px; margin-top: 4px;">Tidak ada lampiran file digital. Silakan ambil berkas fisik di: <strong style="color: #059669;">${a.lokasiFisik}</strong>.</div>
+        </div>
+      `}
     </div>
   `;
 
-  if (actions) {
-    actions.innerHTML = `
-      <button type="button" class="btn-prim" onclick="closeModal('modal-view-arsip'); openEditArsip(${a.id})">
-        <span>✏️</span> Edit Berkas
+  if (leftActions) {
+    leftActions.innerHTML = `
+      <button type="button" class="btn-sec" onclick="printArsip(${a.id})" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer;">
+        <span>🖨️</span> Cetak Lembar Arsip
       </button>
     `;
   }
 
+  if (actions) {
+    actions.innerHTML = `
+      <button type="button" class="btn-prim" onclick="closeModal('modal-view-arsip'); openEditArsip(${a.id})" style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>✏️</span> Edit Data
+      </button>
+      <button type="button" class="btn-sec" onclick="closeModal('modal-view-arsip')">Tutup Jendela</button>
+    `;
+  }
+
   document.getElementById('modal-view-arsip').classList.add('open');
+}
+
+function printArsip(id) {
+  const list = getArsipList();
+  const a = list.find(x => x.id === id);
+  if (!a) return;
+
+  const printWindow = window.open('', '_blank', 'width=800,height=900');
+  if (!printWindow) {
+    showToast('Izinkan pop-up browser untuk mencetak lembar arsip!', 'warning');
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Lembar Kendali Arsip - ${a.nama}</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; margin: 0; }
+        .header { text-align: center; border-bottom: 2.5px double #0f172a; padding-bottom: 14px; margin-bottom: 24px; }
+        .header h2 { margin: 0; font-size: 18px; color: #047857; text-transform: uppercase; letter-spacing: 1px; }
+        .header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; }
+        .title-box { background: #f1f5f9; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #059669; }
+        .title-box h3 { margin: 0; font-size: 16px; color: #0f172a; }
+        .title-box span { font-size: 12px; color: #64748b; display: block; margin-top: 4px; }
+        .loc-box { background: #ecfdf5; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+        .loc-box strong { font-size: 16px; color: #065f46; display: block; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+        th, td { padding: 10px 14px; border: 1px solid #cbd5e1; text-align: left; }
+        th { background: #f8fafc; width: 32%; font-weight: 700; color: #334155; }
+        .footer { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; }
+        @media print {
+          body { padding: 20px; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>YAYASAN LENTERA HATI GURINDAM</h2>
+        <p>Pusat Administrasi & Arsip Dokumen Resmi Organisasi Kota Tanjungpinang</p>
+      </div>
+
+      <div class="title-box">
+        <h3>${a.nama}</h3>
+        <span>Nomor Dokumen: <strong>${a.nomor || 'Tanpa Nomor Resmi'}</strong></span>
+      </div>
+
+      <div class="loc-box">
+        <span style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">LOKASI FISIK PENYIMPANAN DI KANTOR:</span>
+        <strong>📍 ${a.lokasiFisik}</strong>
+      </div>
+
+      <table>
+        <tr>
+          <th>Kategori Klasifikasi</th>
+          <td><strong>${a.kategori}</strong></td>
+        </tr>
+        <tr>
+          <th>Nomor / Kode Resmi</th>
+          <td>${a.nomor || '-'}</td>
+        </tr>
+        <tr>
+          <th>Tanggal Dokumen</th>
+          <td>${a.tanggal ? formatDate(a.tanggal) : '-'}</td>
+        </tr>
+        <tr>
+          <th>Instansi / Lembaga Penerbit</th>
+          <td>${a.penerbit || '-'}</td>
+        </tr>
+        <tr>
+          <th>Petugas Pencatat</th>
+          <td>${a.uploadedBy || 'Pengurus Yayasan'}</td>
+        </tr>
+        <tr>
+          <th>Ketersediaan Lampiran Digital</th>
+          <td>${a.fileBase64 ? 'Tersimpan File Digital (' + (a.fileName || 'PDF/Gambar') + ')' : a.fileUrl ? 'Tautan Cloud (' + a.fileUrl + ')' : 'Hanya Arsip Fisik'}</td>
+        </tr>
+        <tr>
+          <th>Uraian & Ringkasan Dokumen</th>
+          <td>${a.keterangan || '-'}</td>
+        </tr>
+      </table>
+
+      <div class="footer">
+        <div>
+          <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+          <p>Petugas Administrasi Arsip</p>
+        </div>
+        <div style="text-align: right; width: 200px;">
+          <p>Mengetahui,</p>
+          <br><br><br>
+          <p style="font-weight: 700; border-top: 1px solid #94a3b8; padding-top: 4px; margin: 0;">KAMARIDA</p>
+          <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Superadmin Yayasan LHG</p>
+        </div>
+      </div>
+
+      <div class="no-print" style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 24px; background: #059669; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px;">🖨️ Cetak Lembar Dokumen Ini</button>
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 // TOAST NOTIFICATIONS

@@ -1561,22 +1561,31 @@
     </div>
   </div>
 
-  <!-- MODAL: DETAIL / VIEW ARSIP -->
+  <!-- MODAL: DETAIL / VIEW JENDELA ARSIP -->
   <div id="modal-view-arsip" class="modal-overlay">
-    <div class="modal-dialog">
-      <div class="modal-header-clean">
-        <div>
-          <h3 class="modal-title" id="view-arsip-nama">Detail Dokumen Arsip</h3>
-          <p class="modal-subtitle" id="view-arsip-nomor">Nomor Dokumen</p>
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 860px; max-height: 94vh; display: flex; flex-direction: column;">
+      <div class="modal-header-clean" style="border-bottom: 2px solid #E2E8F0; padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+            📁
+          </div>
+          <div style="min-width: 0;">
+            <h3 class="modal-title" id="view-arsip-nama" style="font-size: 16px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Detail Dokumen Arsip</h3>
+            <p class="modal-subtitle" id="view-arsip-nomor" style="font-size: 12px; color: #64748B; margin-top: 2px;">Nomor Dokumen</p>
+          </div>
         </div>
-        <button class="btn-close-modal" onclick="closeModal('modal-view-arsip')" title="Tutup">&times;</button>
+        <button class="btn-close-modal" onclick="closeModal('modal-view-arsip')" title="Tutup Jendela">&times;</button>
       </div>
-      <div class="modal-body-clean" id="view-arsip-body" style="font-size: 13px;">
+      <div class="modal-body-clean" id="view-arsip-body" style="font-size: 13px; padding: 20px 22px;">
         <!-- Filled dynamically by viewArsip() -->
       </div>
-      <div class="modal-footer-clean">
-        <button type="button" class="btn-sec" onclick="closeModal('modal-view-arsip')">Tutup</button>
-        <div id="view-arsip-actions" style="display: flex; gap: 8px;"></div>
+      <div class="modal-footer-clean" style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border-top: 1.5px solid #E2E8F0;">
+        <div id="view-arsip-left-actions" style="display: flex; gap: 8px;">
+          <!-- Print button rendered dynamically -->
+        </div>
+        <div id="view-arsip-actions" style="display: flex; gap: 8px;">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-view-arsip')">Tutup Jendela</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1596,6 +1605,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=9.0"></script>
+  <script src="js/app.js?v=10.0"></script>
 </body>
 </html>
