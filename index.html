@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=8.0">
+  <link rel="stylesheet" href="css/style.css?v=9.0">
 </head>
 <body class="app-body">
 
@@ -576,6 +576,9 @@
               </table>
             </div>
 
+            <!-- TAMPILAN MOBILE: KARTU DATA ANAK (CARD VIEW) -->
+            <div id="anggota-card-list" class="mobile-card-list"></div>
+
           </div>
         </section>
 
@@ -733,6 +736,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- TAMPILAN MOBILE: KARTU RIWAYAT BANTUAN (CARD VIEW) -->
+            <div id="bantuan-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -839,6 +845,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- TAMPILAN MOBILE: KARTU RENCANA KEGIATAN (CARD VIEW) -->
+            <div id="rencana-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -1295,16 +1304,40 @@
     </div>
   </div>
 
-  <!-- MODAL: VIEW DETAIL -->
+  <!-- MODAL: VIEW DETAIL ANGGOTA (DATA ANAK) -->
   <div id="modal-view" class="modal-overlay">
     <div class="modal-dialog">
       <div class="modal-header-clean">
-        <h3 class="modal-title">Detail Informasi Lengkap</h3>
+        <div>
+          <h3 class="modal-title">Detail Informasi Lengkap Anak</h3>
+          <p class="modal-subtitle">Biodata resmi anak disabilitas binaan Yayasan Lentera Hati Gurindam</p>
+        </div>
         <button class="btn-close-modal" onclick="closeModal('modal-view')">&times;</button>
       </div>
       <div class="modal-body-clean" id="view-content"></div>
       <div class="modal-footer-clean">
         <button type="button" class="btn-sec" onclick="closeModal('modal-view')">Tutup</button>
+        <button type="button" id="modal-view-btn-surat" class="btn-outline-action" style="display:none;">📄 Cetak Berkas PDF</button>
+        <button type="button" id="modal-view-btn-kta" class="btn-outline-action" style="display:none;">💳 Cetak ID Card / KTA</button>
+        <button type="button" id="modal-view-btn-edit" class="btn-top-add" style="display:none;">✏️ Edit Data Anak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW DETAIL BANTUAN -->
+  <div id="modal-view-bantuan" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title">Detail Penyerahan Bantuan</h3>
+          <p class="modal-subtitle">Catatan distribusi bantuan untuk anak disabilitas</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-view-bantuan')">&times;</button>
+      </div>
+      <div class="modal-body-clean" id="view-bantuan-content"></div>
+      <div class="modal-footer-clean">
+        <button type="button" class="btn-sec" onclick="closeModal('modal-view-bantuan')">Tutup</button>
+        <button type="button" id="modal-view-bantuan-btn-edit" class="btn-top-add" style="display:none;">✏️ Edit Catatan Bantuan</button>
       </div>
     </div>
   </div>
@@ -1889,6 +1922,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=14.0"></script>
+  <script src="js/app.js?v=15.0"></script>
 </body>
 </html>

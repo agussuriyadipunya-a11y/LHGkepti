@@ -744,64 +744,140 @@ function renderAnggotaTable(search) {
 
   setText('table-total-count-text', `Total: ${list.length} Anak`);
   const tbody = document.getElementById('anggota-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('anggota-card-list');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94A3B8;">Tidak ada data ditemukan</td></tr>';
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94A3B8;">Tidak ada data ditemukan</td></tr>';
+    }
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
+          <div style="font-size: 38px; margin-bottom: 8px;">📋</div>
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Tidak Ada Data Anak</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada data anak disabilitas yang sesuai filter atau pencarian Anda.</div>
+          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddAnggota()">
+            ➕ Tambah Data Anak Baru
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 
-  tbody.innerHTML = list.map((a, i) => `
-    <tr>
-      <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
-      <td>
-        <div style="font-weight: 800; color: #0F172A; font-size: 13px;">${a.nama}</div>
-        ${a.kelurahan ? `<div style="font-size: 11px; color: #059669; font-weight: 600;">📍 Kel. ${a.kelurahan}</div>` : ''}
-      </td>
-      <td>
-        <div class="id-badge-pill">
-          <span class="id-tag">NIK</span>
-          <span class="id-val">${a.nik}</span>
-        </div>
-        ${a.noKk ? `
-          <div class="id-badge-pill" style="margin-top: 3px;">
-            <span class="id-tag" style="background: #E0E7FF; color: #3730A3;">KK</span>
-            <span class="id-val">${a.noKk}</span>
+  // Render tabel untuk layar desktop
+  if (tbody) {
+    tbody.innerHTML = list.map((a, i) => `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
+        <td>
+          <div style="font-weight: 800; color: #0F172A; font-size: 13px;">${a.nama}</div>
+          ${a.kelurahan ? `<div style="font-size: 11px; color: #059669; font-weight: 600;">📍 Kel. ${a.kelurahan}</div>` : ''}
+        </td>
+        <td>
+          <div class="id-badge-pill">
+            <span class="id-tag">NIK</span>
+            <span class="id-val">${a.nik}</span>
           </div>
-        ` : ''}
-      </td>
-      <td style="text-align: center; font-weight: 600; color: #475569;">${a.umur || '12 Thn'}</td>
-      <td style="text-align: center;">
-        <span class="disability-pill ${getDisabilityBadgeClass(a.disabilitas)}">${a.disabilitas}</span>
-        ${a.subDisabilitas ? `<div style="font-size: 9.5px; color: #64748B; margin-top: 2px;">${a.subDisabilitas}</div>` : ''}
-      </td>
-      <td>
-        <div style="font-weight: 700; color: #1E293B;">${a.wali || '-'}</div>
-        ${a.ibu ? `<div style="font-size: 10.5px; color: #64748B;">Ibu: <strong>${a.ibu}</strong></div>` : ''}
-        <div style="margin-top: 4px;">
-          ${(a.kontakWA || a.telWali) ? `
-            <a href="javascript:void(0)" onclick="openWhatsApp('${a.kontakWA || a.telWali}')" class="table-wa-link" title="Buka WhatsApp">
-              <svg width="12" height="12" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-              ${a.kontakWA || a.telWali}
-            </a>
-          ` : '-'}
+          ${a.noKk ? `
+            <div class="id-badge-pill" style="margin-top: 3px;">
+              <span class="id-tag" style="background: #E0E7FF; color: #3730A3;">KK</span>
+              <span class="id-val">${a.noKk}</span>
+            </div>
+          ` : ''}
+        </td>
+        <td style="text-align: center; font-weight: 600; color: #475569;">${a.umur || '12 Thn'}</td>
+        <td style="text-align: center;">
+          <span class="disability-pill ${getDisabilityBadgeClass(a.disabilitas)}">${a.disabilitas}</span>
+          ${a.subDisabilitas ? `<div style="font-size: 9.5px; color: #64748B; margin-top: 2px;">${a.subDisabilitas}</div>` : ''}
+        </td>
+        <td>
+          <div style="font-weight: 700; color: #1E293B;">${a.wali || '-'}</div>
+          ${a.ibu ? `<div style="font-size: 10.5px; color: #64748B;">Ibu: <strong>${a.ibu}</strong></div>` : ''}
+          <div style="margin-top: 4px;">
+            ${(a.kontakWA || a.telWali) ? `
+              <a href="javascript:void(0)" onclick="openWhatsApp('${a.kontakWA || a.telWali}')" class="table-wa-link" title="Buka WhatsApp">
+                <svg width="12" height="12" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                ${a.kontakWA || a.telWali}
+              </a>
+            ` : '-'}
+          </div>
+        </td>
+        <td style="text-align: center; font-weight: 700; color: #475569;">${a.kelas || '-'}</td>
+        <td style="text-align: center;">
+          <span class="${a.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${a.status}</span>
+        </td>
+        <td style="text-align: center;">
+          <div class="action-buttons-group">
+            <button class="btn-action-icon" onclick="viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
+            <button class="btn-action-icon" onclick="openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
+            <button class="btn-action-icon" onclick="cetakKTAFor('${a.id}')" title="Cetak ID Card / KTA">💳</button>
+            <button class="btn-action-icon" onclick="openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
+            <button class="btn-action-icon danger" onclick="deleteAnggota('${a.id}')" title="Hapus">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Render tampilan kartu (Card View) untuk layar ponsel / mobile
+  if (cardList) {
+    cardList.innerHTML = list.map((a) => {
+      const waNum = a.kontakWA || a.telWali || '';
+      return `
+        <div class="data-record-card" onclick="viewAnggota('${a.id}')" title="Ketuk untuk melihat rincian data">
+          <div class="d-card-header">
+            <div class="d-card-avatar-wrap">
+              ${a.foto ? `
+                <img src="${a.foto}" class="d-card-photo" alt="${a.nama}">
+              ` : `
+                <div class="d-card-avatar">${getInitials(a.nama)}</div>
+              `}
+            </div>
+            <div class="d-card-main-info">
+              <div class="d-card-title-row">
+                <h4 class="d-card-name">${a.nama}</h4>
+                <span class="${a.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${a.status}</span>
+              </div>
+              <div class="d-card-sub-row">
+                ${a.kelurahan ? `<span class="d-card-loc">📍 Kel. ${a.kelurahan}</span>` : ''}
+                <span class="d-card-age">🎂 ${a.umur || '12 Thn'}</span>
+                ${a.kelas ? `<span style="font-weight:600; color:#475569;">• 🏫 ${a.kelas}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-card-tags">
+            <span class="disability-pill ${getDisabilityBadgeClass(a.disabilitas)}">${a.disabilitas}</span>
+            <span class="d-card-nik-tag">🆔 ${a.nik}</span>
+            ${a.noKk ? `<span class="d-card-tag-pill">KK: ${a.noKk}</span>` : ''}
+          </div>
+
+          <div class="d-card-footer">
+            <div class="d-card-parent-info">
+              <span>Ortu: <strong>${a.wali || a.ibu || '-'}</strong></span>
+              ${waNum ? `
+                <button type="button" class="d-card-btn-wa" onclick="event.stopPropagation(); openWhatsApp('${waNum}')" title="Hubungi via WhatsApp">
+                  💬 WA
+                </button>
+              ` : ''}
+            </div>
+            <div class="d-card-actions" onclick="event.stopPropagation();">
+              <button type="button" class="btn-action-icon" onclick="viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
+              <button type="button" class="btn-action-icon" onclick="openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
+              <button type="button" class="btn-action-icon" onclick="cetakKTAFor('${a.id}')" title="Cetak KTA">💳</button>
+              <button type="button" class="btn-action-icon danger" onclick="deleteAnggota('${a.id}')" title="Hapus Data">🗑️</button>
+            </div>
+          </div>
+
+          <div class="d-card-tap-cue">
+            <span>👆 Ketuk kartu untuk detail data & cetak berkas</span>
+            <span class="d-card-tap-arrow">›</span>
+          </div>
         </div>
-      </td>
-      <td style="text-align: center; font-weight: 700; color: #475569;">${a.kelas || '-'}</td>
-      <td style="text-align: center;">
-        <span class="${a.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${a.status}</span>
-      </td>
-      <td style="text-align: center;">
-        <div class="action-buttons-group">
-          <button class="btn-action-icon" onclick="viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
-          <button class="btn-action-icon" onclick="openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
-          <button class="btn-action-icon" onclick="cetakKTAFor('${a.id}')" title="Cetak ID Card / KTA">💳</button>
-          <button class="btn-action-icon" onclick="openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
-          <button class="btn-action-icon danger" onclick="deleteAnggota('${a.id}')" title="Hapus">🗑️</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+      `;
+    }).join('');
+  }
 }
 
 // ================= UPLOAD FOTO & PREVIEW HELPERS =================
@@ -1165,7 +1241,7 @@ function viewAnggota(id) {
         <div style="font-size: 12px; color: #059669; font-weight: 700;">Nomor KTA: ${a.noAnggota || a.id}</div>
       </div>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
       ${rows.map(([k, v]) => `
         <div style="background: #F8FAFC; padding: 9px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
           <div style="font-size: 10px; color: #64748B; font-weight: 700;">${k}</div>
@@ -1174,6 +1250,23 @@ function viewAnggota(id) {
       `).join('')}
     </div>
   `;
+
+  // Aktifkan tombol aksi di footer modal
+  const btnKta = document.getElementById('modal-view-btn-kta');
+  const btnSurat = document.getElementById('modal-view-btn-surat');
+  const btnEdit = document.getElementById('modal-view-btn-edit');
+  if (btnKta) {
+    btnKta.style.display = 'inline-flex';
+    btnKta.onclick = () => { closeModal('modal-view'); cetakKTAFor(a.id); };
+  }
+  if (btnSurat) {
+    btnSurat.style.display = 'inline-flex';
+    btnSurat.onclick = () => { closeModal('modal-view'); openSuratFor(a.id); };
+  }
+  if (btnEdit) {
+    btnEdit.style.display = 'inline-flex';
+    btnEdit.onclick = () => { closeModal('modal-view'); openEditAnggota(a.id); };
+  }
 
   document.getElementById('modal-view').classList.add('open');
 }
@@ -3262,18 +3355,32 @@ function renderBantuanTable(search) {
   list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
 
   const tbody = document.getElementById('bantuan-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('bantuan-card-list');
 
   if (list.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 38px; margin-bottom: 8px;">🎁</div>
+            <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Bantuan</p>
+            <p style="font-size: 12px;">Klik tombol "Catat Bantuan Baru" di atas untuk merekam bantuan yang diserahkan kepada anak.</p>
+          </td>
+        </tr>
+      `;
+    }
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
           <div style="font-size: 38px; margin-bottom: 8px;">🎁</div>
-          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Bantuan</p>
-          <p style="font-size: 12px;">Klik tombol "Catat Bantuan Baru" di atas untuk merekam bantuan yang diserahkan kepada anak.</p>
-        </td>
-      </tr>
-    `;
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Catatan Bantuan</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada penyaluran bantuan yang tercatat sesuai filter atau pencarian Anda.</div>
+          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddBantuan()">
+            ➕ Catat Bantuan Baru
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 
@@ -3286,48 +3393,168 @@ function renderBantuanTable(search) {
     'Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '🎁' }
   };
 
-  tbody.innerHTML = list.map((b, idx) => {
-    const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
-        <td style="white-space: nowrap;">
-          <span style="font-weight: 700; color: #1E293B; font-size: 13px;">📅 ${formatDate(b.tanggal)}</span>
-        </td>
-        <td>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="table-avatar">${getInitials(b.anakNama)}</div>
-            <div>
-              <div style="font-weight: 800; font-size: 13px; color: #0F172A;">${b.anakNama}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${b.anakDisabilitas || '-'} • NIK: ${b.anakNik || '-'}</div>
+  // Render desktop table
+  if (tbody) {
+    tbody.innerHTML = list.map((b, idx) => {
+      const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+          <td style="white-space: nowrap;">
+            <span style="font-weight: 700; color: #1E293B; font-size: 13px;">📅 ${formatDate(b.tanggal)}</span>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="table-avatar">${getInitials(b.anakNama)}</div>
+              <div>
+                <div style="font-weight: 800; font-size: 13px; color: #0F172A;">${b.anakNama}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">${b.anakDisabilitas || '-'} • NIK: ${b.anakNik || '-'}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight: 700; color: #047857; font-size: 13.5px;">${b.namaBantuan}</div>
+            ${b.jumlah ? `<span style="font-size: 11px; color: #64748B; font-weight: 600;">Jumlah: ${b.jumlah}</span>` : ''}
+            ${b.keterangan ? `<div style="font-size: 11.5px; color: #475569; margin-top: 3px; font-style: italic;">"${b.keterangan}"</div>` : ''}
+          </td>
+          <td>
+            <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+              ${katStyle.icon} ${b.kategori}
+            </span>
+          </td>
+          <td>
+            <span style="font-weight: 600; font-size: 12.5px; color: #334155;">${b.sumber || '-'}</span>
+          </td>
+          <td>
+            <span style="font-size: 12px; color: #475569;">👤 ${b.petugas || '-'}</span>
+          </td>
+          <td style="text-align: center;">
+            <div style="display: flex; gap: 4px; justify-content: center;">
+              <button class="btn-action-icon" onclick="openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
+              <button class="btn-action-icon edit" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
+              <button class="btn-action-icon delete" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Render mobile cards (Card View)
+  if (cardList) {
+    cardList.innerHTML = list.map((b) => {
+      const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
+      return `
+        <div class="data-record-card" onclick="openDetailBantuan(${b.id})" title="Ketuk untuk melihat detail bantuan">
+          <div class="d-card-header">
+            <div class="d-card-avatar-wrap">
+              <div class="d-card-avatar">${getInitials(b.anakNama)}</div>
+            </div>
+            <div class="d-card-main-info">
+              <div class="d-card-title-row">
+                <h4 class="d-card-name">${b.anakNama}</h4>
+                <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 2px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
+                  ${katStyle.icon} ${b.kategori}
+                </span>
+              </div>
+              <div class="d-card-sub-row">
+                <span style="font-weight: 800; color: #047857; font-size: 13px;">🎁 ${b.namaBantuan}</span>
+                ${b.jumlah ? `<span style="font-size: 11px; color: #64748B;">• ${b.jumlah}</span>` : ''}
+              </div>
             </div>
           </div>
-        </td>
-        <td>
-          <div style="font-weight: 700; color: #047857; font-size: 13.5px;">${b.namaBantuan}</div>
-          ${b.jumlah ? `<span style="font-size: 11px; color: #64748B; font-weight: 600;">Jumlah: ${b.jumlah}</span>` : ''}
-          ${b.keterangan ? `<div style="font-size: 11.5px; color: #475569; margin-top: 3px; font-style: italic;">"${b.keterangan}"</div>` : ''}
-        </td>
-        <td>
-          <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-            ${katStyle.icon} ${b.kategori}
-          </span>
-        </td>
-        <td>
-          <span style="font-weight: 600; font-size: 12.5px; color: #334155;">${b.sumber || '-'}</span>
-        </td>
-        <td>
-          <span style="font-size: 12px; color: #475569;">👤 ${b.petugas || '-'}</span>
-        </td>
-        <td style="text-align: center;">
-          <div style="display: flex; gap: 4px; justify-content: center;">
-            <button class="btn-action-icon edit" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
-            <button class="btn-action-icon delete" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
+
+          <div class="d-card-tags">
+            <span class="d-card-tag-pill">📅 ${formatDate(b.tanggal)}</span>
+            <span class="d-card-tag-pill">🏛️ ${b.sumber || 'Kas Yayasan'}</span>
+            ${b.petugas ? `<span class="d-card-tag-pill">👤 ${b.petugas}</span>` : ''}
           </div>
-        </td>
-      </tr>
+
+          ${b.keterangan ? `
+            <div style="font-size: 11.5px; color: #475569; background: #F8FAFC; border-radius: 8px; padding: 7px 10px; margin-bottom: 8px; font-style: italic;">
+              "${b.keterangan}"
+            </div>
+          ` : ''}
+
+          <div class="d-card-footer">
+            <div class="d-card-parent-info">
+              <span>Disabilitas: <strong>${b.anakDisabilitas || '-'}</strong></span>
+            </div>
+            <div class="d-card-actions" onclick="event.stopPropagation();">
+              <button type="button" class="btn-action-icon" onclick="openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
+              <button type="button" class="btn-action-icon" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
+            </div>
+          </div>
+
+          <div class="d-card-tap-cue">
+            <span>👆 Ketuk kartu untuk rincian data penyerahan bantuan</span>
+            <span class="d-card-tap-arrow">›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function openDetailBantuan(id) {
+  const b = getBantuanList().find(x => x.id === id);
+  if (!b) return;
+
+  const badgeKategoriMap = {
+    'Alat Bantu': { bg: '#FEF3C7', color: '#B45309', border: '#FCD34D', icon: '🦯' },
+    'Sembako & Nutrisi': { bg: '#F3E8FF', color: '#6D28D9', border: '#DDD6FE', icon: '📦' },
+    'Santunan / Uang Tunai': { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', icon: '💵' },
+    'Pendidikan & Sekolah': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '🎒' },
+    'Kesehatan & Obat': { bg: '#FEE2E2', color: '#B91C1C', border: '#FECACA', icon: '💊' },
+    'Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '🎁' }
+  };
+  const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
+
+  const rows = [
+    ['Nama Penerima (Anak)', `${b.anakNama} (${b.anakDisabilitas || '-'})`],
+    ['NIK Penerima', b.anakNik || '-'],
+    ['Tanggal Penyerahan', formatDate(b.tanggal)],
+    ['Kategori Bantuan', `<span style="background:${katStyle.bg}; color:${katStyle.color}; border:1px solid ${katStyle.border}; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px;">${katStyle.icon} ${b.kategori}</span>`],
+    ['Nama / Item Bantuan', b.namaBantuan],
+    ['Volume / Jumlah', b.jumlah || '-'],
+    ['Sumber / Pemberi Bantuan', b.sumber || '-'],
+    ['Petugas Penyerah', b.petugas || '-'],
+    ['Keterangan / Catatan', b.keterangan || '-']
+  ];
+
+  const contentEl = document.getElementById('view-bantuan-content');
+  if (contentEl) {
+    contentEl.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #E2E8F0;">
+        <div class="d-card-avatar" style="width: 48px; height: 48px; font-size: 16px;">${getInitials(b.anakNama)}</div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #0F172A; text-transform: uppercase;">${b.anakNama}</h3>
+          <div style="font-size: 13px; color: #047857; font-weight: 700; margin-top: 2px;">🎁 ${b.namaBantuan}</div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+        ${rows.map(([k, v]) => `
+          <div style="background: #F8FAFC; padding: 9px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
+            <div style="font-size: 10px; color: #64748B; font-weight: 700;">${k}</div>
+            <div style="font-size: 12.5px; font-weight: 700; color: #1E293B; margin-top: 2px;">${v || '-'}</div>
+          </div>
+        `).join('')}
+      </div>
     `;
-  }).join('');
+  }
+
+  const btnEdit = document.getElementById('modal-view-bantuan-btn-edit');
+  if (btnEdit) {
+    btnEdit.style.display = 'inline-flex';
+    btnEdit.onclick = () => {
+      closeModal('modal-view-bantuan');
+      openEditBantuan(b.id);
+    };
+  }
+
+  const modal = document.getElementById('modal-view-bantuan');
+  if (modal) modal.classList.add('open');
 }
 
 function populateBantuanAnakSelect() {
@@ -3573,7 +3800,7 @@ function filterRencanaKegiatan() {
 function renderRencanaKegiatanTable() {
   const list = getRencanaKegiatanList();
   const tbody = document.getElementById('rencana-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('rencana-card-list');
 
   const q = (document.getElementById('rencana-search-input')?.value || '').toLowerCase().trim();
   const filterStatus = (document.getElementById('rencana-filter-status')?.value || '').trim();
@@ -3594,66 +3821,140 @@ function renderRencanaKegiatanTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="9" style="text-align: center; padding: 36px 16px; color: #94A3B8;">
-          <div style="font-size: 32px; margin-bottom: 6px;">📋</div>
-          <div style="font-weight: 700; color: #475569; font-size: 13.5px;">Belum Ada Data Rencana Kegiatan</div>
-          <p style="font-size: 12px; margin-top: 4px;">Klik tombol <strong>"Susun Rencana Baru"</strong> di atas untuk menyusun rencana kerja yayasan.</p>
-        </td>
-      </tr>
-    `;
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 36px 16px; color: #94A3B8;">
+            <div style="font-size: 32px; margin-bottom: 6px;">📋</div>
+            <div style="font-weight: 700; color: #475569; font-size: 13.5px;">Belum Ada Data Rencana Kegiatan</div>
+            <p style="font-size: 12px; margin-top: 4px;">Klik tombol <strong>"Susun Rencana Baru"</strong> di atas untuk menyusun rencana kerja yayasan.</p>
+          </td>
+        </tr>
+      `;
+    }
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
+          <div style="font-size: 38px; margin-bottom: 8px;">📋</div>
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Rencana Kegiatan</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada agenda kerja yang sesuai filter atau pencarian Anda.</div>
+          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddRencanaKegiatan()">
+            ➕ Susun Rencana Baru
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 
-  tbody.innerHTML = filtered.map((item, idx) => {
-    let tglText = formatDate(item.tglMulai);
-    if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
-      tglText += ` s/d ${formatDate(item.tglSelesai)}`;
-    }
+  // Render desktop table
+  if (tbody) {
+    tbody.innerHTML = filtered.map((item, idx) => {
+      let tglText = formatDate(item.tglMulai);
+      if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
+        tglText += ` s/d ${formatDate(item.tglSelesai)}`;
+      }
 
-    const biayaText = item.estimasiBiaya ? item.estimasiBiaya : 'Swadaya / Nihil';
-    const sumberTag = item.sumberDana ? `<span style="font-size: 10px; color: #64748B; display: block; margin-top: 2px;">Dana: ${item.sumberDana}</span>` : '';
+      const biayaText = item.estimasiBiaya ? item.estimasiBiaya : 'Swadaya / Nihil';
+      const sumberTag = item.sumberDana ? `<span style="font-size: 10px; color: #64748B; display: block; margin-top: 2px;">Dana: ${item.sumberDana}</span>` : '';
 
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
-        <td>
-          <div style="font-weight: 800; color: #0F172A; font-size: 13px; line-height: 1.35;">${item.judul}</div>
-          <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 3px;">🏷️ ${item.kategori}</div>
-        </td>
-        <td>
-          <div style="font-size: 12px; font-weight: 600; color: #334155;">🎯 ${item.targetPeserta || '-'}</div>
-          <div style="font-size: 11px; color: #64748B; margin-top: 3px;">📍 ${item.lokasi || 'Sekretariat Yayasan'}</div>
-        </td>
-        <td style="font-size: 12px; color: #1E293B; white-space: nowrap;">
-          <div style="font-weight: 600;">📅 ${tglText}</div>
-        </td>
-        <td>
-          <div style="font-weight: 800; color: #2563EB; font-size: 12px;">${biayaText}</div>
-          ${sumberTag}
-        </td>
-        <td>
-          <div style="font-weight: 700; color: #0F172A; font-size: 12px;">👤 ${item.penanggungJawab || '-'}</div>
-          <div style="font-size: 10.5px; color: #64748B; margin-top: 2px;">Penyusun: ${item.penyusun || '-'}</div>
-        </td>
-        <td style="text-align: center;">
-          ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
-        </td>
-        <td style="text-align: center;">
-          ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
-        </td>
-        <td style="text-align: center;">
-          <div class="action-buttons-group">
-            <button class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Lihat Detail Rencana">👁️</button>
-            <button class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen Resmi A4">🖨️</button>
-            <button class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
-            <button class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
+          <td>
+            <div style="font-weight: 800; color: #0F172A; font-size: 13px; line-height: 1.35;">${item.judul}</div>
+            <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 3px;">🏷️ ${item.kategori}</div>
+          </td>
+          <td>
+            <div style="font-size: 12px; font-weight: 600; color: #334155;">🎯 ${item.targetPeserta || '-'}</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 3px;">📍 ${item.lokasi || 'Sekretariat Yayasan'}</div>
+          </td>
+          <td style="font-size: 12px; color: #1E293B; white-space: nowrap;">
+            <div style="font-weight: 600;">📅 ${tglText}</div>
+          </td>
+          <td>
+            <div style="font-weight: 800; color: #2563EB; font-size: 12px;">${biayaText}</div>
+            ${sumberTag}
+          </td>
+          <td>
+            <div style="font-weight: 700; color: #0F172A; font-size: 12px;">👤 ${item.penanggungJawab || '-'}</div>
+            <div style="font-size: 10.5px; color: #64748B; margin-top: 2px;">Penyusun: ${item.penyusun || '-'}</div>
+          </td>
+          <td style="text-align: center;">
+            ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
+          </td>
+          <td style="text-align: center;">
+            ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
+          </td>
+          <td style="text-align: center;">
+            <div class="action-buttons-group">
+              <button class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Lihat Detail Rencana">👁️</button>
+              <button class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen Resmi A4">🖨️</button>
+              <button class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
+              <button class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Render mobile cards (Card View)
+  if (cardList) {
+    cardList.innerHTML = filtered.map((item) => {
+      let tglText = formatDate(item.tglMulai);
+      if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
+        tglText += ` s/d ${formatDate(item.tglSelesai)}`;
+      }
+      const biayaText = item.estimasiBiaya ? item.estimasiBiaya : 'Swadaya / Nihil';
+
+      return `
+        <div class="data-record-card" onclick="viewRencanaKegiatan(${item.id})" title="Ketuk untuk melihat detail rencana kegiatan">
+          <div class="d-card-header">
+            <div class="d-card-avatar-wrap">
+              <div class="d-card-avatar" style="background: #EFF6FF; color: #2563EB; border-color: #BFDBFE;">📋</div>
+            </div>
+            <div class="d-card-main-info">
+              <div class="d-card-title-row">
+                <h4 class="d-card-name" style="white-space: normal; line-height: 1.3;">${item.judul}</h4>
+              </div>
+              <div class="d-card-sub-row">
+                <span style="color: #059669; font-weight: 700;">🏷️ ${item.kategori}</span>
+              </div>
+            </div>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+
+          <div class="d-card-tags">
+            ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
+            ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
+            <span class="d-card-tag-pill" style="font-weight: 700; color: #2563EB;">💰 ${biayaText}</span>
+          </div>
+
+          <div class="d-card-body-info">
+            <div>📅 <strong>Jadwal:</strong> ${tglText}</div>
+            <div>📍 <strong>Lokasi:</strong> ${item.lokasi || 'Sekretariat Yayasan'}</div>
+          </div>
+
+          <div class="d-card-footer">
+            <div class="d-card-parent-info">
+              <span>PIC: <strong>${item.penanggungJawab || '-'}</strong></span>
+            </div>
+            <div class="d-card-actions" onclick="event.stopPropagation();">
+              <button type="button" class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Detail Rencana">👁️</button>
+              <button type="button" class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen A4">🖨️</button>
+              <button type="button" class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+            </div>
+          </div>
+
+          <div class="d-card-tap-cue">
+            <span>👆 Ketuk kartu untuk melihat lembar rencana lengkap & cetak A4</span>
+            <span class="d-card-tap-arrow">›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function openAddRencanaKegiatan() {
