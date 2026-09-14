@@ -1018,6 +1018,10 @@ function openEditAnggota(id) {
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
+  if (id === 'modal-view-arsip' && typeof activeArsipBlobUrl !== 'undefined' && activeArsipBlobUrl) {
+    URL.revokeObjectURL(activeArsipBlobUrl);
+    activeArsipBlobUrl = null;
+  }
 }
 
 function saveAnggota() {
@@ -2437,10 +2441,88 @@ async function deleteArsip(id) {
   showToast('Arsip berkas telah dihapus.', 'warning');
 }
 
+let activeArsipBlobUrl = null;
+
+function getArsipPdfBlobUrl(base64Data) {
+  if (!base64Data) return null;
+  try {
+    const parts = base64Data.split(',');
+    const raw = parts.length > 1 ? parts[1] : parts[0];
+    const byteCharacters = atob(raw);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const blob = new Blob([byteNumbers], { type: 'application/pdf' });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.error('Error creating PDF Blob URL:', e);
+    return null;
+  }
+}
+
+function openArsipPdfInNewTab(id) {
+  const list = getArsipList();
+  const a = list.find(x => String(x.id) === String(id));
+  if (!a || !a.fileBase64) {
+    showToast('File dokumen tidak ditemukan!', 'error');
+    return;
+  }
+  const blobUrl = getArsipPdfBlobUrl(a.fileBase64);
+  if (blobUrl) {
+    const win = window.open(blobUrl, '_blank');
+    if (!win) {
+      showToast('Pop-up diblokir oleh browser. Mengunduh file sebagai gantinya...', 'warning');
+      downloadArsipFile(id);
+    }
+  } else {
+    showToast('Gagal memproses file PDF!', 'error');
+  }
+}
+
+function downloadArsipFile(id) {
+  const list = getArsipList();
+  const a = list.find(x => String(x.id) === String(id));
+  if (!a || !a.fileBase64) {
+    showToast('File dokumen tidak ditemukan!', 'error');
+    return;
+  }
+  try {
+    const isPdf = a.fileBase64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf'));
+    const mimeType = isPdf ? 'application/pdf' : 'application/octet-stream';
+    const parts = a.fileBase64.split(',');
+    const raw = parts.length > 1 ? parts[1] : parts[0];
+    const byteCharacters = atob(raw);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const blob = new Blob([byteNumbers], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = a.fileName || (isPdf ? 'dokumen_arsip.pdf' : 'dokumen_arsip');
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
+  } catch (e) {
+    showToast('Gagal mengunduh berkas: ' + e.message, 'error');
+  }
+}
+
 function viewArsip(id) {
   const list = getArsipList();
   const a = list.find(x => x.id === id);
   if (!a) return;
+
+  // Revoke previous blob if any
+  if (activeArsipBlobUrl) {
+    URL.revokeObjectURL(activeArsipBlobUrl);
+    activeArsipBlobUrl = null;
+  }
 
   const badgeKategoriMap = {
     'Legalitas & Perizinan': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '📜' },
@@ -2462,6 +2544,12 @@ function viewArsip(id) {
 
   const isPdf = a.fileBase64 && (a.fileBase64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf')));
   const isImg = a.fileBase64 && (a.fileBase64.startsWith('data:image/') || (a.fileName && /\.(jpg|jpeg|png|webp)$/i.test(a.fileName)));
+
+  let pdfBlobUrl = null;
+  if (isPdf) {
+    pdfBlobUrl = getArsipPdfBlobUrl(a.fileBase64);
+    activeArsipBlobUrl = pdfBlobUrl;
+  }
 
   body.innerHTML = `
     <!-- KOTAK UTAMA: LOKASI FISIK PENYIMPANAN DI KANTOR -->
@@ -2527,26 +2615,55 @@ function viewArsip(id) {
     <div style="margin-top: 10px;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
         <span style="font-weight: 800; font-size: 13px; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Pratinjau / Lampiran Berkas Digital</span>
-        ${a.fileBase64 ? `
-          <div style="display: flex; gap: 8px;">
-            <a href="${a.fileBase64}" download="${a.fileName || 'dokumen-arsip'}" class="btn-prim" style="text-decoration: none; padding: 6px 14px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>⬇️</span> Unduh Berkas
-            </a>
-          </div>
-        ` : ''}
       </div>
 
-      ${isPdf ? `
-        <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; overflow: hidden;">
-          <div style="background: #F1F5F9; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #CBD5E1;">
-            <span style="font-size: 12px; font-weight: 700; color: #334155;">📄 Dokumen PDF: <strong>${a.fileName}</strong></span>
-            <a href="${a.fileBase64}" target="_blank" class="btn-sec" style="padding: 4px 10px; font-size: 11px; text-decoration: none;">↗️ Buka di Tab Baru</a>
+      ${isPdf && pdfBlobUrl ? `
+        <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <!-- ACTION HEADER KHUSUS PDF -->
+          <div style="background: #F0FDF4; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #86EFAC; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">📄</span>
+              <div>
+                <strong style="font-size: 13.5px; color: #065F46; display: block;">${a.fileName || 'Dokumen PDF'}</strong>
+                <span style="font-size: 11px; color: #047857; font-weight: 600;">✓ Format Dokumen PDF Resmi • Siap Dibaca & Dicetak</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-prim" onclick="openArsipPdfInNewTab('${a.id}')" style="padding: 7px 16px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: #059669; border: 1px solid #047857; border-radius: 6px; color: white;">
+                <span>↗️</span> Buka Layar Penuh (Tab Baru)
+              </button>
+              <button type="button" class="btn-sec" onclick="downloadArsipFile('${a.id}')" style="padding: 7px 14px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 6px;">
+                <span>⬇️</span> Unduh File
+              </button>
+            </div>
           </div>
-          <iframe src="${a.fileBase64}" style="width: 100%; height: 460px; border: none; display: block;"></iframe>
+
+          <!-- EMBEDDED OBJECT & IFRAME MENGGUNAKAN BLOB URL -->
+          <div style="width: 100%; height: 520px; background: #525659; position: relative;">
+            <object data="${pdfBlobUrl}#toolbar=1" type="application/pdf" width="100%" height="100%" style="display: block; width: 100%; height: 100%;">
+              <iframe src="${pdfBlobUrl}" width="100%" height="100%" style="border: none;">
+                <div style="padding: 40px 20px; text-align: center; background: #F8FAFC; color: #475569; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <div style="font-size: 44px; margin-bottom: 12px;">📄</div>
+                  <h4 style="font-size: 16px; color: #0F172A; margin-bottom: 8px; font-weight: 800;">Baca Dokumen PDF</h4>
+                  <p style="font-size: 12.5px; color: #64748B; max-width: 440px; margin-bottom: 16px; line-height: 1.5;">
+                    Jika tampilan pratinjau browser tidak muncul otomatis di dalam kotak ini, silakan klik tombol di bawah untuk membuka dan membaca dokumen secara penuh di tab baru.
+                  </p>
+                  <button type="button" class="btn-prim" onclick="openArsipPdfInNewTab('${a.id}')" style="padding: 9px 22px; font-size: 13px; font-weight: 700;">
+                    <span>↗️</span> Buka & Baca Dokumen di Tab Baru
+                  </button>
+                </div>
+              </iframe>
+            </object>
+          </div>
         </div>
       ` : isImg ? `
         <div style="background: #0F172A; border-radius: 12px; padding: 14px; text-align: center;">
-          <div style="color: #94A3B8; font-size: 11px; margin-bottom: 8px;">Pratinjau Foto Dokumen: ${a.fileName}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #94A3B8; font-size: 12px; padding: 0 4px;">
+            <span>🖼️ Pratinjau Foto Dokumen: <strong>${a.fileName}</strong></span>
+            <button type="button" class="btn-prim" onclick="downloadArsipFile('${a.id}')" style="padding: 5px 12px; font-size: 11px;">
+              <span>⬇️</span> Unduh Foto
+            </button>
+          </div>
           <img src="${a.fileBase64}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px;" alt="${a.nama}">
         </div>
       ` : a.fileUrl ? `
