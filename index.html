@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Lentera Hati Gurindam - Pendataan Anak Disabilitas</title>
   
   <!-- PWA & WEB APP MANIFEST -->
@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=6.0">
+  <link rel="stylesheet" href="css/style.css?v=7.0">
 </head>
 <body class="app-body">
 
@@ -103,6 +103,8 @@
             <p class="brand-subtitle">GURINDAM TANJUNGPINANG</p>
           </div>
         </div>
+        <!-- TOMBOL TUTUP DRAWER KHUSUS MOBILE -->
+        <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" title="Tutup Menu">✕</button>
       </div>
 
       <!-- NAVIGASI MENU BERDASARKAN ROLE -->
@@ -1601,10 +1603,36 @@
     </div>
   </div>
 
+  <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navigasi Menu Mobile">
+    <button type="button" class="bottom-nav-item active" data-bottom-page="dashboard" onclick="navigate('dashboard')">
+      <span class="bottom-nav-icon">📊</span>
+      <span class="bottom-nav-label">Dashboard</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-bottom-page="input-data-form" onclick="navigate('input-data-form')">
+      <span class="bottom-nav-icon">📝</span>
+      <span class="bottom-nav-label">Input Form</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-bottom-page="input-data" onclick="navigate('input-data')">
+      <span class="bottom-nav-icon">👥</span>
+      <span class="bottom-nav-label">Data Anak</span>
+      <span class="bottom-nav-badge" id="bottom-badge-anak">0</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-bottom-page="bantuan" onclick="navigate('bantuan')">
+      <span class="bottom-nav-icon">🎁</span>
+      <span class="bottom-nav-label">Bantuan</span>
+      <span class="bottom-nav-badge" id="bottom-badge-bantuan">0</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-bottom-page="menu" onclick="toggleSidebar()">
+      <span class="bottom-nav-icon">☰</span>
+      <span class="bottom-nav-label">Menu</span>
+    </button>
+  </nav>
+
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="toast-container"></div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=11.0"></script>
+  <script src="js/app.js?v=12.0"></script>
 </body>
 </html>

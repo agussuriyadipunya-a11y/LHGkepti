@@ -445,6 +445,18 @@ function navigate(page) {
     btn.classList.toggle('active', btn.getAttribute('data-page') === page);
   });
 
+  // Update mobile bottom nav active buttons
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    const bPage = btn.getAttribute('data-bottom-page');
+    if (bPage === page) {
+      btn.classList.add('active');
+    } else if (bPage === 'menu' && !['dashboard', 'input-data-form', 'input-data', 'bantuan'].includes(page)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
   // Switch pages
   document.querySelectorAll('.page').forEach(sec => sec.classList.remove('active'));
   const target = document.getElementById('page-' + page);
@@ -457,6 +469,11 @@ function navigate(page) {
     if (sidebar) sidebar.classList.remove('mobile-open');
     if (backdrop) backdrop.classList.remove('active');
   }
+
+  // Smooth scroll to top when changing page on mobile
+  const contentBody = document.querySelector('.content-body');
+  if (contentBody) contentBody.scrollTop = 0;
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
   // Update topbar headers
   const pageTitles = {
@@ -555,8 +572,10 @@ function renderDashboard() {
   setText('stat-kegiatan', kegiatan.length);
   setText('stat-surat', sm.length + sk.length);
   setText('nav-badge-anak', anggota.length);
+  setText('bottom-badge-anak', anggota.length);
   const bList = DB.get('lhg_bantuan', []);
   setText('nav-badge-bantuan', bList.length);
+  setText('bottom-badge-bantuan', bList.length);
 
   // Recent 5 Children
   const actEl = document.getElementById('dashboard-activity');
@@ -2919,6 +2938,7 @@ function saveDirectInputAnak(e) {
 
   // Update badge & refresh tables
   setText('nav-badge-anak', anggota.length);
+  setText('bottom-badge-anak', anggota.length);
   renderAnggotaTable();
   renderDashboard();
   if (typeof renderCetakKTA === 'function') renderCetakKTA();
@@ -3178,6 +3198,7 @@ function renderBantuanStats() {
   setText('stat-bantuan-alat', alatBantu);
   setText('stat-bantuan-sembako', sembako);
   setText('nav-badge-bantuan', total);
+  setText('bottom-badge-bantuan', total);
 }
 
 let activeBantuanKategori = '';
