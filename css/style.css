@@ -1911,8 +1911,8 @@ button, input, select, textarea {
   position: fixed;
   inset: 0;
   background: 
-    linear-gradient(135deg, rgba(6, 78, 59, 0.68) 0%, rgba(15, 23, 42, 0.78) 100%),
-    url('../img/wallpaper-lhg.jpg') center center / cover no-repeat;
+    linear-gradient(135deg, rgba(6, 78, 59, 0.48) 0%, rgba(15, 23, 42, 0.68) 100%),
+    url('../img/wallpaper-lhg.jpg?v=2.0') center center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
