@@ -386,6 +386,24 @@ function applyRoleUI(user) {
       sec.style.display = 'block';
     }
   });
+
+  // Adapt mobile bottom navigation based on role
+  const bMainBtn = document.getElementById('bottom-nav-btn-main');
+  const bMainIcon = document.getElementById('bottom-nav-icon-main');
+  const bMainLbl = document.getElementById('bottom-nav-label-main');
+  if (bMainBtn && bMainIcon && bMainLbl) {
+    if (userRole === 'petugas') {
+      bMainBtn.setAttribute('data-bottom-page', 'rencana-kegiatan');
+      bMainBtn.setAttribute('onclick', "navigate('rencana-kegiatan')");
+      bMainIcon.textContent = '📋';
+      bMainLbl.textContent = 'Rencana';
+    } else {
+      bMainBtn.setAttribute('data-bottom-page', 'dashboard');
+      bMainBtn.setAttribute('onclick', "navigate('dashboard')");
+      bMainIcon.textContent = '📊';
+      bMainLbl.textContent = 'Dashboard';
+    }
+  }
 }
 
 function hasPermission(role, page) {
@@ -455,7 +473,7 @@ function navigate(page) {
     const bPage = btn.getAttribute('data-bottom-page');
     if (bPage === page) {
       btn.classList.add('active');
-    } else if (bPage === 'menu' && !['dashboard', 'input-data-form', 'input-data', 'bantuan'].includes(page)) {
+    } else if (bPage === 'menu' && !['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan'].includes(page)) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
@@ -1046,6 +1064,9 @@ function openEditAnggota(id) {
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('open');
+  if (!document.querySelector('.modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
   if (id === 'modal-view-arsip' && typeof activeArsipBlobUrl !== 'undefined' && activeArsipBlobUrl) {
     URL.revokeObjectURL(activeArsipBlobUrl);
     activeArsipBlobUrl = null;
@@ -4506,7 +4527,30 @@ document.addEventListener('DOMContentLoaded', () => {
   syncWithSupabase(false);
   // Register PWA Service Worker
   registerPWA();
+  // Initialize touch-friendly modal backdrop tap listeners
+  initModalListeners();
 });
+
+function initModalListeners() {
+  // Tap outside modal content (on overlay backdrop) to close
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal(overlay.id);
+      }
+    });
+  });
+
+  // Keep body class modal-open in sync with any modal open state to prevent background scroll
+  const modalObserver = new MutationObserver(() => {
+    const hasOpenModal = !!document.querySelector('.modal-overlay.open');
+    document.body.classList.toggle('modal-open', hasOpenModal);
+  });
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    modalObserver.observe(m, { attributes: true, attributeFilter: ['class'] });
+  });
+}
 
 // ==============================================================================
 // PWA INSTALLATION & SERVICE WORKER LOGIC
