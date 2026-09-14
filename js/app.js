@@ -123,12 +123,17 @@ function initData() {
     localStorage.setItem('lhg_surat_keluar', JSON.stringify([]));
     localStorage.setItem('lhg_foto', JSON.stringify([]));
     localStorage.setItem('lhg_arsip', JSON.stringify([]));
+    localStorage.setItem('lhg_rencana_kegiatan', JSON.stringify([]));
 
     localStorage.setItem('lhg_init_clean_v3', '1');
   }
 
   if (!localStorage.getItem('lhg_arsip')) {
     localStorage.setItem('lhg_arsip', JSON.stringify([]));
+  }
+
+  if (!localStorage.getItem('lhg_rencana_kegiatan')) {
+    localStorage.setItem('lhg_rencana_kegiatan', JSON.stringify([]));
   }
 
   initUsersData();
@@ -385,9 +390,9 @@ function applyRoleUI(user) {
 
 function hasPermission(role, page) {
   const permissions = {
-    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
-    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    Petugas: ['input-data-form', 'input-data', 'bantuan', 'cetak-kta', 'form-pendaftaran']
+    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    Petugas: ['input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran']
   };
   const list = permissions[role] || [];
   return list.includes(page);
@@ -481,6 +486,7 @@ function navigate(page) {
     'input-data-form': ['Input Data Anak', 'Formulir input data calon anak disabilitas langsung ke database yayasan'],
     'input-data': ['Data Anak Disabilitas', 'Kelola pendaftaran lengkap anak, identitas KK, ragam disabilitas, dan kontak wali'],
     'bantuan': ['Catatan Penerimaan Bantuan Anak', 'Daftar semua bantuan yang telah diterima anak lengkap dengan tanggal penyerahan'],
+    'rencana-kegiatan': ['Rencana Kegiatan & Program Kerja', 'Penyusunan agenda kerja, sasaran disabilitas, jadwal, dan estimasi anggaran yayasan'],
     'cetak-kta': ['Cetak Kartu Tanda Anggota', 'Penerbitan kartu identitas resmi binaan Lentera Hati Gurindam'],
     'form-pendaftaran': ['Surat Keterangan Hasil Pendaftaran', 'Pratinjau, unduh berkas PDF resmi format A4, dan cetak blanko fisik'],
     'laporan-kegiatan': ['Laporan Kegiatan', 'Dokumentasi pelaksanaan agenda kegiatan kemandirian dan terapi anak'],
@@ -498,6 +504,7 @@ function navigate(page) {
   if (page === 'input-data-form') initDirectInputPage();
   if (page === 'input-data') renderAnggotaTable();
   if (page === 'bantuan') renderBantuanPage();
+  if (page === 'rencana-kegiatan') renderRencanaKegiatanPage();
   if (page === 'cetak-kta') renderCetakKTA();
   if (page === 'form-pendaftaran') renderFormPendaftaranPage();
   if (page === 'laporan-kegiatan') renderLaporan();
@@ -576,6 +583,8 @@ function renderDashboard() {
   const bList = DB.get('lhg_bantuan', []);
   setText('nav-badge-bantuan', bList.length);
   setText('bottom-badge-bantuan', bList.length);
+  const rList = DB.get('lhg_rencana_kegiatan', []);
+  setText('nav-badge-rencana', rList.length);
 
   // Recent 5 Children
   const actEl = document.getElementById('dashboard-activity');
@@ -3462,6 +3471,673 @@ async function deleteBantuan(id) {
 }
 
 // ==============================================================================
+// RENCANA KEGIATAN & PROGRAM KERJA YAYASAN LOGIC
+// ==============================================================================
+
+function getRencanaKegiatanList() {
+  return DB.get('lhg_rencana_kegiatan', []);
+}
+
+function updateRencanaBadges() {
+  const list = getRencanaKegiatanList();
+  setText('nav-badge-rencana', list.length);
+}
+
+function formatRupiahDisplay(amount) {
+  if (!amount && amount !== 0) return '-';
+  const num = parseInt(String(amount).replace(/[^0-9]/g, '')) || 0;
+  if (num === 0) return 'Rp 0';
+  return 'Rp ' + num.toLocaleString('id-ID');
+}
+
+function formatRencanaBiayaInput(input) {
+  let val = input.value.replace(/[^0-9]/g, '');
+  if (!val) {
+    input.value = '';
+    return;
+  }
+  input.value = 'Rp ' + parseInt(val, 10).toLocaleString('id-ID');
+}
+
+function getRencanaStatusBadge(status) {
+  const map = {
+    'Draf / Pengajuan': 'background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;',
+    'Menunggu Persetujuan': 'background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;',
+    'Disetujui': 'background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;',
+    'Dalam Persiapan': 'background: #FDF4FF; color: #A21CAF; border: 1px solid #F5D0FE;',
+    'Sedang Berjalan': 'background: #EDE9FE; color: #6D28D9; border: 1px solid #DDD6FE;',
+    'Terlaksana': 'background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;',
+    'Ditunda / Dibatalkan': 'background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA;'
+  };
+  const style = map[status] || 'background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;';
+  return `<span style="display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; ${style}">${status}</span>`;
+}
+
+function getRencanaPrioritasBadge(p) {
+  const map = {
+    'Tinggi': 'background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5;',
+    'Sedang': 'background: #FFFBEB; color: #D97706; border: 1px solid #FCD34D;',
+    'Rendah': 'background: #F0FDF4; color: #16A34A; border: 1px solid #86EFAC;'
+  };
+  const style = map[p] || 'background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;';
+  return `<span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 800; ${style}">${p}</span>`;
+}
+
+function renderRencanaKegiatanPage() {
+  const list = getRencanaKegiatanList();
+  updateRencanaBadges();
+
+  const total = list.length;
+  const draf = list.filter(r => r.status === 'Draf / Pengajuan' || r.status === 'Menunggu Persetujuan').length;
+  const disetujui = list.filter(r => ['Disetujui', 'Dalam Persiapan', 'Sedang Berjalan', 'Terlaksana'].includes(r.status)).length;
+  
+  let totalAnggaran = 0;
+  list.forEach(r => {
+    const raw = String(r.estimasiBiaya || '').replace(/[^0-9]/g, '');
+    if (raw) totalAnggaran += parseInt(raw, 10);
+  });
+
+  setText('stat-rencana-total', total);
+  setText('stat-rencana-draf', draf);
+  setText('stat-rencana-disetujui', disetujui);
+  setText('stat-rencana-anggaran', formatRupiahDisplay(totalAnggaran));
+
+  renderRencanaKegiatanTable();
+}
+
+function filterRencanaKegiatan() {
+  renderRencanaKegiatanTable();
+}
+
+function renderRencanaKegiatanTable() {
+  const list = getRencanaKegiatanList();
+  const tbody = document.getElementById('rencana-tbody');
+  if (!tbody) return;
+
+  const q = (document.getElementById('rencana-search-input')?.value || '').toLowerCase().trim();
+  const filterStatus = (document.getElementById('rencana-filter-status')?.value || '').trim();
+  const filterKategori = (document.getElementById('rencana-filter-kategori')?.value || '').trim();
+
+  const filtered = list.filter(item => {
+    const matchQ = !q ||
+      (item.judul && item.judul.toLowerCase().includes(q)) ||
+      (item.penanggungJawab && item.penanggungJawab.toLowerCase().includes(q)) ||
+      (item.targetPeserta && item.targetPeserta.toLowerCase().includes(q)) ||
+      (item.lokasi && item.lokasi.toLowerCase().includes(q)) ||
+      (item.sumberDana && item.sumberDana.toLowerCase().includes(q));
+
+    const matchStatus = !filterStatus || item.status === filterStatus;
+    const matchKategori = !filterKategori || item.kategori === filterKategori;
+
+    return matchQ && matchStatus && matchKategori;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 36px 16px; color: #94A3B8;">
+          <div style="font-size: 32px; margin-bottom: 6px;">📋</div>
+          <div style="font-weight: 700; color: #475569; font-size: 13.5px;">Belum Ada Data Rencana Kegiatan</div>
+          <p style="font-size: 12px; margin-top: 4px;">Klik tombol <strong>"Susun Rencana Baru"</strong> di atas untuk menyusun rencana kerja yayasan.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((item, idx) => {
+    let tglText = formatDate(item.tglMulai);
+    if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
+      tglText += ` s/d ${formatDate(item.tglSelesai)}`;
+    }
+
+    const biayaText = item.estimasiBiaya ? item.estimasiBiaya : 'Swadaya / Nihil';
+    const sumberTag = item.sumberDana ? `<span style="font-size: 10px; color: #64748B; display: block; margin-top: 2px;">Dana: ${item.sumberDana}</span>` : '';
+
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
+        <td>
+          <div style="font-weight: 800; color: #0F172A; font-size: 13px; line-height: 1.35;">${item.judul}</div>
+          <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 3px;">🏷️ ${item.kategori}</div>
+        </td>
+        <td>
+          <div style="font-size: 12px; font-weight: 600; color: #334155;">🎯 ${item.targetPeserta || '-'}</div>
+          <div style="font-size: 11px; color: #64748B; margin-top: 3px;">📍 ${item.lokasi || 'Sekretariat Yayasan'}</div>
+        </td>
+        <td style="font-size: 12px; color: #1E293B; white-space: nowrap;">
+          <div style="font-weight: 600;">📅 ${tglText}</div>
+        </td>
+        <td>
+          <div style="font-weight: 800; color: #2563EB; font-size: 12px;">${biayaText}</div>
+          ${sumberTag}
+        </td>
+        <td>
+          <div style="font-weight: 700; color: #0F172A; font-size: 12px;">👤 ${item.penanggungJawab || '-'}</div>
+          <div style="font-size: 10.5px; color: #64748B; margin-top: 2px;">Penyusun: ${item.penyusun || '-'}</div>
+        </td>
+        <td style="text-align: center;">
+          ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
+        </td>
+        <td style="text-align: center;">
+          ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
+        </td>
+        <td style="text-align: center;">
+          <div class="action-buttons-group">
+            <button class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Lihat Detail Rencana">👁️</button>
+            <button class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen Resmi A4">🖨️</button>
+            <button class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
+            <button class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddRencanaKegiatan() {
+  const f = document.getElementById('form-rencana-kegiatan');
+  if (f) f.reset();
+  
+  const editIdEl = document.getElementById('rencana-edit-id');
+  if (editIdEl) editIdEl.value = '';
+
+  const titleEl = document.getElementById('modal-rencana-title');
+  if (titleEl) titleEl.textContent = 'Susun Rencana Kegiatan Yayasan';
+
+  const user = getAuthUser();
+  const defaultName = user ? (user.nama || user.username) : 'Petugas LHG';
+  
+  const picEl = document.getElementById('rencana-pic');
+  if (picEl) picEl.value = defaultName;
+
+  const penyusunEl = document.getElementById('rencana-penyusun');
+  if (penyusunEl) penyusunEl.value = defaultName;
+
+  const tglMulaiEl = document.getElementById('rencana-tgl-mulai');
+  if (tglMulaiEl) tglMulaiEl.value = new Date().toISOString().split('T')[0];
+
+  const modal = document.getElementById('modal-rencana-kegiatan');
+  if (modal) modal.classList.add('open');
+}
+
+function openEditRencanaKegiatan(id) {
+  const item = getRencanaKegiatanList().find(x => x.id === id);
+  if (!item) {
+    showToast('Data rencana kegiatan tidak ditemukan!', 'error');
+    return;
+  }
+
+  document.getElementById('rencana-edit-id').value = item.id;
+  document.getElementById('rencana-judul').value = item.judul || '';
+  document.getElementById('rencana-kategori').value = item.kategori || 'Pendidikan & Pelatihan';
+  document.getElementById('rencana-prioritas').value = item.prioritas || 'Sedang';
+  document.getElementById('rencana-target-peserta').value = item.targetPeserta || '';
+  document.getElementById('rencana-pic').value = item.penanggungJawab || '';
+  document.getElementById('rencana-tgl-mulai').value = item.tglMulai || '';
+  document.getElementById('rencana-tgl-selesai').value = item.tglSelesai || '';
+  document.getElementById('rencana-status').value = item.status || 'Draf / Pengajuan';
+  document.getElementById('rencana-lokasi').value = item.lokasi || '';
+  document.getElementById('rencana-biaya').value = item.estimasiBiaya || '';
+  document.getElementById('rencana-sumber-dana').value = item.sumberDana || '';
+  document.getElementById('rencana-penyusun').value = item.penyusun || '';
+  document.getElementById('rencana-tujuan').value = item.tujuan || '';
+  document.getElementById('rencana-deskripsi').value = item.deskripsi || '';
+
+  const titleEl = document.getElementById('modal-rencana-title');
+  if (titleEl) titleEl.textContent = 'Edit Rencana Kegiatan Yayasan';
+
+  const modal = document.getElementById('modal-rencana-kegiatan');
+  if (modal) modal.classList.add('open');
+}
+
+function saveRencanaKegiatan() {
+  const judul = (document.getElementById('rencana-judul')?.value || '').trim();
+  const kategori = document.getElementById('rencana-kategori')?.value;
+  const prioritas = document.getElementById('rencana-prioritas')?.value || 'Sedang';
+  const targetPeserta = (document.getElementById('rencana-target-peserta')?.value || '').trim();
+  const pic = (document.getElementById('rencana-pic')?.value || '').trim();
+  const tglMulai = document.getElementById('rencana-tgl-mulai')?.value;
+  const tglSelesai = document.getElementById('rencana-tgl-selesai')?.value;
+  const status = document.getElementById('rencana-status')?.value || 'Draf / Pengajuan';
+  const lokasi = (document.getElementById('rencana-lokasi')?.value || '').trim();
+  const estimasiBiaya = (document.getElementById('rencana-biaya')?.value || '').trim();
+  const sumberDana = (document.getElementById('rencana-sumber-dana')?.value || '').trim();
+  const penyusun = (document.getElementById('rencana-penyusun')?.value || '').trim();
+  const tujuan = (document.getElementById('rencana-tujuan')?.value || '').trim();
+  const deskripsi = (document.getElementById('rencana-deskripsi')?.value || '').trim();
+
+  if (!judul || !tglMulai || !targetPeserta || !pic) {
+    showToast('Harap lengkapi judul rencana, target sasaran, PIC, dan tanggal pelaksanaan!', 'error');
+    return;
+  }
+
+  const editId = document.getElementById('rencana-edit-id')?.value;
+  let list = getRencanaKegiatanList();
+
+  if (editId) {
+    const numId = parseInt(editId, 10);
+    const idx = list.findIndex(x => x.id === numId);
+    if (idx !== -1) {
+      list[idx] = {
+        ...list[idx],
+        judul,
+        kategori,
+        prioritas,
+        targetPeserta,
+        penanggungJawab: pic,
+        tglMulai,
+        tglSelesai: tglSelesai || tglMulai,
+        status,
+        lokasi,
+        estimasiBiaya,
+        sumberDana,
+        penyusun,
+        tujuan,
+        deskripsi,
+        updatedAt: new Date().toISOString()
+      };
+      DB.set('lhg_rencana_kegiatan', list);
+      showToast('Rencana kegiatan berhasil diperbarui!', 'success');
+    }
+  } else {
+    const newRecord = {
+      id: Date.now(),
+      judul,
+      kategori,
+      prioritas,
+      targetPeserta,
+      penanggungJawab: pic,
+      tglMulai,
+      tglSelesai: tglSelesai || tglMulai,
+      status,
+      lokasi,
+      estimasiBiaya,
+      sumberDana,
+      penyusun,
+      tujuan,
+      deskripsi,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newRecord);
+    DB.set('lhg_rencana_kegiatan', list);
+    showToast('Rencana kegiatan baru berhasil disusun!', 'success');
+  }
+
+  closeModal('modal-rencana-kegiatan');
+  renderRencanaKegiatanPage();
+}
+
+async function deleteRencanaKegiatan(id) {
+  if (!confirm('Apakah Anda yakin ingin menghapus rencana kegiatan ini?')) return;
+  let list = getRencanaKegiatanList().filter(x => x.id !== id);
+  localStorage.setItem('lhg_rencana_kegiatan', JSON.stringify(list));
+  try {
+    await SupabaseAPI.delete('lhg_rencana_kegiatan', 'id', id);
+  } catch (e) {
+    console.warn('Gagal menghapus rencana kegiatan dari cloud:', e);
+  }
+  renderRencanaKegiatanPage();
+  showToast('Rencana kegiatan telah dihapus.', 'warning');
+}
+
+function viewRencanaKegiatan(id) {
+  const item = getRencanaKegiatanList().find(x => x.id === id);
+  if (!item) {
+    showToast('Data rencana tidak ditemukan!', 'error');
+    return;
+  }
+
+  setText('view-rencana-judul', item.judul || 'Rencana Kegiatan');
+  setText('view-rencana-meta', `Kategori: ${item.kategori} | PIC: ${item.penanggungJawab || '-'}`);
+
+  let tglStr = formatDate(item.tglMulai);
+  if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
+    tglStr += ` s/d ${formatDate(item.tglSelesai)}`;
+  }
+
+  const bodyEl = document.getElementById('view-rencana-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap;">
+        ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
+        ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
+        <span style="font-size: 11px; color: #64748B; font-weight: 600;">🏷️ Kategori: ${item.kategori}</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Target Sasaran & Peserta</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin-top: 4px;">🎯 ${item.targetPeserta || '-'}</div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Jadwal Pelaksanaan</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin-top: 4px;">📅 ${tglStr}</div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Lokasi / Tempat</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin-top: 4px;">📍 ${item.lokasi || 'Sekretariat Yayasan'}</div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Estimasi Anggaran & Sumber Dana</div>
+          <div style="font-size: 13px; font-weight: 800; color: #2563EB; margin-top: 4px;">💰 ${item.estimasiBiaya || 'Swadaya'}</div>
+          <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Sumber: ${item.sumberDana || 'Kas Yayasan'}</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Penanggung Jawab (PIC)</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin-top: 4px;">👤 ${item.penanggungJawab || '-'}</div>
+        </div>
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Petugas Penyusun Dokumen</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin-top: 4px;">✍️ ${item.penyusun || '-'}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">🎯 Tujuan & Target Capaian (Indikator Keberhasilan):</div>
+        <div style="background: #F1F5F9; border-radius: 8px; padding: 12px 14px; font-size: 12.5px; line-height: 1.6; color: #1E293B; white-space: pre-wrap;">${item.tujuan || 'Belum diisi.'}</div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">📝 Rincian Langkah Kerja & Tahapan Pelaksanaan:</div>
+        <div style="background: #F1F5F9; border-radius: 8px; padding: 12px 14px; font-size: 12.5px; line-height: 1.6; color: #1E293B; white-space: pre-wrap;">${item.deskripsi || 'Belum diisi.'}</div>
+      </div>
+    `;
+  }
+
+  const leftActionsEl = document.getElementById('view-rencana-left-actions');
+  if (leftActionsEl) {
+    leftActionsEl.innerHTML = `
+      <button type="button" class="btn-top-add" style="background: #2563EB;" onclick="printRencanaKegiatanDoc(${item.id})">
+        <span>🖨️</span> Cetak Lembar Rencana Kerja (Format Resmi A4)
+      </button>
+    `;
+  }
+
+  const modal = document.getElementById('modal-view-rencana');
+  if (modal) modal.classList.add('open');
+}
+
+function printRencanaKegiatanDoc(id) {
+  const item = getRencanaKegiatanList().find(x => x.id === id);
+  if (!item) {
+    showToast('Data rencana tidak ditemukan!', 'error');
+    return;
+  }
+
+  let tglStr = formatDate(item.tglMulai);
+  if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
+    tglStr += ` s/d ${formatDate(item.tglSelesai)}`;
+  }
+
+  const todayStr = formatDate(new Date().toISOString().split('T')[0]);
+  const docNo = `RK-LHG/${new Date().getFullYear()}/${String(item.id).slice(-4)}`;
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    showToast('Izinkan jendela pop-up untuk mencetak dokumen!', 'warning');
+    return;
+  }
+
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <title>Rencana Kerja Yayasan - ${item.judul}</title>
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 14mm 18mm 14mm 18mm;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          color: #000;
+          background: #fff;
+          font-size: 12px;
+          line-height: 1.55;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .kop-surat { text-align: center; margin-bottom: 18px; }
+        .kop-logo-img { width: 68px; height: 68px; object-fit: contain; margin-bottom: 4px; }
+        .kop-sublogo { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #000; }
+        .kop-org-name { font-size: 16px; font-weight: 900; letter-spacing: 0.5px; margin: 6px 0 2px 0; text-transform: uppercase; }
+        .kop-org-prov { font-size: 12.5px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; }
+        .kop-divider-double { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 4px; width: 100%; margin: 0 auto 18px auto; }
+        
+        .doc-header { text-align: center; margin-bottom: 20px; }
+        .doc-title { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4px; text-decoration: underline; }
+        .doc-number { font-size: 11px; font-weight: 700; color: #333; margin-top: 4px; }
+        
+        .section-label { font-size: 12px; font-weight: 800; text-transform: uppercase; margin: 16px 0 6px 0; border-bottom: 1.5px solid #CBD5E1; padding-bottom: 3px; }
+        
+        .table-data { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 12px; }
+        .table-data tr td { padding: 5px 4px; vertical-align: top; }
+        .col-lbl { width: 200px; font-weight: 700; }
+        .col-colon { width: 15px; text-align: center; font-weight: 700; }
+        .col-val { }
+
+        .box-text { border: 1px solid #CBD5E1; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; line-height: 1.6; margin-bottom: 14px; background: #FAFBFD; white-space: pre-wrap; text-align: justify; }
+
+        .ttd-row { display: flex; justify-content: space-between; margin-top: 36px; break-inside: avoid; }
+        .ttd-box { width: 230px; text-align: center; font-size: 11.5px; }
+        .ttd-space { height: 75px; }
+        .ttd-name { font-weight: 800; text-decoration: underline; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="kop-surat">
+        <img src="img/logo-circle.png" alt="Logo LHG" class="kop-logo-img">
+        <div class="kop-sublogo">Sistem Informasi & Pelayanan Anak Disabilitas</div>
+        <div class="kop-org-name">YAYASAN LENTERA HATI GURINDAM</div>
+        <div class="kop-org-prov">KOTA TANJUNGPINANG - KEPULAUAN RIAU</div>
+      </div>
+      <div class="kop-divider-double"></div>
+
+      <div class="doc-header">
+        <div class="doc-title">LEMBAR RENCANA KERJA & PROGRAM KEGIATAN YAYASAN</div>
+        <div class="doc-number">Nomor Dokumen: ${docNo}</div>
+      </div>
+
+      <div class="section-label">I. IDENTITAS & RENCANA PROGRAM</div>
+      <table class="table-data">
+        <tr>
+          <td class="col-lbl">Nama Program / Kegiatan</td>
+          <td class="col-colon">:</td>
+          <td class="col-val" style="font-weight: 800;">${item.judul}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Kategori Bidang</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.kategori}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Target Sasaran Peserta</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.targetPeserta || '-'}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Rencana Waktu Pelaksanaan</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${tglStr}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Lokasi / Tempat Pelaksanaan</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.lokasi || 'Sekretariat Yayasan Lentera Hati Gurindam'}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Tingkat Prioritas & Status</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">Prioritas ${item.prioritas || 'Sedang'} / Status: <strong>${item.status || 'Draf / Pengajuan'}</strong></td>
+        </tr>
+      </table>
+
+      <div class="section-label">II. ANGGARAN BIAYA & PENANGGUNG JAWAB</div>
+      <table class="table-data">
+        <tr>
+          <td class="col-lbl">Estimasi Kebutuhan Biaya</td>
+          <td class="col-colon">:</td>
+          <td class="col-val" style="font-weight: 800;">${item.estimasiBiaya || 'Swadaya / Nihil'}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Rencana Sumber Dana</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.sumberDana || 'Kas Operasional Yayasan'}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Penanggung Jawab (PIC)</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.penanggungJawab || '-'}</td>
+        </tr>
+        <tr>
+          <td class="col-lbl">Petugas Penyusun Dokumen</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${item.penyusun || '-'}</td>
+        </tr>
+      </table>
+
+      <div class="section-label">III. TUJUAN & INDIKATOR KEBERHASILAN</div>
+      <div class="box-text">${item.tujuan || 'Tujuan pelaksanaan kegiatan ini dirancang untuk mendukung kemandirian, sosialisasi, dan kesejahteraan anak penyandang disabilitas binaan Yayasan Lentera Hati Gurindam.'}</div>
+
+      <div class="section-label">IV. TAHAPAN LANGKAH KERJA & TEKNIS PELAKSANAAN</div>
+      <div class="box-text">${item.deskripsi || 'Rincian langkah persiapan teknis disesuaikan dengan SOP Yayasan Lentera Hati Gurindam bersama para panitia/petugas terkait.'}</div>
+
+      <div class="ttd-row">
+        <div class="ttd-box">
+          <div>Disusun Oleh,</div>
+          <div style="font-weight: 700; margin-top: 2px;">Petugas Pelaksana / PIC</div>
+          <div class="ttd-space"></div>
+          <div class="ttd-name">${item.penyusun || item.penanggungJawab || 'Petugas Yayasan'}</div>
+          <div>Lentera Hati Gurindam</div>
+        </div>
+
+        <div class="ttd-box">
+          <div>Tanjungpinang, ${todayStr}</div>
+          <div style="font-weight: 700; margin-top: 2px;">Menyetujui, Ketua Yayasan</div>
+          <div class="ttd-space"></div>
+          <div class="ttd-name">KAMARIDA</div>
+          <div>Ketua Yayasan LHG</div>
+        </div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+function printRekapRencanaKegiatan() {
+  const list = getRencanaKegiatanList();
+  if (!list.length) {
+    showToast('Belum ada data rencana kegiatan untuk dicetak!', 'warning');
+    return;
+  }
+
+  const todayStr = formatDate(new Date().toISOString().split('T')[0]);
+  const win = window.open('', '_blank');
+  if (!win) {
+    showToast('Izinkan jendela pop-up untuk mencetak!', 'warning');
+    return;
+  }
+
+  const rowsHtml = list.map((item, i) => `
+    <tr>
+      <td style="text-align: center;">${i + 1}</td>
+      <td style="font-weight: 700;">${item.judul}</td>
+      <td>${item.kategori}</td>
+      <td>${item.targetPeserta || '-'}</td>
+      <td>${formatDate(item.tglMulai)}</td>
+      <td>${item.lokasi || '-'}</td>
+      <td style="font-weight: 700;">${item.estimasiBiaya || '-'}</td>
+      <td>${item.penanggungJawab || '-'}</td>
+      <td style="text-align: center;">${item.prioritas || 'Sedang'}</td>
+      <td style="text-align: center;">${item.status || 'Draf'}</td>
+    </tr>
+  `).join('');
+
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <title>Rekapitulasi Rencana Kerja Yayasan</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; padding: 6px; }
+        .kop { text-align: center; border-bottom: 2.5px solid #000; padding-bottom: 8px; margin-bottom: 14px; }
+        .kop h2 { font-size: 15px; text-transform: uppercase; margin-bottom: 3px; font-weight: 900; }
+        .kop p { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10.5px; }
+        th, td { border: 1px solid #333; padding: 6px 5px; }
+        th { background: #E2E8F0; font-weight: 800; text-align: center; }
+        .ttd { display: flex; justify-content: flex-end; margin-top: 24px; break-inside: avoid; }
+        .ttd-box { width: 220px; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="kop">
+        <h2>YAYASAN LENTERA HATI GURINDAM TANJUNGPINANG</h2>
+        <p>REKAPITULASI RENCANA KEGIATAN & PROGRAM KERJA YAYASAN</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 30px;">NO</th>
+            <th>PROGRAM / RENCANA KEGIATAN</th>
+            <th>KATEGORI</th>
+            <th>TARGET SASARAN</th>
+            <th>JADWAL</th>
+            <th>LOKASI</th>
+            <th>ANGGARAN</th>
+            <th>PIC</th>
+            <th>PRIORITAS</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <div class="ttd">
+        <div class="ttd-box">
+          <div>Tanjungpinang, ${todayStr}</div>
+          <div style="font-weight: 700; margin-top: 3px;">Ketua Yayasan LHG</div>
+          <div style="height: 60px;"></div>
+          <div style="font-weight: 800; text-decoration: underline;">KAMARIDA</div>
+        </div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 400);
+        };
+      </script>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+// ==============================================================================
 // SUPABASE SYNC LOGIC (CLOUD DATA SYNCHRONIZATION)
 // ==============================================================================
 
@@ -3576,6 +4252,25 @@ function toSupabaseRow(table, item) {
       uploaded_by: item.uploadedBy || item.uploaded_by || null
     };
   }
+  if (table === 'lhg_rencana_kegiatan') {
+    return {
+      id: item.id,
+      judul: item.judul,
+      kategori: item.kategori,
+      penanggung_jawab: item.penanggungJawab || item.penanggung_jawab || null,
+      target_peserta: item.targetPeserta || item.target_peserta || null,
+      lokasi: item.lokasi || null,
+      tgl_mulai: item.tglMulai || item.tgl_mulai || null,
+      tgl_selesai: item.tglSelesai || item.tgl_selesai || null,
+      estimasi_biaya: item.estimasiBiaya || item.estimasi_biaya || null,
+      sumber_dana: item.sumberDana || item.sumber_dana || null,
+      prioritas: item.prioritas || 'Sedang',
+      status: item.status || 'Draf / Pengajuan',
+      tujuan: item.tujuan || null,
+      deskripsi: item.deskripsi || null,
+      penyusun: item.penyusun || null
+    };
+  }
   return item;
 }
 
@@ -3648,6 +4343,26 @@ function fromSupabaseRow(table, row) {
       uploadedBy: row.uploaded_by
     };
   }
+  if (table === 'lhg_rencana_kegiatan') {
+    return {
+      id: row.id,
+      judul: row.judul,
+      kategori: row.kategori,
+      penanggungJawab: row.penanggung_jawab,
+      targetPeserta: row.target_peserta,
+      lokasi: row.lokasi,
+      tglMulai: row.tgl_mulai,
+      tglSelesai: row.tgl_selesai,
+      estimasiBiaya: row.estimasi_biaya,
+      sumberDana: row.sumber_dana,
+      prioritas: row.prioritas,
+      status: row.status,
+      tujuan: row.tujuan,
+      deskripsi: row.deskripsi,
+      penyusun: row.penyusun,
+      createdAt: row.created_at
+    };
+  }
   return row;
 }
 
@@ -3655,7 +4370,7 @@ function fromSupabaseRow(table, row) {
 async function syncKeyToSupabase(key, val) {
   if (!Array.isArray(val)) return;
   const table = key; // matching table name
-  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip'];
+  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan'];
   if (!validTables.includes(table)) return;
 
   try {
@@ -3682,7 +4397,7 @@ async function syncWithSupabase(isManual) {
     return;
   }
 
-  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip'];
+  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan'];
   let syncedCount = 0;
 
   for (const t of tables) {
@@ -3771,6 +4486,7 @@ async function syncWithSupabase(isManual) {
     if (activePage === 'dashboard') renderDashboard();
     if (activePage === 'input-data') renderAnggotaTable();
     if (activePage === 'bantuan') renderBantuanPage();
+    if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
     if (activePage === 'arsip-berkas') renderArsip();
     if (activePage === 'manajemen-user') renderManajemenUserTable();
   }

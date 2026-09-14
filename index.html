@@ -130,6 +130,11 @@
           <span class="nav-label">Bantuan</span>
           <span class="nav-badge" id="nav-badge-bantuan" style="background: #10B981;">0</span>
         </button>
+        <button class="nav-item" data-page="rencana-kegiatan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('rencana-kegiatan')">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Rencana Kegiatan</span>
+          <span class="nav-badge" id="nav-badge-rencana" style="background: #2563EB;">0</span>
+        </button>
 
         <!-- SECTION 2: LAYANAN DOKUMEN -->
         <div class="nav-section-label" data-nav-section="dokumen" data-allowed-roles="Superadmin,Admin,Petugas">LAYANAN DOKUMEN</div>
@@ -732,6 +737,112 @@
         </section>
 
 
+        <!-- ================= PAGE: RENCANA KEGIATAN & PROGRAM KERJA ================= -->
+        <section id="page-rencana-kegiatan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">📋</span>
+                <div>
+                  <h3 class="panel-heading">Rencana Kegiatan & Program Kerja Yayasan</h3>
+                  <p class="panel-subheading">Penyusunan agenda kerja, target sasaran disabilitas, jadwal, dan estimasi anggaran yayasan</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-sec" onclick="printRekapRencanaKegiatan()" title="Cetak Ringkasan Rekapitulasi Rencana Kerja">
+                  <span>🖨️ Cetak Rekap</span>
+                </button>
+                <button class="btn-top-add" onclick="openAddRencanaKegiatan()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Susun Rencana Baru</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STAT KARTU RINGKASAN RENCANA KEGIATAN -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📋</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Total Rencana</div>
+                  <div id="stat-rencana-total" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">⏳</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Draf / Usulan</div>
+                  <div id="stat-rencana-draf" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🟢</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Disetujui / Jalan</div>
+                  <div id="stat-rencana-disetujui" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">💰</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Estimasi Anggaran</div>
+                  <div id="stat-rencana-anggaran" style="font-size: 17px; font-weight: 800; color: #4C1D95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="rencana-search-input" class="search-field" placeholder="Cari program, PIC penanggung jawab, sasaran, atau lokasi..." oninput="filterRencanaKegiatan()">
+              </div>
+              <select id="rencana-filter-status" class="filter-select" onchange="filterRencanaKegiatan()">
+                <option value="">Semua Status</option>
+                <option value="Draf / Pengajuan">Draf / Pengajuan</option>
+                <option value="Disetujui">Disetujui</option>
+                <option value="Dalam Persiapan">Dalam Persiapan</option>
+                <option value="Sedang Berjalan">Sedang Berjalan</option>
+                <option value="Terlaksana">Terlaksana</option>
+                <option value="Ditunda / Dibatalkan">Ditunda / Dibatalkan</option>
+              </select>
+              <select id="rencana-filter-kategori" class="filter-select" onchange="filterRencanaKegiatan()">
+                <option value="">Semua Kategori</option>
+                <option value="Pendidikan & Pelatihan">Pendidikan & Pelatihan Inklusi</option>
+                <option value="Terapi & Layanan Kesehatan">Terapi & Layanan Kesehatan</option>
+                <option value="Bantuan Sosial & Nutrisi">Bantuan Sosial & Nutrisi</option>
+                <option value="Kemandirian & Kewirausahaan">Kemandirian & Kewirausahaan</option>
+                <option value="Advokasi & Sosialisasi">Advokasi & Sosialisasi Disabilitas</option>
+                <option value="Sarana & Alat Bantu">Sarana & Alat Bantu</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <!-- TABEL DATA RENCANA KEGIATAN -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>PROGRAM / RENCANA KEGIATAN</th>
+                    <th>KATEGORI & SASARAN</th>
+                    <th>TARGET JADWAL</th>
+                    <th>ESTIMASI BIAYA</th>
+                    <th>PENANGGUNG JAWAB (PIC)</th>
+                    <th style="text-align: center;">PRIORITAS</th>
+                    <th style="text-align: center;">STATUS</th>
+                    <th style="width: 140px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="rencana-tbody">
+                  <!-- Rendered dynamically by renderRencanaKegiatanTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
         <!-- ================= PAGE 5: LAPORAN KEGIATAN ================= -->
         <section id="page-laporan-kegiatan" class="page">
           <div class="card-panel">
@@ -1291,6 +1402,151 @@
     </div>
   </div>
 
+  <!-- MODAL: RENCANA KEGIATAN & PROGRAM KERJA (TAMBAH / EDIT) -->
+  <div id="modal-rencana-kegiatan" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header-clean">
+        <div>
+          <h3 class="modal-title" id="modal-rencana-title">Susun Rencana Kegiatan Yayasan</h3>
+          <p class="modal-subtitle">Petugas dapat merancang agenda kerja, target peserta anak disabilitas, jadwal, dan estimasi anggaran.</p>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-rencana-kegiatan')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-rencana-kegiatan" onsubmit="event.preventDefault(); saveRencanaKegiatan();">
+        <input type="hidden" id="rencana-edit-id" value="">
+        <div class="modal-body-clean">
+          
+          <div class="form-field">
+            <label class="lbl">Nama Program / Rencana Kegiatan <span class="req">*</span></label>
+            <input type="text" id="rencana-judul" class="pelangi-input" placeholder="Contoh: Pelatihan Kemandirian & Kriya Seni Disabilitas Angkatan I" required>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Kategori Program <span class="req">*</span></label>
+              <select id="rencana-kategori" class="pelangi-select" required>
+                <option value="Pendidikan & Pelatihan">Pendidikan & Pelatihan Inklusi</option>
+                <option value="Terapi & Layanan Kesehatan">Terapi & Layanan Kesehatan (Fisioterapi/Wicara)</option>
+                <option value="Bantuan Sosial & Nutrisi">Bantuan Sosial & Pemenuhan Nutrisi</option>
+                <option value="Kemandirian & Kewirausahaan">Kemandirian & Kewirausahaan Anak Binaan</option>
+                <option value="Advokasi & Sosialisasi">Advokasi & Sosialisasi Disabilitas</option>
+                <option value="Sarana & Alat Bantu">Pengadaan Sarana, Prasarana & Alat Bantu</option>
+                <option value="Lainnya">Program / Kegiatan Lainnya</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Tingkat Prioritas <span class="req">*</span></label>
+              <select id="rencana-prioritas" class="pelangi-select" required>
+                <option value="Tinggi">🔴 Prioritas Tinggi (Mendesak / Utama)</option>
+                <option value="Sedang" selected>🟡 Prioritas Sedang (Rutin Berkala)</option>
+                <option value="Rendah">🟢 Prioritas Rendah (Rencana Jangka Panjang)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Target Sasaran & Peserta <span class="req">*</span></label>
+              <input type="text" id="rencana-target-peserta" class="pelangi-input" placeholder="Contoh: 30 Anak Binaan Disabilitas & Pendamping" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Penanggung Jawab (PIC Kegiatan) <span class="req">*</span></label>
+              <input type="text" id="rencana-pic" class="pelangi-input" placeholder="Contoh: Petugas Lapangan / Agus Suriyadi" required>
+            </div>
+          </div>
+
+          <div class="form-grid-3" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Tanggal Mulai <span class="req">*</span></label>
+              <input type="date" id="rencana-tgl-mulai" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Tanggal Selesai</label>
+              <input type="date" id="rencana-tgl-selesai" class="pelangi-input">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Status Rencana <span class="req">*</span></label>
+              <select id="rencana-status" class="pelangi-select" required>
+                <option value="Draf / Pengajuan">📝 Draf / Pengajuan</option>
+                <option value="Disetujui">🟢 Disetujui</option>
+                <option value="Dalam Persiapan">🛠️ Dalam Persiapan</option>
+                <option value="Sedang Berjalan">🏃 Sedang Berjalan</option>
+                <option value="Terlaksana">✅ Terlaksana</option>
+                <option value="Ditunda / Dibatalkan">⚠️ Ditunda / Dibatalkan</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Rencana Tempat / Lokasi Pelaksanaan</label>
+            <input type="text" id="rencana-lokasi" class="pelangi-input" placeholder="Contoh: Sekretariat Yayasan LHG / Aula Dinsos Kota Tanjungpinang">
+          </div>
+
+          <div class="form-grid-3" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Estimasi Kebutuhan Biaya</label>
+              <input type="text" id="rencana-biaya" class="pelangi-input" placeholder="Contoh: Rp 3.500.000 atau 3500000" oninput="formatRencanaBiayaInput(this)">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Rencana Sumber Pendanaan</label>
+              <input type="text" id="rencana-sumber-dana" class="pelangi-input" placeholder="Contoh: Kas Yayasan / Donatur / Dinsos">
+            </div>
+            <div class="form-field">
+              <label class="lbl">Petugas Penyusun Dokumen <span class="req">*</span></label>
+              <input type="text" id="rencana-penyusun" class="pelangi-input" placeholder="Nama Petugas Penyusun" required>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Tujuan & Target Capaian (Indikator Keberhasilan)</label>
+            <textarea id="rencana-tujuan" class="pelangi-textarea" rows="2" placeholder="Tuliskan tujuan dan hasil yang ingin dicapai dari rencana kerja ini..."></textarea>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Rincian Langkah Kerja & Catatan Teknis</label>
+            <textarea id="rencana-deskripsi" class="pelangi-textarea" rows="3" placeholder="Tahapan persiapan, pembagian tugas panitia, perlengkapan yang dibutuhkan, dsb..."></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-rencana-kegiatan')">Batal</button>
+          <button type="submit" class="btn-prim">
+            <span>💾</span> Simpan Rencana Kegiatan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL / VIEW RENCANA KEGIATAN -->
+  <div id="modal-view-rencana" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 860px; max-height: 94vh; display: flex; flex-direction: column;">
+      <div class="modal-header-clean" style="border-bottom: 2px solid #E2E8F0; padding: 16px 22px;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+            📋
+          </div>
+          <div style="min-width: 0;">
+            <h3 class="modal-title" id="view-rencana-judul" style="font-size: 16px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Detail Rencana Kegiatan</h3>
+            <p class="modal-subtitle" id="view-rencana-meta" style="font-size: 12px; color: #64748B; margin-top: 2px;">Kategori & PIC Program</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-view-rencana')" title="Tutup Jendela">&times;</button>
+      </div>
+      <div class="modal-body-clean" id="view-rencana-body" style="font-size: 13px; padding: 20px 22px;">
+        <!-- Filled dynamically by viewRencanaKegiatan() -->
+      </div>
+      <div class="modal-footer-clean" style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border-top: 1.5px solid #E2E8F0;">
+        <div id="view-rencana-left-actions" style="display: flex; gap: 8px;">
+          <!-- Cetak Lembar Rencana Kerja rendered dynamically -->
+        </div>
+        <div id="view-rencana-actions" style="display: flex; gap: 8px;">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-view-rencana')">Tutup Jendela</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CATAT BANTUAN ANAK -->
   <div id="modal-bantuan" class="modal-overlay">
     <div class="modal-dialog modal-dialog-lg">
@@ -1633,6 +1889,6 @@
   <div id="toast-container" class="toast-container"></div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=12.0"></script>
+  <script src="js/app.js?v=13.0"></script>
 </body>
 </html>

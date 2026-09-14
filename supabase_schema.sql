@@ -121,6 +121,26 @@ CREATE TABLE IF NOT EXISTS lhg_arsip (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 9. TABEL RENCANA KEGIATAN & PROGRAM KERJA YAYASAN
+CREATE TABLE IF NOT EXISTS lhg_rencana_kegiatan (
+    id BIGINT PRIMARY KEY,
+    judul VARCHAR(255) NOT NULL,
+    kategori VARCHAR(100) NOT NULL,
+    penanggung_jawab VARCHAR(255),
+    target_peserta VARCHAR(255),
+    lokasi VARCHAR(255),
+    tgl_mulai DATE,
+    tgl_selesai DATE,
+    estimasi_biaya VARCHAR(100),
+    sumber_dana VARCHAR(150),
+    prioritas VARCHAR(50) DEFAULT 'Sedang',
+    status VARCHAR(50) DEFAULT 'Draf / Pengajuan',
+    tujuan TEXT,
+    deskripsi TEXT,
+    penyusun VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- AKTIFKAN ROW LEVEL SECURITY (RLS) DENGAN KEBIJAKAN AKSES LENGKAP
 -- ==============================================================================
@@ -132,6 +152,7 @@ ALTER TABLE lhg_surat_masuk ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lhg_surat_keluar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lhg_foto ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lhg_arsip ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_rencana_kegiatan ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Akses_Publik_lhg_users" ON lhg_users;
 DROP POLICY IF EXISTS "Akses_Publik_lhg_anggota" ON lhg_anggota;
@@ -141,6 +162,7 @@ DROP POLICY IF EXISTS "Akses_Publik_lhg_surat_masuk" ON lhg_surat_masuk;
 DROP POLICY IF EXISTS "Akses_Publik_lhg_surat_keluar" ON lhg_surat_keluar;
 DROP POLICY IF EXISTS "Akses_Publik_lhg_foto" ON lhg_foto;
 DROP POLICY IF EXISTS "Akses_Publik_lhg_arsip" ON lhg_arsip;
+DROP POLICY IF EXISTS "Akses_Publik_lhg_rencana_kegiatan" ON lhg_rencana_kegiatan;
 
 CREATE POLICY "Akses_Publik_lhg_users" ON lhg_users FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Akses_Publik_lhg_anggota" ON lhg_anggota FOR ALL TO anon USING (true) WITH CHECK (true);
@@ -150,11 +172,12 @@ CREATE POLICY "Akses_Publik_lhg_surat_masuk" ON lhg_surat_masuk FOR ALL TO anon 
 CREATE POLICY "Akses_Publik_lhg_surat_keluar" ON lhg_surat_keluar FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Akses_Publik_lhg_foto" ON lhg_foto FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Akses_Publik_lhg_arsip" ON lhg_arsip FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Akses_Publik_lhg_rencana_kegiatan" ON lhg_rencana_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- ==============================================================================
 -- KOSONGKAN DATA TABEL OPERASIONAL (SIAP PAKAI DENGAN DATABASE BERSIH)
 -- ==============================================================================
-TRUNCATE TABLE lhg_anggota, lhg_bantuan, lhg_kegiatan, lhg_surat_masuk, lhg_surat_keluar, lhg_foto, lhg_arsip;
+TRUNCATE TABLE lhg_anggota, lhg_bantuan, lhg_kegiatan, lhg_surat_masuk, lhg_surat_keluar, lhg_foto, lhg_arsip, lhg_rencana_kegiatan;
 
 -- HANYA SIAPKAN AKUN PENGGUNA RESMI (SUPERADMIN, ADMIN, PETUGAS)
 INSERT INTO lhg_users (username, password, nama, role, status)
