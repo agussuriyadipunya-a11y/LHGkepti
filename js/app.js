@@ -167,7 +167,7 @@ const PhotoStore = {
     });
   },
 
-  saveAll: function(list) {
+  saveAll: function(list, skipCloudSync = false) {
     this._cache = Array.isArray(list) ? list : [];
     if (this._db) {
       try {
@@ -186,7 +186,9 @@ const PhotoStore = {
       localStorage.removeItem('lhg_foto');
     } catch(e) {}
     // Background cloud sync to Supabase
-    syncKeyToSupabase('lhg_foto', this._cache);
+    if (!skipCloudSync) {
+      syncKeyToSupabase('lhg_foto', this._cache);
+    }
   },
 
   _fallbackGet: function() {
@@ -364,11 +366,7 @@ function initAuth() {
     if (loginScreen) loginScreen.style.display = 'none';
     if (appRoot) appRoot.style.display = 'flex';
     applyRoleUI(user);
-    if (user.role === 'Petugas') {
-      navigate('input-data-form');
-    } else {
-      navigate('dashboard');
-    }
+    navigate('dashboard');
   }
 }
 
@@ -429,11 +427,7 @@ function handleLoginSubmit(e) {
   if (appRoot) appRoot.style.display = 'flex';
 
   applyRoleUI(found);
-  if (found.role === 'Petugas') {
-    navigate('input-data-form');
-  } else {
-    navigate('dashboard');
-  }
+  navigate('dashboard');
 }
 
 async function handleLogout() {
@@ -508,9 +502,7 @@ function applyRoleUI(user) {
   // Filter sidebar sections
   document.querySelectorAll('.nav-section-label').forEach(sec => {
     const sType = sec.getAttribute('data-nav-section');
-    if (sType === 'arsip') {
-      sec.style.display = userRole === 'petugas' ? 'none' : 'block';
-    } else if (sType === 'pengaturan') {
+    if (sType === 'pengaturan') {
       sec.style.display = userRole === 'superadmin' ? 'block' : 'none';
     } else {
       sec.style.display = 'block';
@@ -522,17 +514,10 @@ function applyRoleUI(user) {
   const bMainIcon = document.getElementById('bottom-nav-icon-main');
   const bMainLbl = document.getElementById('bottom-nav-label-main');
   if (bMainBtn && bMainIcon && bMainLbl) {
-    if (userRole === 'petugas') {
-      bMainBtn.setAttribute('data-bottom-page', 'rencana-kegiatan');
-      bMainBtn.setAttribute('onclick', "navigate('rencana-kegiatan')");
-      bMainIcon.textContent = '📋';
-      bMainLbl.textContent = 'Rencana';
-    } else {
-      bMainBtn.setAttribute('data-bottom-page', 'dashboard');
-      bMainBtn.setAttribute('onclick', "navigate('dashboard')");
-      bMainIcon.textContent = '📊';
-      bMainLbl.textContent = 'Dashboard';
-    }
+    bMainBtn.setAttribute('data-bottom-page', 'dashboard');
+    bMainBtn.setAttribute('onclick', "navigate('dashboard')");
+    bMainIcon.textContent = '📊';
+    bMainLbl.textContent = 'Dashboard';
   }
 }
 
@@ -540,7 +525,7 @@ function hasPermission(role, page) {
   const permissions = {
     Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
     Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    Petugas: ['input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran']
+    Petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
   };
   const list = permissions[role] || [];
   return list.includes(page);
@@ -5418,6 +5403,49 @@ function fromSupabaseRow(table, row) {
       keterangan: row.keterangan
     };
   }
+  if (table === 'lhg_kegiatan') {
+    return {
+      id: row.id,
+      judul: row.judul,
+      tanggal: row.tanggal,
+      lokasi: row.lokasi,
+      peserta: row.peserta,
+      deskripsi: row.deskripsi,
+      status: row.status
+    };
+  }
+  if (table === 'lhg_surat_masuk') {
+    return {
+      id: row.id,
+      nomor: row.nomor,
+      tanggal: row.tanggal,
+      pengirim: row.pengirim,
+      perihal: row.perihal,
+      keterangan: row.keterangan,
+      status: row.status
+    };
+  }
+  if (table === 'lhg_surat_keluar') {
+    return {
+      id: row.id,
+      nomor: row.nomor,
+      tanggal: row.tanggal,
+      tujuan: row.tujuan,
+      perihal: row.perihal,
+      keterangan: row.keterangan,
+      status: row.status
+    };
+  }
+  if (table === 'lhg_foto') {
+    return {
+      id: row.id,
+      judul: row.judul,
+      tanggal: row.tanggal,
+      kategori: row.kategori,
+      deskripsi: row.deskripsi,
+      url: row.url
+    };
+  }
   if (table === 'lhg_arsip') {
     return {
       id: row.id,
@@ -5494,8 +5522,8 @@ async function syncWithSupabase(isManual) {
     try {
       const cloudData = await SupabaseAPI.select(t);
       if (cloudData !== null) {
-        if (cloudData.length > 0) {
-          if (t === 'lhg_users') {
+        if (t === 'lhg_users') {
+          if (cloudData.length > 0) {
             const deleted = getDeletedUsers();
 
             // 1. Hapus akun di Supabase yang sudah pernah dihapus oleh user
@@ -5540,16 +5568,6 @@ async function syncWithSupabase(isManual) {
               await SupabaseAPI.upsert('lhg_users', rowsToUpsert);
             }
           } else {
-            // Download latest from cloud and cache in localStorage
-            const mapped = cloudData.map(r => fromSupabaseRow(t, r));
-            localStorage.setItem(t, JSON.stringify(mapped));
-          }
-          syncedCount++;
-        } else {
-          // Cloud table is empty: If it's operational data, ensure local cache is also empty (clean slate)
-          if (t !== 'lhg_users') {
-            localStorage.setItem(t, JSON.stringify([]));
-          } else {
             // If users table in cloud is empty, seed active local users
             const localUsers = JSON.parse(localStorage.getItem(t) || '[]');
             const deleted = getDeletedUsers();
@@ -5560,10 +5578,75 @@ async function syncWithSupabase(isManual) {
             }
           }
           syncedCount++;
+        } else if (t === 'lhg_foto') {
+          // PHOTO SYNCHRONIZATION VIA INDEXEDDB
+          const localPhotos = DB.get('lhg_foto', []);
+          if (cloudData.length > 0) {
+            const cloudMapped = cloudData.map(r => fromSupabaseRow('lhg_foto', r));
+            const cloudIdSet = new Set(cloudMapped.map(cp => String(cp.id)));
+
+            // Check if local has photos not yet on cloud
+            const unpushed = localPhotos.filter(lp => lp && lp.id && !cloudIdSet.has(String(lp.id)));
+            if (unpushed.length > 0) {
+              const rows = unpushed.map(item => toSupabaseRow('lhg_foto', item));
+              await SupabaseAPI.upsert('lhg_foto', rows);
+            }
+
+            // Combine both cloud and unpushed local
+            const photoMap = new Map();
+            cloudMapped.forEach(p => photoMap.set(String(p.id), p));
+            unpushed.forEach(p => photoMap.set(String(p.id), p));
+            const finalPhotos = Array.from(photoMap.values());
+
+            PhotoStore.saveAll(finalPhotos, true);
+          } else {
+            // Cloud is empty: push existing local photos to cloud if any
+            if (localPhotos.length > 0) {
+              const rows = localPhotos.map(item => toSupabaseRow('lhg_foto', item));
+              await SupabaseAPI.upsert('lhg_foto', rows);
+            }
+          }
+          syncedCount++;
+        } else {
+          // OPERATIONAL DATA SYNCHRONIZATION
+          const localRaw = localStorage.getItem(t);
+          let localList = [];
+          try {
+            localList = localRaw ? JSON.parse(localRaw) : [];
+          } catch(e) {
+            localList = [];
+          }
+
+          if (cloudData.length > 0) {
+            const cloudMapped = cloudData.map(r => fromSupabaseRow(t, r));
+            const cloudIdSet = new Set(cloudMapped.map(c => String(c.id)));
+
+            // Check unpushed local items
+            const unpushed = (Array.isArray(localList) ? localList : []).filter(l => l && l.id && !cloudIdSet.has(String(l.id)));
+            if (unpushed.length > 0) {
+              const rows = unpushed.map(item => toSupabaseRow(t, item));
+              await SupabaseAPI.upsert(t, rows);
+            }
+
+            // Merge cloud + unpushed
+            const itemMap = new Map();
+            cloudMapped.forEach(item => itemMap.set(String(item.id), item));
+            unpushed.forEach(item => itemMap.set(String(item.id), item));
+            const merged = Array.from(itemMap.values());
+
+            localStorage.setItem(t, JSON.stringify(merged));
+          } else {
+            // Cloud is empty: push local data to cloud so other devices can access
+            if (Array.isArray(localList) && localList.length > 0) {
+              const rows = localList.map(item => toSupabaseRow(t, item));
+              await SupabaseAPI.upsert(t, rows);
+            }
+          }
+          syncedCount++;
         }
       }
     } catch(e) {
-      // Continue to next table
+      console.warn(`Sync error for table ${t}:`, e);
     }
   }
 
@@ -5577,6 +5660,7 @@ async function syncWithSupabase(isManual) {
     if (activePage === 'input-data') renderAnggotaTable();
     if (activePage === 'bantuan') renderBantuanPage();
     if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
+    if (activePage === 'laporan-kegiatan') renderKegiatan();
     if (activePage === 'arsip-berkas') renderArsip();
     if (activePage === 'foto-kegiatan') renderFoto();
     if (activePage === 'manajemen-user') renderManajemenUserTable();
@@ -5588,8 +5672,13 @@ async function syncWithSupabase(isManual) {
 }
 
 // INITIALIZATION
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initData();
+  if (typeof window !== 'undefined' && window.indexedDB) {
+    try {
+      await PhotoStore.init();
+    } catch(e) {}
+  }
   updateClock();
   setInterval(updateClock, 1000);
   initAuth();

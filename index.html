@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=14.0">
+  <link rel="stylesheet" href="css/style.css?v=15.0">
 </head>
 <body class="app-body">
 
@@ -119,7 +119,7 @@
         
         <!-- SECTION 1: UTAMA -->
         <div class="nav-section-label" data-nav-section="utama">UTAMA</div>
-        <button class="nav-item active" data-page="dashboard" data-allowed-roles="Superadmin,Admin" onclick="navigate('dashboard')">
+        <button class="nav-item active" data-page="dashboard" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('dashboard')">
           <span class="nav-icon">📊</span>
           <span class="nav-label">Dashboard Ringkasan</span>
         </button>
@@ -155,20 +155,20 @@
         </button>
 
         <!-- SECTION 3: AKTIVITAS & ARSIP -->
-        <div class="nav-section-label" data-nav-section="arsip" data-allowed-roles="Superadmin,Admin">AKTIVITAS & ARSIP</div>
-        <button class="nav-item" data-page="laporan-kegiatan" data-allowed-roles="Superadmin,Admin" onclick="navigate('laporan-kegiatan')">
+        <div class="nav-section-label" data-nav-section="arsip" data-allowed-roles="Superadmin,Admin,Petugas">AKTIVITAS & ARSIP</div>
+        <button class="nav-item" data-page="laporan-kegiatan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('laporan-kegiatan')">
           <span class="nav-icon">📅</span>
           <span class="nav-label">Laporan Kegiatan</span>
         </button>
-        <button class="nav-item" data-page="surat-menyurat" data-allowed-roles="Superadmin,Admin" onclick="navigate('surat-menyurat')">
+        <button class="nav-item" data-page="surat-menyurat" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('surat-menyurat')">
           <span class="nav-icon">✉️</span>
           <span class="nav-label">Surat Menyurat</span>
         </button>
-        <button class="nav-item" data-page="foto-kegiatan" data-allowed-roles="Superadmin,Admin" onclick="navigate('foto-kegiatan')">
+        <button class="nav-item" data-page="foto-kegiatan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('foto-kegiatan')">
           <span class="nav-icon">📸</span>
           <span class="nav-label">Galeri Foto</span>
         </button>
-        <button class="nav-item" data-page="arsip-berkas" data-allowed-roles="Superadmin,Admin" onclick="navigate('arsip-berkas')">
+        <button class="nav-item" data-page="arsip-berkas" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('arsip-berkas')">
           <span class="nav-icon">📁</span>
           <span class="nav-label">Arsip Berkas</span>
         </button>
@@ -2085,6 +2085,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=18.0"></script>
+  <script src="js/app.js?v=19.0"></script>
 </body>
 </html>
