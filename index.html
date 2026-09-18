@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=15.0">
+  <link rel="stylesheet" href="css/style.css?v=16.0">
 </head>
 <body class="app-body">
 
@@ -214,7 +214,7 @@
 
         <div class="topbar-right">
           <!-- INDIKATOR DATABASE ONLINE CLOUD (SUPABASE) -->
-          <div id="db-status-badge" class="clock-badge" style="cursor: pointer;" onclick="syncWithSupabase(true)" title="Status Koneksi Database Online Supabase. Klik untuk sinkronisasi ulang.">
+          <div id="db-status-badge" class="clock-badge" style="cursor: pointer;" onclick="handleDbBadgeClick()" title="Status Koneksi Database Online Supabase. Klik untuk aktivasi atau sinkronisasi.">
             <span id="db-status-dot" class="pulse-live" style="background: #10B981;"></span>
             <span id="db-status-text" style="font-size: 11.5px; font-weight: 700; color: #059669;">Supabase Cloud</span>
           </div>
@@ -945,6 +945,19 @@
               </div>
             </div>
 
+            <!-- NOTIFIKASI AKTIVASI CLOUD SUPABASE JIKA TABEL BELUM DIBUAT -->
+            <div id="foto-cloud-notice" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; color: #92400E; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5;">
+                <span style="font-size: 22px;">⚠️</span>
+                <div>
+                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Foto yang diunggah saat ini baru tersimpan di browser perangkat ini dan belum bisa dilihat di HP. Silakan aktifkan tabel Supabase.
+                </div>
+              </div>
+              <button type="button" class="btn-pri" style="padding: 7px 16px; font-size: 12px; background: #D97706; white-space: nowrap;" onclick="openModal('modal-supabase-setup')">
+                ⚡ Aktifkan Cloud Sekarang
+              </button>
+            </div>
+
             <!-- STAT SUMMARY FOTO & KEGIATAN -->
             <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
               <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
@@ -1012,6 +1025,19 @@
               <button class="btn-top-add" onclick="openAddArsip()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                 <span>Simpan Arsip Berkas</span>
+              </button>
+            </div>
+
+            <!-- NOTIFIKASI AKTIVASI CLOUD SUPABASE JIKA TABEL BELUM DIBUAT -->
+            <div id="arsip-cloud-notice" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; color: #92400E; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5;">
+                <span style="font-size: 22px;">⚠️</span>
+                <div>
+                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Berkas arsip yang diunggah saat ini baru tersimpan di browser perangkat ini dan belum bisa dilihat di HP. Silakan aktifkan tabel Supabase.
+                </div>
+              </div>
+              <button type="button" class="btn-pri" style="padding: 7px 16px; font-size: 12px; background: #D97706; white-space: nowrap;" onclick="openModal('modal-supabase-setup')">
+                ⚡ Aktifkan Cloud Sekarang
               </button>
             </div>
 
@@ -2015,6 +2041,50 @@
         </div>
       </div>
     </div>
+  <!-- MODAL SUPABASE TABLE ACTIVATION SETUP -->
+  <div id="modal-supabase-setup" class="modal-overlay">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-badge" style="background: #FEF3C7; color: #D97706;">⚡</span>
+          <div>
+            <h3 class="modal-title">Aktivasi Sinkronisasi Supabase Multi-Perangkat</h3>
+            <p class="modal-subtitle">Supaya foto dan berkas dari laptop ini otomatis muncul di HP semua user</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-supabase-setup')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #991B1B; line-height: 1.6;">
+          <strong>⚠️ Mengapa data di HP masih kosong?</strong><br>
+          Tabel <code>lhg_foto</code>, <code>lhg_arsip</code>, dan <code>lhg_kegiatan</code> belum dibuat di Supabase Cloud. Foto yang diunggah saat ini baru tersimpan di browser laptop ini dan belum bisa dikirim ke internet untuk dibaca oleh HP.
+        </div>
+
+        <div style="font-size: 13.5px; font-weight: 700; color: #1F2937; margin-bottom: 8px;">Langkah Singkat (Hanya 1 Menit):</div>
+        <ol style="margin: 0 0 16px 20px; font-size: 13px; color: #4B5563; line-height: 1.7;">
+          <li>Klik tombol <strong>Salin Script SQL</strong> di bawah ini.</li>
+          <li>Klik tombol <strong>Buka Supabase SQL Editor</strong> (otomatis membuka tab baru).</li>
+          <li>Tempelkan (<em>Paste</em> / Ctrl+V) di editor Supabase, lalu klik tombol <strong>Run (▶)</strong> di pojok kanan bawah.</li>
+        </ol>
+
+        <textarea id="supabase-sql-copy-area" readonly style="width: 100%; height: 115px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; resize: none;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+          <button type="button" class="btn-pri" style="flex: 1; padding: 11px 16px; font-size: 13px; background: #059669;" onclick="copySupabaseSetupSQL()">
+            <span>📋 Salin Script SQL</span>
+          </button>
+          <a href="https://supabase.com/dashboard/project/eimjtamfuyeyhqhfumur/sql/new" target="_blank" class="btn-sec" style="flex: 1; padding: 11px 16px; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>↗️ Buka Supabase SQL Editor</span>
+          </a>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 12px; color: #64748B;">Setelah klik RUN di Supabase:</span>
+        <button type="button" class="btn-pri" style="padding: 9px 18px; font-size: 13px;" onclick="testAndSyncSupabase()">
+          <span>🔄 Tes Ulang & Sinkronkan Sekarang</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
@@ -2085,6 +2155,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=19.0"></script>
+  <script src="js/app.js?v=20.0"></script>
 </body>
 </html>

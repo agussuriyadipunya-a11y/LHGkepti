@@ -12,6 +12,108 @@ const SUPABASE_CONFIG = {
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpbWp0YW1mdXlleWhxaGZ1bXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMTM1NDEsImV4cCI6MjEwNDg4OTU0MX0.yfvkJzKd1paoDELrcZZzcpUskO8tdcR83FhXjeTotCY'
 };
 
+// DDL QUERY SCHEMA FOR SUPABASE SETUP
+const SUPABASE_SETUP_SQL = `-- ==============================================================================
+-- LENTERA HATI GURINDAM - AKTIVASI TABEL ONLINE SUPABASE
+-- ==============================================================================
+
+-- 1. TABEL AGENDA KEGIATAN
+CREATE TABLE IF NOT EXISTS lhg_kegiatan (
+    id BIGINT PRIMARY KEY,
+    judul VARCHAR(255) NOT NULL,
+    tanggal DATE NOT NULL,
+    lokasi VARCHAR(255),
+    peserta INT DEFAULT 0,
+    deskripsi TEXT,
+    status VARCHAR(50) DEFAULT 'Selesai',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. TABEL GALERI FOTO KEGIATAN
+CREATE TABLE IF NOT EXISTS lhg_foto (
+    id BIGINT PRIMARY KEY,
+    judul VARCHAR(255) NOT NULL,
+    tanggal DATE,
+    kategori VARCHAR(100),
+    deskripsi TEXT,
+    url TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. TABEL SURAT MASUK
+CREATE TABLE IF NOT EXISTS lhg_surat_masuk (
+    id BIGINT PRIMARY KEY,
+    nomor VARCHAR(100) NOT NULL,
+    tanggal DATE NOT NULL,
+    pengirim VARCHAR(255) NOT NULL,
+    perihal TEXT NOT NULL,
+    keterangan TEXT,
+    status VARCHAR(50) DEFAULT 'Diproses',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. TABEL SURAT KELUAR
+CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
+    id BIGINT PRIMARY KEY,
+    nomor VARCHAR(100) NOT NULL,
+    tanggal DATE NOT NULL,
+    tujuan VARCHAR(255) NOT NULL,
+    perihal TEXT NOT NULL,
+    keterangan TEXT,
+    status VARCHAR(50) DEFAULT 'Terkirim',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. TABEL ARSIP BERKAS YAYASAN
+CREATE TABLE IF NOT EXISTS lhg_arsip (
+    id BIGINT PRIMARY KEY,
+    nomor VARCHAR(150),
+    nama VARCHAR(255) NOT NULL,
+    kategori VARCHAR(100) NOT NULL,
+    tanggal DATE,
+    lokasi_fisik VARCHAR(255),
+    penerbit VARCHAR(255),
+    keterangan TEXT,
+    file_url TEXT,
+    file_name VARCHAR(255),
+    uploaded_by VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. TABEL RENCANA KEGIATAN & PROGRAM KERJA
+CREATE TABLE IF NOT EXISTS lhg_rencana_kegiatan (
+    id BIGINT PRIMARY KEY,
+    judul VARCHAR(255) NOT NULL,
+    kategori VARCHAR(100) NOT NULL,
+    penanggung_jawab VARCHAR(255),
+    target_peserta VARCHAR(255),
+    lokasi VARCHAR(255),
+    tgl_mulai DATE,
+    tgl_selesai DATE,
+    estimasi_biaya VARCHAR(100),
+    sumber_dana VARCHAR(150),
+    prioritas VARCHAR(50) DEFAULT 'Sedang',
+    status VARCHAR(50) DEFAULT 'Draf / Pengajuan',
+    tujuan TEXT,
+    deskripsi TEXT,
+    penyusun VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE lhg_kegiatan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_foto ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_surat_masuk ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_surat_keluar ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_arsip ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lhg_rencana_kegiatan ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public full access lhg_kegiatan" ON lhg_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access lhg_foto" ON lhg_foto FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access lhg_surat_masuk" ON lhg_surat_masuk FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access lhg_surat_keluar" ON lhg_surat_keluar FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access lhg_arsip" ON lhg_arsip FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access lhg_rencana_kegiatan" ON lhg_rencana_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);`;
+
 // SUPABASE HTTP REST HELPER
 const SupabaseAPI = {
   headers: {
@@ -21,6 +123,8 @@ const SupabaseAPI = {
     'Prefer': 'return=representation'
   },
   isOnline: false,
+  tablesReady: false,
+  missingTables: [],
   checkConnection: async function() {
     try {
       const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/lhg_users?select=count`, {
@@ -28,10 +132,27 @@ const SupabaseAPI = {
         headers: this.headers
       });
       this.isOnline = resp.status !== 404 && resp.status < 500;
+
+      // Check key operational tables
+      const checkTabs = ['lhg_foto', 'lhg_arsip', 'lhg_kegiatan'];
+      const missing = [];
+      for (const t of checkTabs) {
+        try {
+          const r = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${t}?select=count`, {
+            method: 'HEAD',
+            headers: this.headers
+          });
+          if (r.status === 404) missing.push(t);
+        } catch(e) {}
+      }
+      this.missingTables = missing;
+      this.tablesReady = this.isOnline && missing.length === 0;
       this.updateStatusBadge();
       return this.isOnline;
     } catch(e) {
       this.isOnline = false;
+      this.tablesReady = false;
+      this.missingTables = [];
       this.updateStatusBadge();
       return false;
     }
@@ -40,14 +161,28 @@ const SupabaseAPI = {
     const dot = document.getElementById('db-status-dot');
     const txt = document.getElementById('db-status-text');
     if (!dot || !txt) return;
-    if (this.isOnline) {
+    if (this.isOnline && this.tablesReady) {
       dot.style.background = '#10B981';
-      txt.textContent = 'Supabase Cloud (Terkoneksi)';
+      txt.textContent = 'Supabase Cloud (Sinkron Aktif)';
       txt.style.color = '#059669';
-    } else {
+    } else if (this.isOnline && !this.tablesReady) {
       dot.style.background = '#F59E0B';
-      txt.textContent = 'Mode Lokal (Supabase Belum Tabel)';
+      txt.textContent = 'Aktivasi Cloud Diperlukan';
       txt.style.color = '#B45309';
+    } else {
+      dot.style.background = '#EF4444';
+      txt.textContent = 'Mode Offline (Lokal)';
+      txt.style.color = '#DC2626';
+    }
+
+    // Toggle banners
+    const fotoNotice = document.getElementById('foto-cloud-notice');
+    if (fotoNotice) {
+      fotoNotice.style.display = (!this.tablesReady && this.isOnline) ? 'flex' : 'none';
+    }
+    const arsipNotice = document.getElementById('arsip-cloud-notice');
+    if (arsipNotice) {
+      arsipNotice.style.display = (!this.tablesReady && this.isOnline) ? 'flex' : 'none';
     }
   },
   select: async function(table) {
@@ -89,6 +224,48 @@ const SupabaseAPI = {
     }
   }
 };
+
+function handleDbBadgeClick() {
+  if (SupabaseAPI.isOnline && !SupabaseAPI.tablesReady) {
+    const area = document.getElementById('supabase-sql-copy-area');
+    if (area) area.value = SUPABASE_SETUP_SQL;
+    openModal('modal-supabase-setup');
+  } else {
+    syncWithSupabase(true);
+  }
+}
+
+function copySupabaseSetupSQL() {
+  const area = document.getElementById('supabase-sql-copy-area');
+  if (area) area.value = SUPABASE_SETUP_SQL;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(SUPABASE_SETUP_SQL).then(() => {
+      showToast('Script SQL berhasil disalin! Silakan paste di Supabase SQL Editor lalu klik Run.', 'success');
+    }).catch(() => {
+      if (area) {
+        area.select();
+        document.execCommand('copy');
+        showToast('Script SQL disalin ke clipboard!', 'success');
+      }
+    });
+  } else if (area) {
+    area.select();
+    document.execCommand('copy');
+    showToast('Script SQL disalin ke clipboard!', 'success');
+  }
+}
+
+async function testAndSyncSupabase() {
+  showToast('Memeriksa aktivasi tabel di Supabase...', 'info');
+  await SupabaseAPI.checkConnection();
+  if (SupabaseAPI.tablesReady) {
+    closeModal('modal-supabase-setup');
+    showToast('Selamat! Semua tabel berhasil terhubung. Memulai sinkronisasi data...', 'success');
+    await syncWithSupabase(true);
+  } else {
+    showToast('Tabel lhg_foto belum terdeteksi. Pastikan Anda sudah paste script SQL dan klik RUN di Supabase!', 'warning');
+  }
+}
 
 // ==============================================================================
 // INDEXEDDB PHOTO & MEDIA STORE (UNLIMITED STORAGE QUOTA)
@@ -2396,6 +2573,11 @@ function renderFoto() {
   const container = document.getElementById('photo-grouped-container');
   if (!container) return;
 
+  const notice = document.getElementById('foto-cloud-notice');
+  if (notice) {
+    notice.style.display = (!SupabaseAPI.tablesReady && SupabaseAPI.isOnline) ? 'flex' : 'none';
+  }
+
   if (PhotoStore._cache === null && typeof window !== 'undefined' && window.indexedDB) {
     PhotoStore.getAll().then(() => renderFoto());
     return;
@@ -2889,6 +3071,10 @@ function filterArsipByKategori(cat) {
 }
 
 function renderArsip(search) {
+  const notice = document.getElementById('arsip-cloud-notice');
+  if (notice) {
+    notice.style.display = (!SupabaseAPI.tablesReady && SupabaseAPI.isOnline) ? 'flex' : 'none';
+  }
   renderArsipStats();
   renderArsipTable(search);
 }
@@ -5580,7 +5766,15 @@ async function syncWithSupabase(isManual) {
           syncedCount++;
         } else if (t === 'lhg_foto') {
           // PHOTO SYNCHRONIZATION VIA INDEXEDDB
-          const localPhotos = DB.get('lhg_foto', []);
+          let localPhotos = PhotoStore._cache;
+          if ((!localPhotos || localPhotos.length === 0) && typeof window !== 'undefined' && window.indexedDB) {
+            try {
+              localPhotos = await PhotoStore.getAll();
+            } catch(e) {}
+          }
+          if (!localPhotos) {
+            localPhotos = DB.get('lhg_foto', []);
+          }
           if (cloudData.length > 0) {
             const cloudMapped = cloudData.map(r => fromSupabaseRow('lhg_foto', r));
             const cloudIdSet = new Set(cloudMapped.map(cp => String(cp.id)));
