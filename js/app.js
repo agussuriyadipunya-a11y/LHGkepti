@@ -821,7 +821,7 @@ function navigate(page) {
   if (page === 'form-pendaftaran') renderFormPendaftaranPage();
   if (page === 'laporan-kegiatan') renderLaporan();
   if (page === 'surat-menyurat') renderSurat();
-  if (page === 'foto-kegiatan') { _lastFotoHash = ''; renderFoto(); }
+  if (page === 'foto-kegiatan') renderFoto();
   if (page === 'arsip-berkas') renderArsip();
   if (page === 'manajemen-user') renderManajemenUserTable();
 }
@@ -2632,9 +2632,6 @@ function escapeForJsStr(str) {
   return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
-// Track last rendered hash to avoid unnecessary re-renders (prevents blink)
-let _lastFotoHash = '';
-
 function renderFoto() {
   const container = document.getElementById('photo-grouped-container');
   if (!container) return;
@@ -2696,13 +2693,6 @@ function renderFoto() {
   // Sort by latest date descending
   groupsArray.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
 
-  // --- HASH CHECK: skip re-render if data hasn't changed (prevents blink) ---
-  const currentHash = rawList.length + '|' + search + '|' + filterKat + '|' +
-    groupsArray.map(g => g.judul + ':' + g.photos.length + ':' + g.tanggal).join(',');
-  if (currentHash === _lastFotoHash && container.children.length > 0) {
-    return; // Nothing changed, skip re-render
-  }
-  _lastFotoHash = currentHash;
 
   if (groupsArray.length === 0) {
     container.innerHTML = `
@@ -2747,7 +2737,7 @@ function renderFoto() {
         <div class="kegiatan-album-grid">
           ${group.photos.map((p, idx) => `
             <div class="kegiatan-photo-item" onclick="openLightboxDetail(${p.id})">
-              <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" decoding="async">
+              <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" loading="lazy">
               <div class="kegiatan-photo-idx">#${idx + 1}</div>
             </div>
           `).join('')}
@@ -3050,7 +3040,6 @@ async function deleteSingleFoto(id) {
   }
 
   closeLightbox();
-  _lastFotoHash = ''; // Force re-render on next renderFoto call
   renderFoto();
   showToast('Foto berhasil dihapus.', 'warning');
 }
@@ -3081,7 +3070,6 @@ async function deleteAlbumKegiatan(judul) {
     console.warn('Gagal menghapus album foto dari cloud:', e);
   }
 
-  _lastFotoHash = ''; // Force re-render on next renderFoto call
   renderFoto();
   showToast(`Album kegiatan "${judul}" dan ${toDelete.length} foto berhasil dihapus.`, 'warning');
 }
