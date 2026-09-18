@@ -2741,6 +2741,11 @@ function renderFoto() {
       </div>
     `;
   }).join('');
+
+  // After render, remove any stale overlay elements on touch devices
+  if (typeof fixMobileTouchFlicker === 'function') {
+    requestAnimationFrame(() => fixMobileTouchFlicker());
+  }
 }
 
 function openAddFoto(prefillJudul = '', prefillTanggal = '', prefillKategori = '', prefillDeskripsi = '') {
@@ -6052,7 +6057,55 @@ document.addEventListener('DOMContentLoaded', async () => {
   registerPWA();
   // Initialize touch-friendly modal backdrop tap listeners
   initModalListeners();
+  // Fix mobile touch flicker on ALL pages
+  fixMobileTouchFlicker();
 });
+
+// ==============================================================================
+// MOBILE TOUCH FLICKER FIX
+// ==============================================================================
+function fixMobileTouchFlicker() {
+  // Detect touch device
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (!isTouch) return;
+
+  // Remove ALL .kegiatan-photo-overlay elements from the DOM entirely on touch devices.
+  // This is a belt-and-suspenders fix in case old cached CSS/HTML still renders the overlay.
+  function removePhotoOverlays() {
+    document.querySelectorAll('.kegiatan-photo-overlay').forEach(el => {
+      el.style.display = 'none';
+      el.style.opacity = '0';
+      el.style.visibility = 'hidden';
+      el.style.pointerEvents = 'none';
+    });
+    // Also ensure no transition on photo items
+    document.querySelectorAll('.kegiatan-photo-item').forEach(el => {
+      el.style.transition = 'none';
+      el.style.webkitTransition = 'none';
+    });
+  }
+
+  // Run immediately
+  removePhotoOverlays();
+
+  // Run again after any potential re-render (watch for DOM mutations in photo container)
+  const photoContainer = document.getElementById('photo-grouped-container');
+  if (photoContainer) {
+    const obs = new MutationObserver(() => {
+      removePhotoOverlays();
+    });
+    obs.observe(photoContainer, { childList: true, subtree: true });
+  }
+
+  // Prevent hover state from sticking after touch on Android/iOS
+  // When finger lifts, blur all elements to clear stuck hover
+  document.addEventListener('touchend', () => {
+    setTimeout(() => {
+      const hovered = document.querySelector('.kegiatan-photo-item:hover, .kegiatan-photo-item:focus');
+      if (hovered) hovered.blur();
+    }, 0);
+  }, { passive: true });
+}
 
 function initModalListeners() {
   // Tap outside modal content (on overlay backdrop) to close
@@ -6080,17 +6133,60 @@ function initModalListeners() {
 // ==============================================================================
 let deferredInstallPrompt = null;
 
+// App version — bump this to force all mobile browsers to reload
+const APP_BUILD_VERSION = '25.0';
+
 function registerPWA() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => {
-        console.log('Service Worker Registered successfully:', reg.scope);
-        reg.update();
-      })
-      .catch(err => {
-        console.warn('Service Worker Registration failed:', err);
+  if (!('serviceWorker' in navigator)) return;
+
+  // ---- VERSION CHECK: clear stale caches if version changed ----
+  const savedBuild = localStorage.getItem('lhg_build_version');
+  if (savedBuild !== APP_BUILD_VERSION) {
+    localStorage.setItem('lhg_build_version', APP_BUILD_VERSION);
+    // Clear ALL browser caches
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
       });
+    }
   }
+
+  // ---- SERVICE WORKER REGISTRATION ----
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => {
+      // Force SW to check for update immediately
+      reg.update();
+
+      // If a new SW is waiting to activate, tell it to skip waiting NOW
+      function activateWaitingSW(worker) {
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      }
+
+      if (reg.waiting) {
+        activateWaitingSW(reg.waiting);
+      }
+
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed') {
+            activateWaitingSW(newWorker);
+          }
+        });
+      });
+    })
+    .catch(err => {
+      console.warn('Service Worker Registration failed:', err);
+    });
+
+  // When a new SW takes control, reload page ONCE to get fresh assets
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {

@@ -4058,6 +4058,14 @@ body.drawer-open {
   backface-visibility: hidden;
 }
 
+/* OVERLAY: Hidden by default on ALL devices. Enabled via JS/CSS only on desktop hover. */
+.kegiatan-photo-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Always-visible delete button for ALL devices */
 .kegiatan-photo-del-mobile {
   position: absolute;
