@@ -1157,11 +1157,11 @@ function renderAnggotaTable(search) {
               ` : ''}
             </div>
             <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
-              <button type="button" class="btn-action-icon" onclick="openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
-              <button type="button" class="btn-action-icon" onclick="cetakKTAFor('${a.id}')" title="Cetak KTA">💳</button>
-              <button type="button" class="btn-action-icon" onclick="openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
-              <button type="button" class="btn-action-icon danger" onclick="deleteAnggota('${a.id}')" title="Hapus Data">🗑️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); cetakKTAFor('${a.id}')" title="Cetak KTA">💳</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
+              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteAnggota('${a.id}')" title="Hapus Data">🗑️</button>
             </div>
           </div>
 
@@ -3303,9 +3303,9 @@ function renderArsipTable(search) {
           <div class="d-card-footer">
             <span style="font-size: 11px; color: #64748B;">Instansi: <strong>${a.penerbit || '-'}</strong></span>
             <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="viewArsip(${a.id})" title="Lihat Detail">👁️</button>
-              <button type="button" class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); viewArsip(${a.id})" title="Lihat Detail">👁️</button>
+              <button type="button" class="btn-action-icon edit" onclick="event.stopPropagation(); openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
             </div>
           </div>
           <div class="d-card-tap-cue">
@@ -4586,9 +4586,9 @@ function renderBantuanTable(search) {
               <span>Disabilitas: <strong>${b.anakDisabilitas || '-'}</strong></span>
             </div>
             <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
-              <button type="button" class="btn-action-icon" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
+              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
             </div>
           </div>
 
@@ -5058,10 +5058,10 @@ function renderRencanaKegiatanTable() {
               <span>PIC: <strong>${item.penanggungJawab || '-'}</strong></span>
             </div>
             <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Detail Rencana">👁️</button>
-              <button type="button" class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen A4">🖨️</button>
-              <button type="button" class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+              <button type="button" class="btn-action-icon" style="color: #2563EB;" onclick="event.stopPropagation(); viewRencanaKegiatan(${item.id})" title="Detail Rencana">👁️</button>
+              <button type="button" class="btn-action-icon" style="color: #059669;" onclick="event.stopPropagation(); printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen A4">🖨️</button>
+              <button type="button" class="btn-action-icon" style="color: #D97706;" onclick="event.stopPropagation(); openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
             </div>
           </div>
 
@@ -6080,16 +6080,6 @@ function initModalListeners() {
         closeModal(overlay.id);
       }
     });
-  });
-
-  // Keep body class modal-open in sync with any modal open state to prevent background scroll
-  const modalObserver = new MutationObserver(() => {
-    const hasOpenModal = !!document.querySelector('.modal-overlay.open');
-    document.body.classList.toggle('modal-open', hasOpenModal);
-  });
-
-  document.querySelectorAll('.modal-overlay').forEach(m => {
-    modalObserver.observe(m, { attributes: true, attributeFilter: ['class'] });
   });
 }
 
