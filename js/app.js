@@ -732,8 +732,9 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
   if (window.innerWidth <= 900) {
-    sidebar.classList.toggle('mobile-open');
-    backdrop.classList.toggle('active');
+    const isOpen = sidebar.classList.toggle('mobile-open');
+    if (backdrop) backdrop.classList.toggle('active', isOpen);
+    document.body.classList.toggle('drawer-open', isOpen);
   } else {
     sidebar.classList.toggle('collapsed');
   }
@@ -783,6 +784,7 @@ function navigate(page) {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (sidebar) sidebar.classList.remove('mobile-open');
     if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('drawer-open');
   }
 
   // Smooth scroll to top when changing page on mobile
@@ -1158,6 +1160,7 @@ function renderAnggotaTable(search) {
               <button type="button" class="btn-action-icon" onclick="viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
               <button type="button" class="btn-action-icon" onclick="openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
               <button type="button" class="btn-action-icon" onclick="cetakKTAFor('${a.id}')" title="Cetak KTA">💳</button>
+              <button type="button" class="btn-action-icon" onclick="openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
               <button type="button" class="btn-action-icon danger" onclick="deleteAnggota('${a.id}')" title="Hapus Data">🗑️</button>
             </div>
           </div>
@@ -1426,7 +1429,15 @@ function openEditAnggota(id) {
   currentModalPhotoBase64 = a.foto || null;
   updateModalPhotoUI(currentModalPhotoBase64);
 
-  document.getElementById('modal-anggota').classList.add('open');
+  openModal('modal-anggota');
+}
+
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
+  }
 }
 
 function closeModal(id) {
@@ -2361,30 +2372,78 @@ function printFormPendaftaran() {
 function renderLaporan() {
   const list = DB.get('lhg_kegiatan');
   const tbody = document.getElementById('laporan-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('laporan-card-list');
 
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94A3B8;">Belum ada laporan kegiatan</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94A3B8;">Belum ada laporan kegiatan</td></tr>';
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
+          <div style="font-size: 38px; margin-bottom: 8px;">📅</div>
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Laporan Kegiatan</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Catatan dokumentasi agenda pelaksanaan kegiatan yayasan belum tersedia.</div>
+          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddLaporan()">
+            ➕ Tambah Laporan Agenda
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 
-  tbody.innerHTML = list.map((k, i) => `
-    <tr>
-      <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
-      <td style="font-weight: 700; color: #0F172A;">${k.judul}</td>
-      <td>${formatDate(k.tanggal)}</td>
-      <td>${k.lokasi || '-'}</td>
-      <td style="text-align: center; font-weight: 800; color: #059669;">${k.peserta || 0} org</td>
-      <td style="text-align: center;">
-        <span class="disability-pill ${k.status === 'Selesai' ? 'badge-grahita' : 'badge-autis'}">${k.status}</span>
-      </td>
-      <td style="text-align: center;">
-        <div class="action-buttons-group">
-          <button class="btn-action-icon danger" onclick="deleteLaporan(${k.id})" title="Hapus">🗑️</button>
+  if (tbody) {
+    tbody.innerHTML = list.map((k, i) => `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
+        <td style="font-weight: 700; color: #0F172A;">${k.judul}</td>
+        <td>${formatDate(k.tanggal)}</td>
+        <td>${k.lokasi || '-'}</td>
+        <td style="text-align: center; font-weight: 800; color: #059669;">${k.peserta || 0} org</td>
+        <td style="text-align: center;">
+          <span class="disability-pill ${k.status === 'Selesai' ? 'badge-grahita' : 'badge-autis'}">${k.status}</span>
+        </td>
+        <td style="text-align: center;">
+          <div class="action-buttons-group">
+            <button class="btn-action-icon danger" onclick="deleteLaporan(${k.id})" title="Hapus">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  if (cardList) {
+    cardList.innerHTML = list.map(k => `
+      <div class="data-record-card">
+        <div class="d-card-header">
+          <div class="d-card-avatar-wrap">
+            <div class="d-card-avatar" style="background:#EFF6FF; color:#2563EB; border-color:#BFDBFE;">📅</div>
+          </div>
+          <div class="d-card-main-info">
+            <div class="d-card-title-row">
+              <h4 class="d-card-name">${k.judul}</h4>
+              <span class="disability-pill ${k.status === 'Selesai' ? 'badge-grahita' : 'badge-autis'}">${k.status}</span>
+            </div>
+            <div class="d-card-sub-row">
+              <span>📅 ${formatDate(k.tanggal)}</span>
+              ${k.lokasi ? `<span>• 📍 ${k.lokasi}</span>` : ''}
+            </div>
+          </div>
         </div>
-      </td>
-    </tr>
-  `).join('');
+        <div class="d-card-tags">
+          <span class="d-card-tag-pill" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0; font-weight:700;">
+            👥 ${k.peserta || 0} Peserta
+          </span>
+          ${k.deskripsi ? `<div style="font-size:11.5px; color:#475569; margin-top:4px; line-height:1.4;">${k.deskripsi}</div>` : ''}
+        </div>
+        <div class="d-card-footer">
+          <span style="font-size: 11px; color: #64748B;">Agenda Kegiatan Terlaksana</span>
+          <div class="d-card-actions">
+            <button type="button" class="btn-action-icon danger" onclick="deleteLaporan(${k.id})" title="Hapus Laporan">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 function openAddLaporan() {
@@ -3115,18 +3174,32 @@ function renderArsipTable(search) {
   list.sort((a, b) => new Date(b.tanggal || b.id || 0) - new Date(a.tanggal || a.id || 0));
 
   const tbody = document.getElementById('arsip-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('arsip-card-list');
 
   if (list.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 38px; margin-bottom: 8px;">📁</div>
+            <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Berkas yang Diarsipkan</p>
+            <p style="font-size: 12px;">Klik tombol "Simpan Arsip Berkas" di atas untuk menambahkan dokumen resmi yayasan.</p>
+          </td>
+        </tr>
+      `;
+    }
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
           <div style="font-size: 38px; margin-bottom: 8px;">📁</div>
-          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Berkas yang Diarsipkan</p>
-          <p style="font-size: 12px;">Klik tombol "Simpan Arsip Berkas" di atas untuk menambahkan dokumen resmi yayasan.</p>
-        </td>
-      </tr>
-    `;
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Berkas yang Diarsipkan</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Tidak ada arsip dokumen resmi yayasan yang cocok dengan pencarian atau filter Anda.</div>
+          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddArsip()">
+            ➕ Simpan Arsip Berkas
+          </button>
+        </div>
+      `;
+    }
     return;
   }
 
@@ -3139,57 +3212,105 @@ function renderArsipTable(search) {
     'Administrasi & Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '📁' }
   };
 
-  tbody.innerHTML = list.map((a, idx) => {
-    const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
-    const hasDigital = a.fileUrl || a.fileBase64;
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
-        <td style="white-space: nowrap;">
-          <div style="font-weight: 700; color: #1E293B; font-size: 12.5px;">${a.nomor || '<span style="color:#94A3B8; font-style:italic;">Tanpa Nomor</span>'}</div>
-          <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</div>
-        </td>
-        <td>
-          <div style="font-weight: 800; font-size: 13.5px; color: #047857; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="viewArsip(${a.id})" title="Klik untuk membuka jendela data arsip lengkap">
-            <span>📄</span> <span style="text-decoration: underline;">${a.nama}</span>
-          </div>
-          ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${a.penerbit}</strong></div>` : ''}
-          ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan}"</div>` : ''}
-        </td>
-        <td>
-          <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-            ${katStyle.icon} ${a.kategori}
-          </span>
-        </td>
-        <td>
-          <div style="display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="viewArsip(${a.id})" title="Lihat detail lokasi fisik di jendela">
-            <span style="font-size: 14px;">📍</span>
-            <span style="font-weight: 600; font-size: 12px; color: #065F46; background: #ECFDF5; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0;">${a.lokasiFisik || '-'}</span>
-          </div>
-        </td>
-        <td style="text-align: center;">
-          ${hasDigital ? `
-            <button type="button" class="btn-sec" onclick="viewArsip(${a.id})" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; border-color: #A7F3D0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat pratinjau berkas digital di jendela">
-              <span>📎</span> ${a.fileName ? 'Buka Dokumen' : 'Buka Link'}
-            </button>
-          ` : `
-            <span style="font-size: 11px; color: #64748B; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #E2E8F0; display: inline-flex; align-items: center; gap: 4px;">
-              <span>📦</span> Fisik
+  if (tbody) {
+    tbody.innerHTML = list.map((a, idx) => {
+      const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
+      const hasDigital = a.fileUrl || a.fileBase64;
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+          <td style="white-space: nowrap;">
+            <div style="font-weight: 700; color: #1E293B; font-size: 12.5px;">${a.nomor || '<span style="color:#94A3B8; font-style:italic;">Tanpa Nomor</span>'}</div>
+            <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</div>
+          </td>
+          <td>
+            <div style="font-weight: 800; font-size: 13.5px; color: #047857; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="viewArsip(${a.id})" title="Klik untuk membuka jendela data arsip lengkap">
+              <span>📄</span> <span style="text-decoration: underline;">${a.nama}</span>
+            </div>
+            ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${a.penerbit}</strong></div>` : ''}
+            ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan}"</div>` : ''}
+          </td>
+          <td>
+            <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+              ${katStyle.icon} ${a.kategori}
             </span>
-          `}
-        </td>
-        <td style="text-align: center;">
-          <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
-            <button type="button" onclick="viewArsip(${a.id})" title="Buka Jendela Data Lengkap" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">
-              <span>👁️</span> <span>View</span>
-            </button>
-            <button class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
-            <button class="btn-action-icon delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="viewArsip(${a.id})" title="Lihat detail lokasi fisik di jendela">
+              <span style="font-size: 14px;">📍</span>
+              <span style="font-weight: 600; font-size: 12px; color: #065F46; background: #ECFDF5; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0;">${a.lokasiFisik || '-'}</span>
+            </div>
+          </td>
+          <td style="text-align: center;">
+            ${hasDigital ? `
+              <button type="button" class="btn-sec" onclick="viewArsip(${a.id})" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: #047857; background: #ECFDF5; border-color: #A7F3D0; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat pratinjau berkas digital di jendela">
+                <span>📎</span> ${a.fileName ? 'Buka Dokumen' : 'Buka Link'}
+              </button>
+            ` : `
+              <span style="font-size: 11px; color: #64748B; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #E2E8F0; display: inline-flex; align-items: center; gap: 4px;">
+                <span>📦</span> Fisik
+              </span>
+            `}
+          </td>
+          <td style="text-align: center;">
+            <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+              <button type="button" onclick="viewArsip(${a.id})" title="Buka Jendela Data Lengkap" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">
+                <span>👁️</span> <span>View</span>
+              </button>
+              <button class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
+              <button class="btn-action-icon delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  if (cardList) {
+    cardList.innerHTML = list.map(a => {
+      const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
+      const hasDigital = a.fileUrl || a.fileBase64;
+      return `
+        <div class="data-record-card" onclick="viewArsip(${a.id})" title="Ketuk untuk melihat detail arsip berkas">
+          <div class="d-card-header">
+            <div class="d-card-avatar-wrap">
+              <div class="d-card-avatar" style="background:${katStyle.bg}; color:${katStyle.color}; border-color:${katStyle.border};">
+                ${katStyle.icon}
+              </div>
+            </div>
+            <div class="d-card-main-info">
+              <div class="d-card-title-row">
+                <h4 class="d-card-name">${a.nama}</h4>
+              </div>
+              <div class="d-card-sub-row">
+                <span>📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</span>
+                ${a.nomor ? `<span>• No: ${a.nomor}</span>` : ''}
+              </div>
+            </div>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+          <div class="d-card-tags">
+            <span style="background:${katStyle.bg}; color:${katStyle.color}; border:1px solid ${katStyle.border}; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">
+              ${katStyle.icon} ${a.kategori}
+            </span>
+            ${a.lokasiFisik ? `<span class="d-card-tag-pill">📍 ${a.lokasiFisik}</span>` : ''}
+            ${hasDigital ? `<span class="d-card-tag-pill" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0; font-weight:700;">📎 Digital</span>` : `<span class="d-card-tag-pill">📦 Fisik</span>`}
+          </div>
+          <div class="d-card-footer">
+            <span style="font-size: 11px; color: #64748B;">Instansi: <strong>${a.penerbit || '-'}</strong></span>
+            <div class="d-card-actions" onclick="event.stopPropagation();">
+              <button type="button" class="btn-action-icon" onclick="viewArsip(${a.id})" title="Lihat Detail">👁️</button>
+              <button type="button" class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
+              <button type="button" class="btn-action-icon danger" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+            </div>
+          </div>
+          <div class="d-card-tap-cue">
+            <span>👆 Ketuk untuk buka berkas digital & detail</span>
+            <span class="d-card-tap-arrow">›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function handleArsipFileInput(event) {
@@ -4011,59 +4132,113 @@ function renderManajemenUserTable(search, filterRole) {
   }
 
   const tbody = document.getElementById('user-tbody');
-  if (!tbody) return;
+  const cardList = document.getElementById('user-card-list');
 
   if (users.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
-          <div style="font-size: 32px; margin-bottom: 8px;">👤</div>
-          <p>Tidak ada pengguna yang cocok dengan kriteria</p>
-        </td>
-      </tr>
-    `;
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
+            <div style="font-size: 32px; margin-bottom: 8px;">👤</div>
+            <p>Tidak ada pengguna yang cocok dengan kriteria</p>
+          </td>
+        </tr>
+      `;
+    }
+    if (cardList) {
+      cardList.innerHTML = `
+        <div class="mobile-empty-card">
+          <div style="font-size: 38px; margin-bottom: 8px;">👤</div>
+          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Pengguna Tidak Ditemukan</div>
+          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Tidak ada akun pengguna yang cocok dengan filter atau kata kunci pencarian.</div>
+        </div>
+      `;
+    }
     return;
   }
 
   const currentUser = getAuthUser();
 
-  tbody.innerHTML = users.map((u, i) => {
-    const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
-    const isSelf = currentUser && currentUser.username === u.username;
+  if (tbody) {
+    tbody.innerHTML = users.map((u, i) => {
+      const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
+      const isSelf = currentUser && currentUser.username === u.username;
 
-    return `
-      <tr>
-        <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
-        <td>
-          <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${u.username}</span>
-          ${isSelf ? '<span style="margin-left: 6px; font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
-        </td>
-        <td>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 32px; height: 32px; border-radius: 50%; background: #F1F5F9; color: #334155; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">
-              ${getInitials(u.nama || u.username)}
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
+          <td>
+            <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${u.username}</span>
+            ${isSelf ? '<span style="margin-left: 6px; font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: #F1F5F9; color: #334155; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">
+                ${getInitials(u.nama || u.username)}
+              </div>
+              <strong style="color: #0F172A;">${u.nama || '-'}</strong>
             </div>
-            <strong style="color: #0F172A;">${u.nama || '-'}</strong>
+          </td>
+          <td style="text-align: center;">
+            <span class="${roleBadgeClass}">${u.role}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="${u.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${u.status}</span>
+          </td>
+          <td style="font-size: 12px; color: #64748B;">${u.createdAt || '-'}</td>
+          <td style="text-align: center;">
+            <div class="action-buttons-group">
+              <button class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna">✏️</button>
+              ${!isSelf && u.username !== '2172041908850002' ? `
+                <button class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">🗑️</button>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  if (cardList) {
+    cardList.innerHTML = users.map(u => {
+      const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
+      const isSelf = currentUser && currentUser.username === u.username;
+      return `
+        <div class="data-record-card">
+          <div class="d-card-header">
+            <div class="d-card-avatar-wrap">
+              <div class="d-card-avatar" style="background:#F1F5F9; color:#334155; border-color:#CBD5E1;">
+                ${getInitials(u.nama || u.username)}
+              </div>
+            </div>
+            <div class="d-card-main-info">
+              <div class="d-card-title-row">
+                <h4 class="d-card-name">${u.nama || u.username}</h4>
+                <span class="${u.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${u.status}</span>
+              </div>
+              <div class="d-card-sub-row">
+                <span style="font-family:monospace; font-weight:700; color:#0F172A;">🔑 ${u.username}</span>
+                ${isSelf ? '<span style="font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
+              </div>
+            </div>
           </div>
-        </td>
-        <td style="text-align: center;">
-          <span class="${roleBadgeClass}">${u.role}</span>
-        </td>
-        <td style="text-align: center;">
-          <span class="${u.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${u.status}</span>
-        </td>
-        <td style="font-size: 12px; color: #64748B;">${u.createdAt || '-'}</td>
-        <td style="text-align: center;">
-          <div class="action-buttons-group">
-            <button class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna">✏️</button>
-            ${!isSelf && u.username !== '2172041908850002' ? `
-              <button class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">🗑️</button>
-            ` : ''}
+          <div class="d-card-tags">
+            <span class="${roleBadgeClass}">👤 ${u.role}</span>
+            <span class="d-card-tag-pill">📅 Terdaftar: ${u.createdAt || '-'}</span>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+          <div class="d-card-footer">
+            <span style="font-size: 11.5px; color: #64748B;">Kelola Akun</span>
+            <div class="d-card-actions">
+              <button type="button" class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna">✏️</button>
+              ${!isSelf && u.username !== '2172041908850002' ? `
+                <button type="button" class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">🗑️</button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function filterUsersByRole(role) {

@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=16.0">
+  <link rel="stylesheet" href="css/style.css?v=17.0">
 </head>
 <body class="app-body">
 
@@ -891,6 +891,9 @@
                 <tbody id="laporan-tbody"></tbody>
               </table>
             </div>
+
+            <!-- TAMPILAN MOBILE: KARTU LAPORAN KEGIATAN (CARD VIEW) -->
+            <div id="laporan-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -1109,6 +1112,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- TAMPILAN MOBILE: KARTU ARSIP BERKAS (CARD VIEW) -->
+            <div id="arsip-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -1162,6 +1168,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- TAMPILAN MOBILE: KARTU USER (CARD VIEW) -->
+            <div id="user-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -2043,8 +2052,8 @@
     </div>
   <!-- MODAL SUPABASE TABLE ACTIVATION SETUP -->
   <div id="modal-supabase-setup" class="modal-overlay">
-    <div class="modal-card" style="max-width: 620px;">
-      <div class="modal-header">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 620px;">
+      <div class="modal-header-clean">
         <div class="modal-title-wrap">
           <span class="modal-icon-badge" style="background: #FEF3C7; color: #D97706;">⚡</span>
           <div>
@@ -2054,7 +2063,7 @@
         </div>
         <button class="btn-close-modal" onclick="closeModal('modal-supabase-setup')">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 20px;">
+      <div class="modal-body-clean" style="padding: 20px;">
         <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #991B1B; line-height: 1.6;">
           <strong>⚠️ Mengapa data di HP masih kosong?</strong><br>
           Tabel <code>lhg_foto</code>, <code>lhg_arsip</code>, dan <code>lhg_kegiatan</code> belum dibuat di Supabase Cloud. Foto yang diunggah saat ini baru tersimpan di browser laptop ini dan belum bisa dikirim ke internet untuk dibaca oleh HP.
@@ -2078,7 +2087,7 @@
           </a>
         </div>
       </div>
-      <div class="modal-footer" style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div class="modal-footer-clean" style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <span style="font-size: 12px; color: #64748B;">Setelah klik RUN di Supabase:</span>
         <button type="button" class="btn-pri" style="padding: 9px 18px; font-size: 13px;" onclick="testAndSyncSupabase()">
           <span>🔄 Tes Ulang & Sinkronkan Sekarang</span>
@@ -2155,6 +2164,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=20.0"></script>
+  <script src="js/app.js?v=21.0"></script>
 </body>
 </html>
