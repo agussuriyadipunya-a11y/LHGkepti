@@ -6090,6 +6090,7 @@ function registerPWA() {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => {
         console.log('Service Worker Registered successfully:', reg.scope);
+        reg.update();
       })
       .catch(err => {
         console.warn('Service Worker Registration failed:', err);
