@@ -686,16 +686,6 @@ function applyRoleUI(user) {
     }
   });
 
-  // Adapt mobile bottom navigation based on role
-  const bMainBtn = document.getElementById('bottom-nav-btn-main');
-  const bMainIcon = document.getElementById('bottom-nav-icon-main');
-  const bMainLbl = document.getElementById('bottom-nav-label-main');
-  if (bMainBtn && bMainIcon && bMainLbl) {
-    bMainBtn.setAttribute('data-bottom-page', 'dashboard');
-    bMainBtn.setAttribute('onclick', "navigate('dashboard')");
-    bMainIcon.textContent = '📊';
-    bMainLbl.textContent = 'Dashboard';
-  }
 }
 
 function hasPermission(role, page) {
@@ -759,18 +749,6 @@ function navigate(page) {
   // Update sidebar active buttons
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-page') === page);
-  });
-
-  // Update mobile bottom nav active buttons
-  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
-    const bPage = btn.getAttribute('data-bottom-page');
-    if (bPage === page) {
-      btn.classList.add('active');
-    } else if (bPage === 'menu' && !['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan'].includes(page)) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
   });
 
   // Switch pages
@@ -891,10 +869,8 @@ function renderDashboard() {
   setText('stat-kegiatan', kegiatan.length);
   setText('stat-surat', sm.length + sk.length);
   setText('nav-badge-anak', anggota.length);
-  setText('bottom-badge-anak', anggota.length);
   const bList = DB.get('lhg_bantuan', []);
   setText('nav-badge-bantuan', bList.length);
-  setText('bottom-badge-bantuan', bList.length);
   const rList = DB.get('lhg_rencana_kegiatan', []);
   setText('nav-badge-rencana', rList.length);
 
@@ -1038,23 +1014,10 @@ function renderAnggotaTable(search) {
 
   setText('table-total-count-text', `Total: ${list.length} Anak`);
   const tbody = document.getElementById('anggota-tbody');
-  const cardList = document.getElementById('anggota-card-list');
 
   if (!list.length) {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94A3B8;">Tidak ada data ditemukan</td></tr>';
-    }
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">📋</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Tidak Ada Data Anak</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada data anak disabilitas yang sesuai filter atau pencarian Anda.</div>
-          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddAnggota()">
-            ➕ Tambah Data Anak Baru
-          </button>
-        </div>
-      `;
     }
     return;
   }
@@ -1112,70 +1075,6 @@ function renderAnggotaTable(search) {
         </td>
       </tr>
     `).join('');
-  }
-
-  // Render tampilan kartu (Card View) untuk layar ponsel / mobile
-  if (cardList) {
-    const newCardsHtml = list.map((a) => {
-      const waNum = a.kontakWA || a.telWali || '';
-      return `
-        <div class="data-record-card" onclick="viewAnggota('${a.id}')" title="Ketuk untuk melihat rincian data">
-          <div class="d-card-header">
-            <div class="d-card-avatar-wrap">
-              ${a.foto ? `
-                <img src="${a.foto}" class="d-card-photo" alt="${a.nama}">
-              ` : `
-                <div class="d-card-avatar">${getInitials(a.nama)}</div>
-              `}
-            </div>
-            <div class="d-card-main-info">
-              <div class="d-card-title-row">
-                <h4 class="d-card-name">${a.nama}</h4>
-                <span class="${a.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${a.status}</span>
-              </div>
-              <div class="d-card-sub-row">
-                ${a.kelurahan ? `<span class="d-card-loc">📍 Kel. ${a.kelurahan}</span>` : ''}
-                <span class="d-card-age">🎂 ${a.umur || '12 Thn'}</span>
-                ${a.kelas ? `<span style="font-weight:600; color:#475569;">• 🏫 ${a.kelas}</span>` : ''}
-              </div>
-            </div>
-          </div>
-
-          <div class="d-card-tags">
-            <span class="disability-pill ${getDisabilityBadgeClass(a.disabilitas)}">${a.disabilitas}</span>
-            <span class="d-card-nik-tag">🆔 ${a.nik}</span>
-            ${a.noKk ? `<span class="d-card-tag-pill">KK: ${a.noKk}</span>` : ''}
-          </div>
-
-          <div class="d-card-footer">
-            <div class="d-card-parent-info">
-              <span>Ortu: <strong>${a.wali || a.ibu || '-'}</strong></span>
-              ${waNum ? `
-                <button type="button" class="d-card-btn-wa" onclick="event.stopPropagation(); openWhatsApp('${waNum}')" title="Hubungi via WhatsApp">
-                  💬 WA
-                </button>
-              ` : ''}
-            </div>
-            <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); viewAnggota('${a.id}')" title="Detail Lengkap">👁️</button>
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openEditAnggota('${a.id}')" title="Edit Data">✏️</button>
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); cetakKTAFor('${a.id}')" title="Cetak KTA">💳</button>
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openSuratFor('${a.id}')" title="Surat Keterangan Pendaftaran (PDF)">📄</button>
-              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteAnggota('${a.id}')" title="Hapus Data">🗑️</button>
-            </div>
-          </div>
-
-          <div class="d-card-tap-cue">
-            <span>👆 Ketuk kartu untuk detail data & cetak berkas</span>
-            <span class="d-card-tap-arrow">›</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    if (cardList.innerHTML !== newCardsHtml) {
-      cardList.innerHTML = newCardsHtml;
-    }
   }
 }
 
@@ -2376,22 +2275,9 @@ function printFormPendaftaran() {
 function renderLaporan() {
   const list = DB.get('lhg_kegiatan');
   const tbody = document.getElementById('laporan-tbody');
-  const cardList = document.getElementById('laporan-card-list');
 
   if (!list.length) {
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94A3B8;">Belum ada laporan kegiatan</td></tr>';
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">📅</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Laporan Kegiatan</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Catatan dokumentasi agenda pelaksanaan kegiatan yayasan belum tersedia.</div>
-          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddLaporan()">
-            ➕ Tambah Laporan Agenda
-          </button>
-        </div>
-      `;
-    }
     return;
   }
 
@@ -2412,40 +2298,6 @@ function renderLaporan() {
           </div>
         </td>
       </tr>
-    `).join('');
-  }
-
-  if (cardList) {
-    cardList.innerHTML = list.map(k => `
-      <div class="data-record-card">
-        <div class="d-card-header">
-          <div class="d-card-avatar-wrap">
-            <div class="d-card-avatar" style="background:#EFF6FF; color:#2563EB; border-color:#BFDBFE;">📅</div>
-          </div>
-          <div class="d-card-main-info">
-            <div class="d-card-title-row">
-              <h4 class="d-card-name">${k.judul}</h4>
-              <span class="disability-pill ${k.status === 'Selesai' ? 'badge-grahita' : 'badge-autis'}">${k.status}</span>
-            </div>
-            <div class="d-card-sub-row">
-              <span>📅 ${formatDate(k.tanggal)}</span>
-              ${k.lokasi ? `<span>• 📍 ${k.lokasi}</span>` : ''}
-            </div>
-          </div>
-        </div>
-        <div class="d-card-tags">
-          <span class="d-card-tag-pill" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0; font-weight:700;">
-            👥 ${k.peserta || 0} Peserta
-          </span>
-          ${k.deskripsi ? `<div style="font-size:11.5px; color:#475569; margin-top:4px; line-height:1.4;">${k.deskripsi}</div>` : ''}
-        </div>
-        <div class="d-card-footer">
-          <span style="font-size: 11px; color: #64748B;">Agenda Kegiatan Terlaksana</span>
-          <div class="d-card-actions">
-            <button type="button" class="btn-action-icon danger" onclick="deleteLaporan(${k.id})" title="Hapus Laporan">🗑️</button>
-          </div>
-        </div>
-      </div>
     `).join('');
   }
 }
@@ -3179,7 +3031,6 @@ function renderArsipTable(search) {
   list.sort((a, b) => new Date(b.tanggal || b.id || 0) - new Date(a.tanggal || a.id || 0));
 
   const tbody = document.getElementById('arsip-tbody');
-  const cardList = document.getElementById('arsip-card-list');
 
   if (list.length === 0) {
     if (tbody) {
@@ -3191,18 +3042,6 @@ function renderArsipTable(search) {
             <p style="font-size: 12px;">Klik tombol "Simpan Arsip Berkas" di atas untuk menambahkan dokumen resmi yayasan.</p>
           </td>
         </tr>
-      `;
-    }
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">📁</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Berkas yang Diarsipkan</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Tidak ada arsip dokumen resmi yayasan yang cocok dengan pencarian atau filter Anda.</div>
-          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddArsip()">
-            ➕ Simpan Arsip Berkas
-          </button>
-        </div>
       `;
     }
     return;
@@ -3267,52 +3106,6 @@ function renderArsipTable(search) {
             </div>
           </td>
         </tr>
-      `;
-    }).join('');
-  }
-
-  if (cardList) {
-    cardList.innerHTML = list.map(a => {
-      const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
-      const hasDigital = a.fileUrl || a.fileBase64;
-      return `
-        <div class="data-record-card" onclick="viewArsip(${a.id})" title="Ketuk untuk melihat detail arsip berkas">
-          <div class="d-card-header">
-            <div class="d-card-avatar-wrap">
-              <div class="d-card-avatar" style="background:${katStyle.bg}; color:${katStyle.color}; border-color:${katStyle.border};">
-                ${katStyle.icon}
-              </div>
-            </div>
-            <div class="d-card-main-info">
-              <div class="d-card-title-row">
-                <h4 class="d-card-name">${a.nama}</h4>
-              </div>
-              <div class="d-card-sub-row">
-                <span>📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</span>
-                ${a.nomor ? `<span>• No: ${a.nomor}</span>` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="d-card-tags">
-            <span style="background:${katStyle.bg}; color:${katStyle.color}; border:1px solid ${katStyle.border}; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:3px;">
-              ${katStyle.icon} ${a.kategori}
-            </span>
-            ${a.lokasiFisik ? `<span class="d-card-tag-pill">📍 ${a.lokasiFisik}</span>` : ''}
-            ${hasDigital ? `<span class="d-card-tag-pill" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0; font-weight:700;">📎 Digital</span>` : `<span class="d-card-tag-pill">📦 Fisik</span>`}
-          </div>
-          <div class="d-card-footer">
-            <span style="font-size: 11px; color: #64748B;">Instansi: <strong>${a.penerbit || '-'}</strong></span>
-            <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); viewArsip(${a.id})" title="Lihat Detail">👁️</button>
-              <button type="button" class="btn-action-icon edit" onclick="event.stopPropagation(); openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
-            </div>
-          </div>
-          <div class="d-card-tap-cue">
-            <span>👆 Ketuk untuk buka berkas digital & detail</span>
-            <span class="d-card-tap-arrow">›</span>
-          </div>
-        </div>
       `;
     }).join('');
   }
@@ -4089,7 +3882,6 @@ async function saveDirectInputAnak(e) {
 
   // Update badge & refresh tables
   setText('nav-badge-anak', anggota.length);
-  setText('bottom-badge-anak', anggota.length);
   renderAnggotaTable();
   renderDashboard();
   if (typeof renderCetakKTA === 'function') renderCetakKTA();
@@ -4137,7 +3929,6 @@ function renderManajemenUserTable(search, filterRole) {
   }
 
   const tbody = document.getElementById('user-tbody');
-  const cardList = document.getElementById('user-card-list');
 
   if (users.length === 0) {
     if (tbody) {
@@ -4148,15 +3939,6 @@ function renderManajemenUserTable(search, filterRole) {
             <p>Tidak ada pengguna yang cocok dengan kriteria</p>
           </td>
         </tr>
-      `;
-    }
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">👤</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Pengguna Tidak Ditemukan</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Tidak ada akun pengguna yang cocok dengan filter atau kata kunci pencarian.</div>
-        </div>
       `;
     }
     return;
@@ -4200,47 +3982,6 @@ function renderManajemenUserTable(search, filterRole) {
             </div>
           </td>
         </tr>
-      `;
-    }).join('');
-  }
-
-  if (cardList) {
-    cardList.innerHTML = users.map(u => {
-      const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
-      const isSelf = currentUser && currentUser.username === u.username;
-      return `
-        <div class="data-record-card">
-          <div class="d-card-header">
-            <div class="d-card-avatar-wrap">
-              <div class="d-card-avatar" style="background:#F1F5F9; color:#334155; border-color:#CBD5E1;">
-                ${getInitials(u.nama || u.username)}
-              </div>
-            </div>
-            <div class="d-card-main-info">
-              <div class="d-card-title-row">
-                <h4 class="d-card-name">${u.nama || u.username}</h4>
-                <span class="${u.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${u.status}</span>
-              </div>
-              <div class="d-card-sub-row">
-                <span style="font-family:monospace; font-weight:700; color:#0F172A;">🔑 ${u.username}</span>
-                ${isSelf ? '<span style="font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
-              </div>
-            </div>
-          </div>
-          <div class="d-card-tags">
-            <span class="${roleBadgeClass}">👤 ${u.role}</span>
-            <span class="d-card-tag-pill">📅 Terdaftar: ${u.createdAt || '-'}</span>
-          </div>
-          <div class="d-card-footer">
-            <span style="font-size: 11.5px; color: #64748B;">Kelola Akun</span>
-            <div class="d-card-actions">
-              <button type="button" class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna">✏️</button>
-              ${!isSelf && u.username !== '2172041908850002' ? `
-                <button type="button" class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">🗑️</button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
       `;
     }).join('');
   }
@@ -4422,7 +4163,6 @@ function renderBantuanStats() {
   setText('stat-bantuan-alat', alatBantu);
   setText('stat-bantuan-sembako', sembako);
   setText('nav-badge-bantuan', total);
-  setText('bottom-badge-bantuan', total);
 }
 
 let activeBantuanKategori = '';
@@ -4456,7 +4196,6 @@ function renderBantuanTable(search) {
   list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
 
   const tbody = document.getElementById('bantuan-tbody');
-  const cardList = document.getElementById('bantuan-card-list');
 
   if (list.length === 0) {
     if (tbody) {
@@ -4468,18 +4207,6 @@ function renderBantuanTable(search) {
             <p style="font-size: 12px;">Klik tombol "Catat Bantuan Baru" di atas untuk merekam bantuan yang diserahkan kepada anak.</p>
           </td>
         </tr>
-      `;
-    }
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">🎁</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Catatan Bantuan</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada penyaluran bantuan yang tercatat sesuai filter atau pencarian Anda.</div>
-          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddBantuan()">
-            ➕ Catat Bantuan Baru
-          </button>
-        </div>
       `;
     }
     return;
@@ -4494,7 +4221,7 @@ function renderBantuanTable(search) {
     'Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '🎁' }
   };
 
-  // Render desktop table
+  // Render table
   if (tbody) {
     const newTbodyHtml = list.map((b, idx) => {
       const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
@@ -4542,66 +4269,6 @@ function renderBantuanTable(search) {
 
     if (tbody.innerHTML !== newTbodyHtml) {
       tbody.innerHTML = newTbodyHtml;
-    }
-  }
-
-  // Render mobile cards (Card View)
-  if (cardList) {
-    const newCardsHtml = list.map((b) => {
-      const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
-      return `
-        <div class="data-record-card" onclick="openDetailBantuan(${b.id})" title="Ketuk untuk melihat detail bantuan">
-          <div class="d-card-header">
-            <div class="d-card-avatar-wrap">
-              <div class="d-card-avatar">${getInitials(b.anakNama)}</div>
-            </div>
-            <div class="d-card-main-info">
-              <div class="d-card-title-row">
-                <h4 class="d-card-name">${b.anakNama}</h4>
-                <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 2px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
-                  ${katStyle.icon} ${b.kategori}
-                </span>
-              </div>
-              <div class="d-card-sub-row">
-                <span style="font-weight: 800; color: #047857; font-size: 13px;">🎁 ${b.namaBantuan}</span>
-                ${b.jumlah ? `<span style="font-size: 11px; color: #64748B;">• ${b.jumlah}</span>` : ''}
-              </div>
-            </div>
-          </div>
-
-          <div class="d-card-tags">
-            <span class="d-card-tag-pill">📅 ${formatDate(b.tanggal)}</span>
-            <span class="d-card-tag-pill">🏛️ ${b.sumber || 'Kas Yayasan'}</span>
-            ${b.petugas ? `<span class="d-card-tag-pill">👤 ${b.petugas}</span>` : ''}
-          </div>
-
-          ${b.keterangan ? `
-            <div style="font-size: 11.5px; color: #475569; background: #F8FAFC; border-radius: 8px; padding: 7px 10px; margin-bottom: 8px; font-style: italic;">
-              "${b.keterangan}"
-            </div>
-          ` : ''}
-
-          <div class="d-card-footer">
-            <div class="d-card-parent-info">
-              <span>Disabilitas: <strong>${b.anakDisabilitas || '-'}</strong></span>
-            </div>
-            <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
-              <button type="button" class="btn-action-icon" onclick="event.stopPropagation(); openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
-            </div>
-          </div>
-
-          <div class="d-card-tap-cue">
-            <span>👆 Ketuk kartu untuk rincian data penyerahan bantuan</span>
-            <span class="d-card-tap-arrow">›</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    if (cardList.innerHTML !== newCardsHtml) {
-      cardList.innerHTML = newCardsHtml;
     }
   }
 }
@@ -4918,7 +4585,6 @@ function filterRencanaKegiatan() {
 function renderRencanaKegiatanTable() {
   const list = getRencanaKegiatanList();
   const tbody = document.getElementById('rencana-tbody');
-  const cardList = document.getElementById('rencana-card-list');
 
   const q = (document.getElementById('rencana-search-input')?.value || '').toLowerCase().trim();
   const filterStatus = (document.getElementById('rencana-filter-status')?.value || '').trim();
@@ -4950,22 +4616,10 @@ function renderRencanaKegiatanTable() {
         </tr>
       `;
     }
-    if (cardList) {
-      cardList.innerHTML = `
-        <div class="mobile-empty-card">
-          <div style="font-size: 38px; margin-bottom: 8px;">📋</div>
-          <div style="font-weight: 800; color: #1E293B; font-size: 14.5px;">Belum Ada Rencana Kegiatan</div>
-          <div style="font-size: 12px; color: #64748B; margin-top: 4px; line-height: 1.5;">Belum ada agenda kerja yang sesuai filter atau pencarian Anda.</div>
-          <button type="button" class="btn-top-add" style="margin-top: 14px; width: 100%; justify-content: center;" onclick="openAddRencanaKegiatan()">
-            ➕ Susun Rencana Baru
-          </button>
-        </div>
-      `;
-    }
     return;
   }
 
-  // Render desktop table
+  // Render table
   if (tbody) {
     tbody.innerHTML = filtered.map((item, idx) => {
       let tglText = formatDate(item.tglMulai);
@@ -5013,63 +4667,6 @@ function renderRencanaKegiatanTable() {
             </div>
           </td>
         </tr>
-      `;
-    }).join('');
-  }
-
-  // Render mobile cards (Card View)
-  if (cardList) {
-    cardList.innerHTML = filtered.map((item) => {
-      let tglText = formatDate(item.tglMulai);
-      if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
-        tglText += ` s/d ${formatDate(item.tglSelesai)}`;
-      }
-      const biayaText = item.estimasiBiaya ? item.estimasiBiaya : 'Swadaya / Nihil';
-
-      return `
-        <div class="data-record-card" onclick="viewRencanaKegiatan(${item.id})" title="Ketuk untuk melihat detail rencana kegiatan">
-          <div class="d-card-header">
-            <div class="d-card-avatar-wrap">
-              <div class="d-card-avatar" style="background: #EFF6FF; color: #2563EB; border-color: #BFDBFE;">📋</div>
-            </div>
-            <div class="d-card-main-info">
-              <div class="d-card-title-row">
-                <h4 class="d-card-name" style="white-space: normal; line-height: 1.3;">${item.judul}</h4>
-              </div>
-              <div class="d-card-sub-row">
-                <span style="color: #059669; font-weight: 700;">🏷️ ${item.kategori}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="d-card-tags">
-            ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
-            ${getRencanaPrioritasBadge(item.prioritas || 'Sedang')}
-            <span class="d-card-tag-pill" style="font-weight: 700; color: #2563EB;">💰 ${biayaText}</span>
-          </div>
-
-          <div class="d-card-body-info">
-            <div>📅 <strong>Jadwal:</strong> ${tglText}</div>
-            <div>📍 <strong>Lokasi:</strong> ${item.lokasi || 'Sekretariat Yayasan'}</div>
-          </div>
-
-          <div class="d-card-footer">
-            <div class="d-card-parent-info">
-              <span>PIC: <strong>${item.penanggungJawab || '-'}</strong></span>
-            </div>
-            <div class="d-card-actions" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-icon" style="color: #2563EB;" onclick="event.stopPropagation(); viewRencanaKegiatan(${item.id})" title="Detail Rencana">👁️</button>
-              <button type="button" class="btn-action-icon" style="color: #059669;" onclick="event.stopPropagation(); printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen A4">🖨️</button>
-              <button type="button" class="btn-action-icon" style="color: #D97706;" onclick="event.stopPropagation(); openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
-              <button type="button" class="btn-action-icon danger" onclick="event.stopPropagation(); deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
-            </div>
-          </div>
-
-          <div class="d-card-tap-cue">
-            <span>👆 Ketuk kartu untuk melihat lembar rencana lengkap & cetak A4</span>
-            <span class="d-card-tap-arrow">›</span>
-          </div>
-        </div>
       `;
     }).join('');
   }

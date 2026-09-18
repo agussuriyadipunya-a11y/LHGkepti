@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=24.0">
+  <link rel="stylesheet" href="css/style.css?v=25.0">
 </head>
 <body class="app-body">
 
@@ -587,10 +587,6 @@
                 <tbody id="anggota-tbody"></tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU DATA ANAK (CARD VIEW) -->
-            <div id="anggota-card-list" class="mobile-card-list"></div>
-
           </div>
         </section>
 
@@ -748,9 +744,6 @@
                 </tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU RIWAYAT BANTUAN (CARD VIEW) -->
-            <div id="bantuan-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -857,9 +850,6 @@
                 </tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU RENCANA KEGIATAN (CARD VIEW) -->
-            <div id="rencana-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -896,9 +886,6 @@
                 <tbody id="laporan-tbody"></tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU LAPORAN KEGIATAN (CARD VIEW) -->
-            <div id="laporan-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -1117,9 +1104,6 @@
                 </tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU ARSIP BERKAS (CARD VIEW) -->
-            <div id="arsip-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -1173,9 +1157,6 @@
                 </tbody>
               </table>
             </div>
-
-            <!-- TAMPILAN MOBILE: KARTU USER (CARD VIEW) -->
-            <div id="user-card-list" class="mobile-card-list"></div>
           </div>
         </section>
 
@@ -2113,32 +2094,6 @@
     </div>
   </div>
 
-  <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
-  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navigasi Menu Mobile">
-    <button type="button" class="bottom-nav-item active" id="bottom-nav-btn-main" data-bottom-page="dashboard" onclick="navigate('dashboard')">
-      <span class="bottom-nav-icon" id="bottom-nav-icon-main">📊</span>
-      <span class="bottom-nav-label" id="bottom-nav-label-main">Dashboard</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-bottom-page="input-data-form" onclick="navigate('input-data-form')">
-      <span class="bottom-nav-icon">📝</span>
-      <span class="bottom-nav-label">Input Form</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-bottom-page="input-data" onclick="navigate('input-data')">
-      <span class="bottom-nav-icon">👥</span>
-      <span class="bottom-nav-label">Data Anak</span>
-      <span class="bottom-nav-badge" id="bottom-badge-anak">0</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-bottom-page="bantuan" onclick="navigate('bantuan')">
-      <span class="bottom-nav-icon">🎁</span>
-      <span class="bottom-nav-label">Bantuan</span>
-      <span class="bottom-nav-badge" id="bottom-badge-bantuan">0</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-bottom-page="menu" onclick="toggleSidebar()">
-      <span class="bottom-nav-icon">☰</span>
-      <span class="bottom-nav-label">Menu</span>
-    </button>
-  </nav>
-
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="toast-container"></div>
 
@@ -2181,6 +2136,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=29.0"></script>
+  <script src="js/app.js?v=30.0"></script>
 </body>
 </html>
