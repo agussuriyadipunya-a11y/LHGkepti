@@ -3752,6 +3752,7 @@ function showModernConfirm({
     overlay.style.display = 'flex';
     void overlay.offsetWidth;
     overlay.classList.add('show');
+    document.body.classList.add('modal-open');
 
     if (cancelBtn) {
       cancelBtn.focus();
@@ -3771,13 +3772,14 @@ function closeModernConfirm(result) {
   const overlay = document.getElementById('lhg-confirm-dialog');
   if (!overlay) return;
   overlay.classList.remove('show');
+  document.body.classList.remove('modal-open');
   setTimeout(() => {
     overlay.style.display = 'none';
     if (_lhgConfirmResolver) {
       _lhgConfirmResolver(result);
       _lhgConfirmResolver = null;
     }
-  }, 220);
+  }, 200);
 }
 
 // Global keyboard shortcut for confirmation dialog
