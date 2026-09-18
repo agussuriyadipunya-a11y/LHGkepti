@@ -4042,9 +4042,11 @@ body.drawer-open {
   background: #F1F5F9;
   border: 1px solid #E2E8F0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  -webkit-transform: translateZ(0);
   transform: translateZ(0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  /* NO transition by default - prevents flicker on touch */
 }
 
 .kegiatan-photo-item img {
@@ -4052,51 +4054,38 @@ body.drawer-open {
   height: 100%;
   object-fit: cover;
   display: block;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-.kegiatan-photo-overlay {
+/* Always-visible delete button for ALL devices */
+.kegiatan-photo-del-mobile {
   position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-}
-
-.kegiatan-photo-zoom {
-  width: 38px;
-  height: 38px;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  color: #0F172A;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  transform: scale(0.85);
-}
-
-.kegiatan-photo-delete-btn {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(225, 29, 72, 0.9);
+  background: rgba(220, 38, 38, 0.88);
   color: #FFFFFF;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-/* ONLY DESKTOP WITH MOUSE: Enable hover transforms & overlay */
+.kegiatan-photo-del-mobile:active {
+  transform: scale(0.9);
+  background: #B91C1C;
+}
+
+/* Desktop mouse hover: nice lift effect + hover enlargement */
 @media (hover: hover) and (pointer: fine) {
   .kegiatan-photo-item {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -4111,43 +4100,31 @@ body.drawer-open {
   .kegiatan-photo-item:hover img {
     transform: scale(1.06);
   }
-  .kegiatan-photo-overlay {
+  .kegiatan-photo-del-mobile {
+    opacity: 0;
     transition: opacity 0.2s ease;
   }
-  .kegiatan-photo-item:hover .kegiatan-photo-overlay {
+  .kegiatan-photo-item:hover .kegiatan-photo-del-mobile {
     opacity: 1;
   }
-  .kegiatan-photo-zoom {
-    transition: transform 0.2s ease;
-  }
-  .kegiatan-photo-item:hover .kegiatan-photo-zoom {
-    transform: scale(1);
-  }
-  .kegiatan-photo-delete-btn {
-    transition: transform 0.2s ease, background 0.2s ease;
-  }
-  .kegiatan-photo-delete-btn:hover {
-    transform: scale(1.15);
-    background: #BE123C;
+  .kegiatan-photo-del-mobile:hover {
+    transform: scale(1.12);
+    background: #B91C1C;
   }
 }
 
-/* TOUCH DEVICES (MOBILE/TABLET): No hover flash, no stuck overlay, silky smooth scroll */
-@media (hover: none) or (pointer: coarse) {
+/* Touch devices: NO transitions, NO hover tricks, NO overlays */
+@media (hover: none), (pointer: coarse) {
   .kegiatan-photo-item {
     transition: none !important;
-    transform: none !important;
+    will-change: auto !important;
   }
   .kegiatan-photo-item img {
     transition: none !important;
     transform: none !important;
   }
-  .kegiatan-photo-overlay {
-    display: none !important;
-  }
   .kegiatan-photo-item:active {
-    opacity: 0.82;
-    transition: opacity 0.1s ease;
+    opacity: 0.85;
   }
 }
 
