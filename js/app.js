@@ -2732,7 +2732,7 @@ function renderFoto() {
         <div class="kegiatan-album-grid">
           ${group.photos.map((p, idx) => `
             <div class="kegiatan-photo-item" onclick="openLightboxDetail(${p.id})">
-              <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" loading="lazy">
+              <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" decoding="async">
               <div class="kegiatan-photo-overlay">
                 <span class="kegiatan-photo-zoom">🔍</span>
                 <button type="button" class="kegiatan-photo-delete-btn" title="Hapus foto ini" onclick="event.stopPropagation(); deleteSingleFoto(${p.id})">
