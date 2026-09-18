@@ -1,6 +1,6 @@
 // Service Worker - Lentera Hati Gurindam PWA
-// v26 - network-only for app shell, no cache loops
-const CACHE_NAME = 'lhg-pwa-v26';
+// v27 - network-first for app shell, no reload loops, stable caching
+const CACHE_NAME = 'lhg-pwa-v27';
 
 // These are NEVER cached (always fresh from network)
 const NEVER_CACHE = [
@@ -63,9 +63,9 @@ self.addEventListener('fetch', (event) => {
                      pathname.endsWith('.js');
 
   if (isAppShell) {
-    // Network-only for app shell: if offline, show stale but prefer fresh
+    // Network-first for app shell: if offline, fallback to cache
     event.respondWith(
-      fetch(event.request, { cache: 'no-cache' }).catch(() => {
+      fetch(event.request).catch(() => {
         return caches.match(event.request);
       })
     );

@@ -1116,7 +1116,7 @@ function renderAnggotaTable(search) {
 
   // Render tampilan kartu (Card View) untuk layar ponsel / mobile
   if (cardList) {
-    cardList.innerHTML = list.map((a) => {
+    const newCardsHtml = list.map((a) => {
       const waNum = a.kontakWA || a.telWali || '';
       return `
         <div class="data-record-card" onclick="viewAnggota('${a.id}')" title="Ketuk untuk melihat rincian data">
@@ -1172,6 +1172,10 @@ function renderAnggotaTable(search) {
         </div>
       `;
     }).join('');
+
+    if (cardList.innerHTML !== newCardsHtml) {
+      cardList.innerHTML = newCardsHtml;
+    }
   }
 }
 
@@ -2744,7 +2748,6 @@ function renderFoto() {
           ${group.photos.map((p, idx) => `
             <div class="kegiatan-photo-item" onclick="openLightboxDetail(${p.id})">
               <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" decoding="async">
-              <button type="button" class="kegiatan-photo-del-mobile" title="Hapus foto" onclick="event.stopPropagation(); deleteSingleFoto(${p.id})">🗑</button>
               <div class="kegiatan-photo-idx">#${idx + 1}</div>
             </div>
           `).join('')}
@@ -4507,7 +4510,7 @@ function renderBantuanTable(search) {
 
   // Render desktop table
   if (tbody) {
-    tbody.innerHTML = list.map((b, idx) => {
+    const newTbodyHtml = list.map((b, idx) => {
       const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
       return `
         <tr>
@@ -4519,8 +4522,8 @@ function renderBantuanTable(search) {
             <div style="display: flex; align-items: center; gap: 8px;">
               <div class="table-avatar">${getInitials(b.anakNama)}</div>
               <div>
-                <div style="font-weight: 800; font-size: 13px; color: #0F172A;">${b.anakNama}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${b.anakDisabilitas || '-'} • NIK: ${b.anakNik || '-'}</div>
+                <strong style="color: #0F172A; font-size: 13px;">${b.anakNama}</strong>
+                ${b.anakDisabilitas ? `<div style="font-size: 11px; color: #64748B;">${b.anakDisabilitas}</div>` : ''}
               </div>
             </div>
           </td>
@@ -4550,11 +4553,15 @@ function renderBantuanTable(search) {
         </tr>
       `;
     }).join('');
+
+    if (tbody.innerHTML !== newTbodyHtml) {
+      tbody.innerHTML = newTbodyHtml;
+    }
   }
 
   // Render mobile cards (Card View)
   if (cardList) {
-    cardList.innerHTML = list.map((b) => {
+    const newCardsHtml = list.map((b) => {
       const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
       return `
         <div class="data-record-card" onclick="openDetailBantuan(${b.id})" title="Ketuk untuk melihat detail bantuan">
@@ -4606,6 +4613,10 @@ function renderBantuanTable(search) {
         </div>
       `;
     }).join('');
+
+    if (cardList.innerHTML !== newCardsHtml) {
+      cardList.innerHTML = newCardsHtml;
+    }
   }
 }
 
@@ -6126,7 +6137,7 @@ function initModalListeners() {
 let deferredInstallPrompt = null;
 
 // App version — bump this to force all mobile browsers to reload
-const APP_BUILD_VERSION = '25.0';
+const APP_BUILD_VERSION = '26.0';
 
 function registerPWA() {
   if (!('serviceWorker' in navigator)) return;
@@ -6172,12 +6183,8 @@ function registerPWA() {
       console.warn('Service Worker Registration failed:', err);
     });
 
-  // When a new SW takes control, reload page ONCE to get fresh assets
-  let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return;
-    reloading = true;
-    window.location.reload();
+    console.log('Service Worker controller changed to new version');
   });
 }
 
