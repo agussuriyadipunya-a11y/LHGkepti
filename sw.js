@@ -1,6 +1,6 @@
 // Service Worker - Lentera Hati Gurindam PWA
-// v25 - NETWORK ONLY for app shell, cache only for images/fonts
-const CACHE_NAME = 'lhg-pwa-v25';
+// v26 - network-only for app shell, no cache loops
+const CACHE_NAME = 'lhg-pwa-v26';
 
 // These are NEVER cached (always fresh from network)
 const NEVER_CACHE = [

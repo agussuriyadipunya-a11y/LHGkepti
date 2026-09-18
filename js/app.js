@@ -821,7 +821,7 @@ function navigate(page) {
   if (page === 'form-pendaftaran') renderFormPendaftaranPage();
   if (page === 'laporan-kegiatan') renderLaporan();
   if (page === 'surat-menyurat') renderSurat();
-  if (page === 'foto-kegiatan') renderFoto();
+  if (page === 'foto-kegiatan') { _lastFotoHash = ''; renderFoto(); }
   if (page === 'arsip-berkas') renderArsip();
   if (page === 'manajemen-user') renderManajemenUserTable();
 }
@@ -2628,6 +2628,9 @@ function escapeForJsStr(str) {
   return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+// Track last rendered hash to avoid unnecessary re-renders (prevents blink)
+let _lastFotoHash = '';
+
 function renderFoto() {
   const container = document.getElementById('photo-grouped-container');
   if (!container) return;
@@ -2679,8 +2682,8 @@ function renderFoto() {
   }
 
   if (search) {
-    groupsArray = groupsArray.filter(g => 
-      g.judul.toLowerCase().includes(search) || 
+    groupsArray = groupsArray.filter(g =>
+      g.judul.toLowerCase().includes(search) ||
       (g.deskripsi && g.deskripsi.toLowerCase().includes(search)) ||
       (g.kategori && g.kategori.toLowerCase().includes(search))
     );
@@ -2688,6 +2691,14 @@ function renderFoto() {
 
   // Sort by latest date descending
   groupsArray.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+  // --- HASH CHECK: skip re-render if data hasn't changed (prevents blink) ---
+  const currentHash = rawList.length + '|' + search + '|' + filterKat + '|' +
+    groupsArray.map(g => g.judul + ':' + g.photos.length + ':' + g.tanggal).join(',');
+  if (currentHash === _lastFotoHash && container.children.length > 0) {
+    return; // Nothing changed, skip re-render
+  }
+  _lastFotoHash = currentHash;
 
   if (groupsArray.length === 0) {
     container.innerHTML = `
@@ -2703,7 +2714,7 @@ function renderFoto() {
     return;
   }
 
-  container.innerHTML = groupsArray.map(group => {
+  const newHTML = groupsArray.map(group => {
     const katBadgeClass = 'badge-' + (group.kategori || 'lainnya').toLowerCase().replace(/\s+/g, '-');
     return `
       <div class="kegiatan-album-card">
@@ -2742,10 +2753,13 @@ function renderFoto() {
     `;
   }).join('');
 
-  // After render, remove any stale overlay elements on touch devices
-  if (typeof fixMobileTouchFlicker === 'function') {
-    requestAnimationFrame(() => fixMobileTouchFlicker());
+  // Only update DOM if content actually changed (extra safety)
+  if (container.innerHTML !== newHTML) {
+    container.innerHTML = newHTML;
   }
+
+  // After render, sanitize any leftover overlay elements on touch devices
+  fixMobileTouchFlicker();
 }
 
 function openAddFoto(prefillJudul = '', prefillTanggal = '', prefillKategori = '', prefillDeskripsi = '') {
@@ -3036,6 +3050,7 @@ async function deleteSingleFoto(id) {
   }
 
   closeLightbox();
+  _lastFotoHash = ''; // Force re-render on next renderFoto call
   renderFoto();
   showToast('Foto berhasil dihapus.', 'warning');
 }
@@ -3066,6 +3081,7 @@ async function deleteAlbumKegiatan(judul) {
     console.warn('Gagal menghapus album foto dari cloud:', e);
   }
 
+  _lastFotoHash = ''; // Force re-render on next renderFoto call
   renderFoto();
   showToast(`Album kegiatan "${judul}" dan ${toDelete.length} foto berhasil dihapus.`, 'warning');
 }
@@ -6065,46 +6081,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 // MOBILE TOUCH FLICKER FIX
 // ==============================================================================
 function fixMobileTouchFlicker() {
-  // Detect touch device
   const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   if (!isTouch) return;
 
-  // Remove ALL .kegiatan-photo-overlay elements from the DOM entirely on touch devices.
-  // This is a belt-and-suspenders fix in case old cached CSS/HTML still renders the overlay.
-  function removePhotoOverlays() {
-    document.querySelectorAll('.kegiatan-photo-overlay').forEach(el => {
-      el.style.display = 'none';
-      el.style.opacity = '0';
-      el.style.visibility = 'hidden';
-      el.style.pointerEvents = 'none';
-    });
-    // Also ensure no transition on photo items
-    document.querySelectorAll('.kegiatan-photo-item').forEach(el => {
-      el.style.transition = 'none';
-      el.style.webkitTransition = 'none';
-    });
-  }
+  // Force-hide any .kegiatan-photo-overlay elements that may exist from cached HTML.
+  // NOTE: No MutationObserver here — that causes infinite loops. Call this manually after each render.
+  document.querySelectorAll('.kegiatan-photo-overlay').forEach(el => {
+    el.style.cssText = 'display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;';
+  });
 
-  // Run immediately
-  removePhotoOverlays();
-
-  // Run again after any potential re-render (watch for DOM mutations in photo container)
-  const photoContainer = document.getElementById('photo-grouped-container');
-  if (photoContainer) {
-    const obs = new MutationObserver(() => {
-      removePhotoOverlays();
-    });
-    obs.observe(photoContainer, { childList: true, subtree: true });
-  }
-
-  // Prevent hover state from sticking after touch on Android/iOS
-  // When finger lifts, blur all elements to clear stuck hover
-  document.addEventListener('touchend', () => {
-    setTimeout(() => {
-      const hovered = document.querySelector('.kegiatan-photo-item:hover, .kegiatan-photo-item:focus');
-      if (hovered) hovered.blur();
-    }, 0);
-  }, { passive: true });
+  // Remove all transition/transform CSS from photo items to prevent movement flicker
+  document.querySelectorAll('.kegiatan-photo-item').forEach(el => {
+    el.style.transition = 'none';
+    el.style.webkitTransition = 'none';
+    el.style.transform = '';
+    el.style.webkitTransform = '';
+  });
 }
 
 function initModalListeners() {
