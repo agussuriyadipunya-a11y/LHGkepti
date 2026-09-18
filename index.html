@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=21.0">
+  <link rel="stylesheet" href="css/style.css?v=22.0">
 </head>
 <body class="app-body">
 
@@ -2037,22 +2037,32 @@
     </div>
   </div>
 
-  <!-- LIGHTBOX VIEWER -->
-  <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
-    <div class="lightbox-box" onclick="event.stopPropagation()">
-      <button class="lightbox-close-btn" onclick="closeLightbox()">&times;</button>
-      <img id="lightbox-img" src="" alt="Preview Foto">
-      <div class="lightbox-caption-box">
-        <p id="lightbox-caption" class="lightbox-caption-text"></p>
-        <p id="lightbox-sub" style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;"></p>
-        <div class="lightbox-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-          <a id="lightbox-btn-download" href="" download="foto-kegiatan-lhg.jpg" class="btn-sec" style="padding: 6px 14px; font-size: 11.5px; background: rgba(255,255,255,0.18); color: #FFF; border-color: rgba(255,255,255,0.35); text-decoration: none; border-radius: 8px;">
-            <span>⬇️ Unduh Foto</span>
+  <!-- MODAL: DETAIL / PRATINJAU FOTO KEGIATAN -->
+  <div id="modal-view-foto" class="modal-overlay">
+    <div class="modal-dialog" style="max-width: 640px; max-height: 90vh;">
+      <div class="modal-header-clean">
+        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+          <span style="font-size: 22px;">📸</span>
+          <div style="min-width: 0;">
+            <h3 class="modal-title" id="view-foto-judul" style="font-size: 15px; font-weight: 800; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Detail Foto Kegiatan</h3>
+            <p class="modal-subtitle" id="view-foto-sub" style="font-size: 11.5px; color: #64748B;">Tanggal & Kategori</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="closeModal('modal-view-foto')" title="Tutup Jendela">&times;</button>
+      </div>
+      <div class="modal-body-clean" style="padding: 10px; text-align: center; background: #0F172A; display: flex; align-items: center; justify-content: center; min-height: 220px; max-height: 55vh; overflow: hidden; border-radius: 8px; margin: 12px 16px 0;">
+        <img id="view-foto-img" src="" alt="Foto Kegiatan" style="max-width: 100%; max-height: 52vh; object-fit: contain; border-radius: 6px; display: block;">
+      </div>
+      <div class="modal-footer-clean" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-top: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <a id="view-foto-btn-dl" href="" download="foto-kegiatan.jpg" class="btn-sec" style="padding: 7px 14px; font-size: 12px; text-decoration: none;">
+            <span>⬇️ Unduh</span>
           </a>
-          <button type="button" id="lightbox-btn-delete" class="btn-sec" style="padding: 6px 14px; font-size: 11.5px; background: rgba(220,38,38,0.35); color: #FECACA; border-color: rgba(220,38,38,0.5); border-radius: 8px;" onclick="deleteCurrentLightboxPhoto()">
-            <span>🗑️ Hapus Foto</span>
+          <button type="button" class="btn-sec" style="padding: 7px 14px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="deleteCurrentViewPhoto()">
+            <span>🗑️ Hapus</span>
           </button>
         </div>
+        <button type="button" class="btn-prim" onclick="closeModal('modal-view-foto')">Tutup</button>
       </div>
     </div>
   </div>
@@ -2171,6 +2181,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=26.0"></script>
+  <script src="js/app.js?v=27.0"></script>
 </body>
 </html>

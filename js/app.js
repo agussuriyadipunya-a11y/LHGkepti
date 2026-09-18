@@ -2760,9 +2760,6 @@ function renderFoto() {
   if (container.innerHTML !== newHTML) {
     container.innerHTML = newHTML;
   }
-
-  // After render, sanitize any leftover overlay elements on touch devices
-  fixMobileTouchFlicker();
 }
 
 function openAddFoto(prefillJudul = '', prefillTanggal = '', prefillKategori = '', prefillDeskripsi = '') {
@@ -3091,45 +3088,46 @@ async function deleteAlbumKegiatan(judul) {
 
 function openLightboxDetail(id) {
   const list = DB.get('lhg_foto', []);
-  const photo = list.find(p => p.id === id);
+  const photo = list.find(p => String(p.id) === String(id));
   if (!photo) return;
 
-  currentLightboxPhotoId = id;
-  const imgEl = document.getElementById('lightbox-img');
-  const captionEl = document.getElementById('lightbox-caption');
-  const subEl = document.getElementById('lightbox-sub');
-  const dlBtn = document.getElementById('lightbox-btn-download');
+  currentLightboxPhotoId = photo.id;
+  const imgEl = document.getElementById('view-foto-img');
+  const judulEl = document.getElementById('view-foto-judul');
+  const subEl = document.getElementById('view-foto-sub');
+  const dlBtn = document.getElementById('view-foto-btn-dl');
 
   if (imgEl) imgEl.src = photo.url;
-  if (captionEl) captionEl.textContent = photo.judul || 'Dokumentasi Kegiatan';
+  if (judulEl) judulEl.textContent = photo.judul || 'Dokumentasi Kegiatan';
   if (subEl) subEl.textContent = `${formatDate(photo.tanggal)} • Kategori: ${photo.kategori || 'Kegiatan'}${photo.deskripsi ? ' • ' + photo.deskripsi : ''}`;
   if (dlBtn) {
     dlBtn.href = photo.url;
     dlBtn.download = `${(photo.judul || 'foto-kegiatan').toLowerCase().replace(/\s+/g, '-')}-${photo.id}.jpg`;
   }
 
-  const lb = document.getElementById('lightbox');
-  if (lb) lb.classList.add('open');
+  openModal('modal-view-foto');
 }
 
 function openLightbox(url, caption) {
-  const imgEl = document.getElementById('lightbox-img');
-  const captionEl = document.getElementById('lightbox-caption');
+  const imgEl = document.getElementById('view-foto-img');
+  const judulEl = document.getElementById('view-foto-judul');
+  const subEl = document.getElementById('view-foto-sub');
   if (imgEl) imgEl.src = url;
-  if (captionEl) captionEl.textContent = caption;
-  const lb = document.getElementById('lightbox');
-  if (lb) lb.classList.add('open');
+  if (judulEl) judulEl.textContent = caption || 'Dokumentasi Kegiatan';
+  if (subEl) subEl.textContent = '';
+  openModal('modal-view-foto');
 }
 
 function closeLightbox() {
   currentLightboxPhotoId = null;
-  const lb = document.getElementById('lightbox');
-  if (lb) lb.classList.remove('open');
+  closeModal('modal-view-foto');
 }
 
-function deleteCurrentLightboxPhoto() {
+function deleteCurrentViewPhoto() {
   if (currentLightboxPhotoId !== null) {
-    deleteSingleFoto(currentLightboxPhotoId);
+    const id = currentLightboxPhotoId;
+    closeModal('modal-view-foto');
+    deleteSingleFoto(id);
   }
 }
 
@@ -6084,31 +6082,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   registerPWA();
   // Initialize touch-friendly modal backdrop tap listeners
   initModalListeners();
-  // Fix mobile touch flicker on ALL pages
-  fixMobileTouchFlicker();
 });
-
-// ==============================================================================
-// MOBILE TOUCH FLICKER FIX
-// ==============================================================================
-function fixMobileTouchFlicker() {
-  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  if (!isTouch) return;
-
-  // Force-hide any .kegiatan-photo-overlay elements that may exist from cached HTML.
-  // NOTE: No MutationObserver here — that causes infinite loops. Call this manually after each render.
-  document.querySelectorAll('.kegiatan-photo-overlay').forEach(el => {
-    el.style.cssText = 'display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;';
-  });
-
-  // Remove all transition/transform CSS from photo items to prevent movement flicker
-  document.querySelectorAll('.kegiatan-photo-item').forEach(el => {
-    el.style.transition = 'none';
-    el.style.webkitTransition = 'none';
-    el.style.transform = '';
-    el.style.webkitTransform = '';
-  });
-}
 
 function initModalListeners() {
   // Tap outside modal content (on overlay backdrop) to close
@@ -6137,55 +6111,13 @@ function initModalListeners() {
 let deferredInstallPrompt = null;
 
 // App version — bump this to force all mobile browsers to reload
-const APP_BUILD_VERSION = '26.0';
-
 function registerPWA() {
-  if (!('serviceWorker' in navigator)) return;
-
-  // ---- VERSION CHECK: clear stale caches if version changed ----
-  const savedBuild = localStorage.getItem('lhg_build_version');
-  if (savedBuild !== APP_BUILD_VERSION) {
-    localStorage.setItem('lhg_build_version', APP_BUILD_VERSION);
-    // Clear ALL browser caches
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err => {
+        console.warn('Service Worker registration failed:', err);
       });
-    }
   }
-
-  // ---- SERVICE WORKER REGISTRATION ----
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg => {
-      // Force SW to check for update immediately
-      reg.update();
-
-      // If a new SW is waiting to activate, tell it to skip waiting NOW
-      function activateWaitingSW(worker) {
-        worker.postMessage({ type: 'SKIP_WAITING' });
-      }
-
-      if (reg.waiting) {
-        activateWaitingSW(reg.waiting);
-      }
-
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            activateWaitingSW(newWorker);
-          }
-        });
-      });
-    })
-    .catch(err => {
-      console.warn('Service Worker Registration failed:', err);
-    });
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('Service Worker controller changed to new version');
-  });
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {

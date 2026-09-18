@@ -1,31 +1,23 @@
 // Service Worker - Lentera Hati Gurindam PWA
-// v27 - network-first for app shell, no reload loops, stable caching
-const CACHE_NAME = 'lhg-pwa-v27';
-
-// These are NEVER cached (always fresh from network)
-const NEVER_CACHE = [
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/sw.js'
-];
-
-// These can be cached (rarely change)
-const CACHEABLE = [
-  '/js/html2pdf.bundle.min.js',
-  '/manifest.json',
-  '/img/logo-circle.png',
-  '/img/idcard-template.jpg',
-  '/img/icon-192x192.png',
-  '/img/icon-512x512.png'
+const CACHE_NAME = 'lhg-pwa-v28';
+const ASSETS_TO_CACHE = [
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './js/html2pdf.bundle.min.js',
+  './manifest.json',
+  './img/logo-circle.png',
+  './img/idcard-template.jpg',
+  './img/icon-192x192.png',
+  './img/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
-  // Skip waiting immediately — take control right away
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CACHEABLE).catch(() => {});
+      return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
     })
   );
 });
@@ -40,49 +32,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Handle skipWaiting message from page
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // Never intercept Supabase API calls or non-GET
-  if (url.hostname.includes('supabase.co') || event.request.method !== 'GET') {
+  // Never intercept Supabase API calls or non-GET requests
+  if (event.request.url.includes('supabase.co') || event.request.method !== 'GET') {
     return;
   }
 
-  // For app shell files (HTML, CSS, JS) — ALWAYS go to network first, never serve stale
-  const pathname = url.pathname;
-  const isAppShell = NEVER_CACHE.some(p => pathname.endsWith(p.replace('/', ''))) ||
-                     pathname.endsWith('.html') ||
-                     pathname.endsWith('.css') ||
-                     pathname.endsWith('.js');
-
-  if (isAppShell) {
-    // Network-first for app shell: if offline, fallback to cache
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(event.request);
-      })
-    );
-    return;
-  }
-
-  // For static assets (images, fonts) — cache first, network fallback
+  // Network first, fallback to cache
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200) {
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone);
+          });
         }
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
