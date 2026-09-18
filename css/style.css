@@ -3757,4 +3757,424 @@ body.modal-open {
   }
 }
 
+/* ==========================================================================
+   GALERI FOTO KEGIATAN PER KEGIATAN & MULTI-UPLOAD (MAX 10 FOTO)
+   ========================================================================== */
+.photo-grouped-container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kegiatan-album-card {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.kegiatan-album-card:hover {
+  box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
+  border-color: #CBD5E1;
+}
+
+.kegiatan-album-header {
+  padding: 16px 20px;
+  background: #F8FAFC;
+  border-bottom: 1.5px solid #E2E8F0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.kegiatan-album-info {
+  flex: 1;
+  min-width: 260px;
+}
+
+.kegiatan-album-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+.kegiatan-album-title {
+  font-family: var(--font-main);
+  font-size: 16px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.kegiatan-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-pelatihan { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+.badge-kemandirian { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.badge-olahraga { background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; }
+.badge-kesenian { background: #FDF2F8; color: #BE185D; border: 1px solid #FBCFE8; }
+.badge-sosial { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+.badge-kesehatan { background: #FFF1F2; color: #BE123C; border: 1px solid #FECDD3; }
+.badge-rekreasi { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+.badge-lainnya { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+
+.kegiatan-album-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 600;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.kegiatan-album-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kegiatan-album-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-album-action {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-album-action:hover {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-album-delete {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9px;
+  background: #FFF1F2;
+  color: #E11D48;
+  border: 1px solid #FECDD3;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-album-delete:hover {
+  background: #E11D48;
+  color: #FFFFFF;
+  border-color: #E11D48;
+}
+
+.kegiatan-album-grid {
+  padding: 18px 20px 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.kegiatan-photo-item {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kegiatan-photo-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.14);
+}
+
+.kegiatan-photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.kegiatan-photo-item:hover img {
+  transform: scale(1.06);
+}
+
+.kegiatan-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.kegiatan-photo-item:hover .kegiatan-photo-overlay {
+  opacity: 1;
+}
+
+.kegiatan-photo-zoom {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  transform: scale(0.85);
+  transition: transform 0.2s ease;
+}
+
+.kegiatan-photo-item:hover .kegiatan-photo-zoom {
+  transform: scale(1);
+}
+
+.kegiatan-photo-delete-btn {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(225, 29, 72, 0.9);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.kegiatan-photo-delete-btn:hover {
+  transform: scale(1.15);
+  background: #BE123C;
+}
+
+.kegiatan-photo-idx {
+  position: absolute;
+  bottom: 6px;
+  left: 7px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+/* DROPZONE MULTI-UPLOAD FOTO */
+.foto-dropzone-box {
+  border: 2px dashed #10B981;
+  background: #F0FDF4;
+  border-radius: 16px;
+  padding: 26px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.foto-dropzone-box:hover, .foto-dropzone-box.dragover {
+  background: #DCFCE7;
+  border-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(5, 150, 105, 0.12);
+}
+
+.foto-dropzone-icon {
+  font-size: 38px;
+  margin-bottom: 8px;
+  animation: bounceSoft 2.5s infinite ease-in-out;
+}
+
+@keyframes bounceSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.foto-dropzone-title {
+  font-family: var(--font-main);
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #065F46;
+  margin-bottom: 4px;
+}
+
+.foto-dropzone-desc {
+  font-size: 12px;
+  color: #047857;
+  margin-bottom: 12px;
+}
+
+.foto-dropzone-pills {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.foto-pill {
+  font-size: 11px;
+  font-weight: 700;
+  background: #FFFFFF;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+  padding: 3px 10px;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* PREVIEW GRID UNTUK FOTO YANG DIPILIH */
+.foto-selected-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding: 6px;
+  background: #F8FAFC;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.foto-preview-thumb-box {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid #CBD5E1;
+  background: #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.foto-preview-thumb-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.foto-preview-thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(225, 29, 72, 0.95);
+  color: #FFFFFF;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+}
+
+.foto-preview-thumb-remove:hover {
+  transform: scale(1.15);
+  background: #BE123C;
+}
+
+.foto-preview-thumb-idx {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 9.5px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.75);
+  color: #FFFFFF;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* EMPTY STATE */
+.foto-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: #FFFFFF;
+  border: 2px dashed #CBD5E1;
+  border-radius: 20px;
+  margin: 10px 0;
+}
+
+.foto-empty-icon {
+  font-size: 52px;
+  margin-bottom: 12px;
+}
+
+.foto-empty-state h4 {
+  font-family: var(--font-main);
+  font-size: 17px;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 6px;
+}
+
+.foto-empty-state p {
+  font-size: 13.5px;
+  color: #64748B;
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .kegiatan-album-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 12px 14px 16px;
+    gap: 10px;
+  }
+  .kegiatan-album-header {
+    padding: 12px 14px;
+  }
+}
+
+
 

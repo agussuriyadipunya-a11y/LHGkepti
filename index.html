@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=13.0">
+  <link rel="stylesheet" href="css/style.css?v=14.0">
 </head>
 <body class="app-body">
 
@@ -930,20 +930,70 @@
         <!-- ================= PAGE 7: FOTO KEGIATAN ================= -->
         <section id="page-foto-kegiatan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            <div class="table-toolbar" style="flex-wrap: wrap; gap: 14px;">
               <div class="header-title-group">
                 <span class="panel-icon">📸</span>
                 <div>
                   <h3 class="panel-heading">Galeri Dokumentasi Foto Kegiatan</h3>
-                  <p class="panel-subheading">Kumpulan potret interaksi sosial, terapi, dan pelatihan anak</p>
+                  <p class="panel-subheading">Koleksi potret kegiatan, terapi, dan pelatihan anak binaan dikelompokkan per kegiatan</p>
                 </div>
               </div>
-              <button class="btn-top-add" onclick="openAddFoto()">
-                <span>➕</span> Unggah Foto Kegiatan
-              </button>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="btn-top-add" onclick="openAddFoto()">
+                  <span>➕</span> Unggah Foto Kegiatan
+                </button>
+              </div>
             </div>
 
-            <div id="photo-grid" class="photo-modern-grid"></div>
+            <!-- STAT SUMMARY FOTO & KEGIATAN -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📅</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Kegiatan Terdokumentasi</div>
+                  <div id="stat-foto-kegiatan-total" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🖼️</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Total Foto Tersimpan</div>
+                  <div id="stat-foto-total" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">⚡</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Kapasitas Unggah</div>
+                  <div style="font-size: 13px; font-weight: 800; color: #92400E; margin-top: 2px;">Maksimal 10 Foto Sekaligus</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TOOLBAR FILTER & SEARCH -->
+            <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; background: #F8FAFC; padding: 12px 16px; border-radius: 14px; border: 1px solid #E2E8F0;">
+              <div style="display: flex; gap: 10px; align-items: center; flex: 1; min-width: 250px;">
+                <span style="font-size: 16px;">🔍</span>
+                <input type="text" id="foto-search-input" class="pelangi-input" placeholder="Cari kegiatan atau kata kunci foto..." style="width: 100%; max-width: 380px;" oninput="renderFoto()">
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 700; color: #64748B;">Kategori:</span>
+                <select id="foto-filter-kategori" class="pelangi-select" style="min-width: 170px;" onchange="renderFoto()">
+                  <option value="">Semua Kategori</option>
+                  <option value="Pelatihan">Pelatihan</option>
+                  <option value="Kemandirian">Kemandirian</option>
+                  <option value="Olahraga">Olahraga</option>
+                  <option value="Kesenian">Kesenian</option>
+                  <option value="Sosial">Bantuan Sosial</option>
+                  <option value="Kesehatan">Kesehatan</option>
+                  <option value="Rekreasi">Rekreasi & Outing</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- CONTAINER ALBUM PER KEGIATAN -->
+            <div id="photo-grouped-container" class="photo-grouped-container"></div>
           </div>
         </section>
 
@@ -1131,8 +1181,8 @@
                 Pas foto akan otomatis tercetak di ID Card resmi anak. Format JPG/PNG.
               </p>
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <input type="file" id="modal-foto" accept="image/*" style="display: none;" onchange="handleModalPhotoSelect(event)">
-                <button type="button" class="btn-top-add" style="padding: 6px 14px; font-size: 11.5px; background: #059669;" onclick="document.getElementById('modal-foto').click()">
+                <input type="file" id="modal-foto-anggota" accept="image/*" style="display: none;" onchange="handleModalPhotoSelect(event)">
+                <button type="button" class="btn-top-add" style="padding: 6px 14px; font-size: 11.5px; background: #059669;" onclick="document.getElementById('modal-foto-anggota').click()">
                   <span>📁 Pilih / Ambil Foto</span>
                 </button>
                 <button type="button" id="btn-modal-remove-photo" class="btn-sec" style="display: none; padding: 6px 12px; font-size: 11.5px; color: #DC2626; border-color: #FECACA;" onclick="removeModalPhoto()">
@@ -1668,48 +1718,107 @@
     </div>
   </div>
 
-  <!-- MODAL: FOTO KEGIATAN -->
-  <div id="modal-foto" class="modal-overlay">
-    <div class="modal-dialog">
+  <!-- MODAL: FOTO KEGIATAN (MULTI-UPLOAD MAX 10 FOTO PER KEGIATAN) -->
+  <div id="modal-foto-kegiatan" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 680px;">
       <div class="modal-header-clean">
-        <h3 class="modal-title">Tambah Dokumentasi Foto</h3>
-        <button class="btn-close-modal" onclick="closeModal('modal-foto')">&times;</button>
-      </div>
-      <form id="form-foto" onsubmit="event.preventDefault(); saveFoto();">
-        <div class="modal-body-clean">
-          <div class="form-field">
-            <label class="lbl">Judul Foto *</label>
-            <input type="text" name="judul_foto" class="pelangi-input" placeholder="Contoh: Senam Pagi Bersama Anak Inklusi" required>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            📸
           </div>
+          <div>
+            <h3 class="modal-title">Unggah Foto Dokumentasi Kegiatan</h3>
+            <p class="modal-subtitle">Unggah hingga 10 foto sekaligus untuk satu kegiatan</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-foto-kegiatan')">&times;</button>
+      </div>
+
+      <form id="form-foto" onsubmit="event.preventDefault(); saveFotoMulti();">
+        <div class="modal-body-clean" style="max-height: 72vh; overflow-y: auto; padding: 20px 24px;">
+
+          <!-- PILIH / INPUT KEGIATAN -->
+          <div class="form-field">
+            <label class="lbl" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Nama / Judul Kegiatan *</span>
+              <span style="font-size: 11px; font-weight: 600; color: #059669;">Dikelompokkan per kegiatan</span>
+            </label>
+            <div style="display: flex; gap: 8px; flex-direction: column;">
+              <select id="foto-select-kegiatan-exist" class="pelangi-select" onchange="handleSelectExistingKegiatan(this.value)">
+                <option value="">-- Ketik Judul Kegiatan Baru --</option>
+              </select>
+              <input type="text" id="foto-judul-kegiatan" class="pelangi-input" placeholder="Contoh: Pemeriksaan Kesehatan Berkala Anak Disabilitas" required>
+            </div>
+          </div>
+
           <div class="form-grid-2">
             <div class="form-field">
-              <label class="lbl">Kategori Kegiatan</label>
-              <select name="kat_foto" class="pelangi-select">
+              <label class="lbl">Tanggal Kegiatan *</label>
+              <input type="date" id="foto-tanggal-kegiatan" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Kategori Kegiatan *</label>
+              <select id="foto-kategori-kegiatan" class="pelangi-select">
                 <option value="Pelatihan">Pelatihan</option>
                 <option value="Kemandirian">Kemandirian</option>
                 <option value="Olahraga">Olahraga</option>
                 <option value="Kesenian">Kesenian</option>
                 <option value="Sosial">Bantuan Sosial</option>
                 <option value="Kesehatan">Kesehatan</option>
+                <option value="Rekreasi">Rekreasi & Outing</option>
+                <option value="Lainnya">Lainnya</option>
               </select>
             </div>
-            <div class="form-field">
-              <label class="lbl">Tanggal Pengambilan</label>
-              <input type="date" name="tgl_foto" class="pelangi-input">
+          </div>
+
+          <div class="form-field">
+            <label class="lbl">Keterangan / Catatan Kegiatan (Opsional)</label>
+            <textarea id="foto-deskripsi-kegiatan" class="pelangi-textarea" rows="2" placeholder="Catatan singkat atau rangkuman kegiatan ini..."></textarea>
+          </div>
+
+          <!-- DROPZONE MULTI-UPLOAD FOTO (MAX 10) -->
+          <div class="form-field" style="margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="lbl" style="margin-bottom: 0;">Pilih File Foto (Maksimal 10 Foto Sekali Upload) *</label>
+              <span id="foto-selected-counter-badge" class="badge-tag-counter" style="display: none; background: #ECFDF5; color: #059669; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 12px; border: 1px solid #A7F3D0;">
+                0 / 10 Foto Terpilih
+              </span>
+            </div>
+
+            <input type="file" id="foto-files-input" accept="image/jpeg,image/png,image/webp,image/jpg" multiple style="display: none;" onchange="handleFotoFilesSelected(event)">
+
+            <div id="foto-dropzone" class="foto-dropzone-box" onclick="document.getElementById('foto-files-input').click()" ondragover="handleFotoDragOver(event)" ondragleave="handleFotoDragLeave(event)" ondrop="handleFotoDrop(event)">
+              <div class="foto-dropzone-icon">📷</div>
+              <div class="foto-dropzone-title">Klik atau Tarik Foto Kegiatan ke Sini</div>
+              <div class="foto-dropzone-desc">Dapat memilih hingga 10 foto sekaligus dari galeri atau kamera</div>
+              <div class="foto-dropzone-pills">
+                <span class="foto-pill">Maks. 10 Foto Sekali Upload</span>
+                <span class="foto-pill">Format: JPG, PNG, WEBP</span>
+                <span class="foto-pill">Otomatis Optimasi Kualitas HD</span>
+              </div>
+            </div>
+
+            <!-- PREVIEW GRID UNTUK FOTO YANG DIPILIH -->
+            <div id="foto-preview-container" style="display: none; margin-top: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: #334155;">Pratinjau Foto yang Akan Diunggah:</span>
+                <button type="button" class="btn-sec" style="padding: 3px 10px; font-size: 11px; color: #DC2626; border-color: #FECACA;" onclick="clearSelectedFotoUpload()">
+                  Bersihkan Pilihan
+                </button>
+              </div>
+              <div id="foto-selected-grid" class="foto-selected-preview-grid">
+                <!-- Injected dynamically -->
+              </div>
             </div>
           </div>
-          <div class="form-field">
-            <label class="lbl">URL Foto (Tautan Gambar) *</label>
-            <input type="url" name="url_foto" class="pelangi-input" placeholder="https://picsum.photos/seed/kegiatan/600/400" required>
-          </div>
-          <div class="form-field">
-            <label class="lbl">Keterangan Singkat</label>
-            <textarea name="deskripsi_foto" class="pelangi-textarea" placeholder="Deskripsi momen pada foto..."></textarea>
-          </div>
+
         </div>
+
         <div class="modal-footer-clean">
-          <button type="button" class="btn-sec" onclick="closeModal('modal-foto')">Batal</button>
-          <button type="submit" class="btn-prim">Simpan Foto</button>
+          <button type="button" class="btn-sec" onclick="closeModal('modal-foto-kegiatan')">Batal</button>
+          <button type="submit" id="btn-submit-foto" class="btn-prim" style="display: inline-flex; align-items: center; gap: 8px;">
+            <span>💾 Simpan & Unggah Foto</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1895,6 +2004,15 @@
       <img id="lightbox-img" src="" alt="Preview Foto">
       <div class="lightbox-caption-box">
         <p id="lightbox-caption" class="lightbox-caption-text"></p>
+        <p id="lightbox-sub" style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;"></p>
+        <div class="lightbox-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          <a id="lightbox-btn-download" href="" download="foto-kegiatan-lhg.jpg" class="btn-sec" style="padding: 6px 14px; font-size: 11.5px; background: rgba(255,255,255,0.18); color: #FFF; border-color: rgba(255,255,255,0.35); text-decoration: none; border-radius: 8px;">
+            <span>⬇️ Unduh Foto</span>
+          </a>
+          <button type="button" id="lightbox-btn-delete" class="btn-sec" style="padding: 6px 14px; font-size: 11.5px; background: rgba(220,38,38,0.35); color: #FECACA; border-color: rgba(220,38,38,0.5); border-radius: 8px;" onclick="deleteCurrentLightboxPhoto()">
+            <span>🗑️ Hapus Foto</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1967,6 +2085,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=16.0"></script>
+  <script src="js/app.js?v=17.0"></script>
 </body>
 </html>

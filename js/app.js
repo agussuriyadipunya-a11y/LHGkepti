@@ -988,7 +988,7 @@ function updateModalPhotoUI(base64) {
 
 function removeModalPhoto() {
   currentModalPhotoBase64 = null;
-  const inputEl = document.getElementById('modal-foto');
+  const inputEl = document.getElementById('modal-foto-anggota');
   if (inputEl) inputEl.value = '';
   updateModalPhotoUI(null);
   showToast('Pas foto dihapus dari form.', 'info');
@@ -2264,59 +2264,502 @@ async function deleteSurat(type, id) {
   showToast('Surat dihapus', 'warning');
 }
 
-// ================= FOTO KEGIATAN =================
-function renderFoto() {
-  const list = DB.get('lhg_foto');
-  const grid = document.getElementById('photo-grid');
-  if (!grid) return;
+// ==============================================================================
+// FOTO KEGIATAN MODULE (PER KEGIATAN & MULTI-UPLOAD MAX 10 FOTO)
+// ==============================================================================
+const MAX_UPLOAD_FOTO = 10;
+let selectedUploadPhotos = []; // array of { name, size, base64 }
+let currentLightboxPhotoId = null;
 
-  grid.innerHTML = list.map(f => `
-    <div class="photo-card-item" onclick="openLightbox('${f.url}', '${f.judul.replace(/'/g, "\\'")}')">
-      <div class="photo-img-wrap">
-        <img src="${f.url}" alt="${f.judul}" loading="lazy">
+function escapeHtmlStr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeForJsStr(str) {
+  if (!str) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function renderFoto() {
+  const container = document.getElementById('photo-grouped-container');
+  if (!container) return;
+
+  const rawList = DB.get('lhg_foto', []);
+  const search = (document.getElementById('foto-search-input')?.value || '').toLowerCase().trim();
+  const filterKat = (document.getElementById('foto-filter-kategori')?.value || '').trim();
+
+  // Update total photos stat
+  setText('stat-foto-total', rawList.length);
+
+  // Group all photos by activity title (judul)
+  const allGroups = {};
+  rawList.forEach(item => {
+    const titleKey = (item.judul || 'Kegiatan Tanpa Judul').trim();
+    if (!allGroups[titleKey]) {
+      allGroups[titleKey] = {
+        judul: titleKey,
+        tanggal: item.tanggal || '',
+        kategori: item.kategori || 'Pelatihan',
+        deskripsi: item.deskripsi || '',
+        photos: []
+      };
+    }
+    allGroups[titleKey].photos.push(item);
+    if (item.tanggal && (!allGroups[titleKey].tanggal || item.tanggal > allGroups[titleKey].tanggal)) {
+      allGroups[titleKey].tanggal = item.tanggal;
+    }
+  });
+
+  const totalActivities = Object.keys(allGroups).length;
+  setText('stat-foto-kegiatan-total', totalActivities);
+
+  // Filter groups
+  let groupsArray = Object.values(allGroups);
+
+  if (filterKat) {
+    groupsArray = groupsArray.filter(g => (g.kategori || '').toLowerCase() === filterKat.toLowerCase());
+  }
+
+  if (search) {
+    groupsArray = groupsArray.filter(g => 
+      g.judul.toLowerCase().includes(search) || 
+      (g.deskripsi && g.deskripsi.toLowerCase().includes(search)) ||
+      (g.kategori && g.kategori.toLowerCase().includes(search))
+    );
+  }
+
+  // Sort by latest date descending
+  groupsArray.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+  if (groupsArray.length === 0) {
+    container.innerHTML = `
+      <div class="foto-empty-state">
+        <div class="foto-empty-icon">📸</div>
+        <h4>${rawList.length === 0 ? 'Belum Ada Dokumentasi Foto Kegiatan' : 'Tidak Ada Kegiatan yang Cocok'}</h4>
+        <p>${rawList.length === 0 ? 'Koleksi dokumentasi foto kegiatan akan ditampilkan rapi dikelompokkan per kegiatan (hingga 10 foto per unggahan).' : 'Coba ubah kata kunci pencarian atau reset filter kategori untuk melihat kegiatan lainnya.'}</p>
+        <button type="button" class="btn-prim" onclick="openAddFoto()" style="margin-top: 14px;">
+          <span>➕ Unggah Foto Kegiatan</span>
+        </button>
       </div>
-      <div class="photo-card-body">
-        <div class="photo-title">${f.judul}</div>
-        <div class="photo-sub">${formatDate(f.tanggal)} • ${f.kategori}</div>
+    `;
+    return;
+  }
+
+  container.innerHTML = groupsArray.map(group => {
+    const katBadgeClass = 'badge-' + (group.kategori || 'lainnya').toLowerCase().replace(/\s+/g, '-');
+    return `
+      <div class="kegiatan-album-card">
+        <div class="kegiatan-album-header">
+          <div class="kegiatan-album-info">
+            <div class="kegiatan-album-title-wrap">
+              <span class="kegiatan-badge ${katBadgeClass}">${escapeHtmlStr(group.kategori || 'Kegiatan')}</span>
+              <h4 class="kegiatan-album-title">${escapeHtmlStr(group.judul)}</h4>
+            </div>
+            <div class="kegiatan-album-meta">
+              <span>📅 ${formatDate(group.tanggal)}</span>
+              <span>📸 ${group.photos.length} Foto Dokumentasi</span>
+              ${group.deskripsi ? `<span>• ${escapeHtmlStr(group.deskripsi)}</span>` : ''}
+            </div>
+          </div>
+          <div class="kegiatan-album-actions">
+            <button type="button" class="btn-album-action" onclick="openAddFotoForKegiatan('${escapeForJsStr(group.judul)}', '${escapeForJsStr(group.tanggal)}', '${escapeForJsStr(group.kategori)}', '${escapeForJsStr(group.deskripsi)}')">
+              <span>➕ Tambah Foto</span>
+            </button>
+            <button type="button" class="btn-album-delete" onclick="deleteAlbumKegiatan('${escapeForJsStr(group.judul)}')">
+              <span>🗑️ Hapus Album</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="kegiatan-album-grid">
+          ${group.photos.map((p, idx) => `
+            <div class="kegiatan-photo-item" onclick="openLightboxDetail(${p.id})">
+              <img src="${p.url}" alt="${escapeHtmlStr(group.judul)}" loading="lazy">
+              <div class="kegiatan-photo-overlay">
+                <span class="kegiatan-photo-zoom">🔍</span>
+                <button type="button" class="kegiatan-photo-delete-btn" title="Hapus foto ini" onclick="event.stopPropagation(); deleteSingleFoto(${p.id})">
+                  🗑️
+                </button>
+              </div>
+              <div class="kegiatan-photo-idx">#${idx + 1}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
+    `;
+  }).join('');
+}
+
+function openAddFoto(prefillJudul = '', prefillTanggal = '', prefillKategori = '', prefillDeskripsi = '') {
+  const form = document.getElementById('form-foto');
+  if (form) form.reset();
+
+  selectedUploadPhotos = [];
+  renderSelectedPhotosPreview();
+
+  // Populate existing kegiatan select
+  const selectExist = document.getElementById('foto-select-kegiatan-exist');
+  if (selectExist) {
+    const listKegiatan = DB.get('lhg_kegiatan', []);
+    const listFoto = DB.get('lhg_foto', []);
+    
+    // Unique names from both
+    const uniqueTitles = new Map();
+    listKegiatan.forEach(k => {
+      if (k.judul) uniqueTitles.set(k.judul.trim(), { judul: k.judul.trim(), tanggal: k.tanggal, kategori: 'Pelatihan', deskripsi: k.deskripsi || '' });
+    });
+    listFoto.forEach(f => {
+      if (f.judul && !uniqueTitles.has(f.judul.trim())) {
+        uniqueTitles.set(f.judul.trim(), { judul: f.judul.trim(), tanggal: f.tanggal, kategori: f.kategori, deskripsi: f.deskripsi || '' });
+      }
+    });
+
+    let opts = '<option value="">-- Ketik Judul Kegiatan Baru --</option>';
+    uniqueTitles.forEach(val => {
+      opts += `<option value="${escapeHtmlStr(val.judul)}" data-tgl="${escapeHtmlStr(val.tanggal || '')}" data-kat="${escapeHtmlStr(val.kategori || '')}" data-desk="${escapeHtmlStr(val.deskripsi || '')}">${escapeHtmlStr(val.judul)} (${formatDate(val.tanggal)})</option>`;
+    });
+    selectExist.innerHTML = opts;
+  }
+
+  const judulEl = document.getElementById('foto-judul-kegiatan');
+  const tglEl = document.getElementById('foto-tanggal-kegiatan');
+  const katEl = document.getElementById('foto-kategori-kegiatan');
+  const deskEl = document.getElementById('foto-deskripsi-kegiatan');
+
+  if (prefillJudul) {
+    if (selectExist) selectExist.value = prefillJudul;
+    if (judulEl) judulEl.value = prefillJudul;
+    if (tglEl) tglEl.value = prefillTanggal || new Date().toISOString().split('T')[0];
+    if (katEl) katEl.value = prefillKategori || 'Pelatihan';
+    if (deskEl) deskEl.value = prefillDeskripsi || '';
+  } else {
+    if (selectExist) selectExist.value = '';
+    if (judulEl) judulEl.value = '';
+    if (tglEl) tglEl.value = new Date().toISOString().split('T')[0];
+    if (katEl) katEl.value = 'Pelatihan';
+    if (deskEl) deskEl.value = '';
+  }
+
+  const modal = document.getElementById('modal-foto-kegiatan');
+  if (modal) {
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
+  }
+}
+
+function openAddFotoForKegiatan(judul, tanggal, kategori, deskripsi) {
+  openAddFoto(judul, tanggal, kategori, deskripsi);
+}
+
+function handleSelectExistingKegiatan(selectedTitle) {
+  const judulEl = document.getElementById('foto-judul-kegiatan');
+  const tglEl = document.getElementById('foto-tanggal-kegiatan');
+  const katEl = document.getElementById('foto-kategori-kegiatan');
+  const deskEl = document.getElementById('foto-deskripsi-kegiatan');
+  const selectExist = document.getElementById('foto-select-kegiatan-exist');
+
+  if (!selectedTitle) {
+    if (judulEl) judulEl.value = '';
+    return;
+  }
+
+  if (judulEl) judulEl.value = selectedTitle;
+
+  const opt = selectExist ? selectExist.querySelector(`option[value="${CSS.escape(selectedTitle)}"]`) : null;
+  if (opt) {
+    const tgl = opt.getAttribute('data-tgl');
+    const kat = opt.getAttribute('data-kat');
+    const desk = opt.getAttribute('data-desk');
+    if (tgl && tglEl) tglEl.value = tgl;
+    if (kat && katEl) katEl.value = kat;
+    if (desk && deskEl) deskEl.value = desk;
+  }
+}
+
+// Drag & drop handlers
+function handleFotoDragOver(e) {
+  e.preventDefault();
+  const dz = document.getElementById('foto-dropzone');
+  if (dz) dz.classList.add('dragover');
+}
+
+function handleFotoDragLeave(e) {
+  e.preventDefault();
+  const dz = document.getElementById('foto-dropzone');
+  if (dz) dz.classList.remove('dragover');
+}
+
+function handleFotoDrop(e) {
+  e.preventDefault();
+  const dz = document.getElementById('foto-dropzone');
+  if (dz) dz.classList.remove('dragover');
+  if (e.dataTransfer && e.dataTransfer.files) {
+    processSelectedFotoFiles(Array.from(e.dataTransfer.files));
+  }
+}
+
+function handleFotoFilesSelected(event) {
+  const files = Array.from(event.target.files || []);
+  processSelectedFotoFiles(files);
+  event.target.value = '';
+}
+
+function processSelectedFotoFiles(newFiles) {
+  const imageFiles = newFiles.filter(f => f.type.startsWith('image/'));
+  if (imageFiles.length === 0) {
+    showToast('Harap pilih file gambar yang valid (JPG, PNG, WebP)!', 'error');
+    return;
+  }
+
+  const remainingSlots = MAX_UPLOAD_FOTO - selectedUploadPhotos.length;
+  if (remainingSlots <= 0) {
+    showToast(`Batas maksimal ${MAX_UPLOAD_FOTO} foto telah tercapai! Hapus beberapa foto untuk menambah foto baru.`, 'warning');
+    return;
+  }
+
+  let filesToProcess = imageFiles;
+  if (imageFiles.length > remainingSlots) {
+    filesToProcess = imageFiles.slice(0, remainingSlots);
+    showToast(`Maksimal ${MAX_UPLOAD_FOTO} foto sekali upload! Hanya ${remainingSlots} foto yang ditambahkan.`, 'warning');
+  }
+
+  showToast(`Memproses & mengoptimasi ${filesToProcess.length} foto...`, 'info');
+
+  let processedCount = 0;
+  filesToProcess.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      compressImage(e.target.result, 1280, 1280, 0.78, function(compressedBase64) {
+        selectedUploadPhotos.push({
+          name: file.name,
+          size: file.size,
+          base64: compressedBase64
+        });
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          renderSelectedPhotosPreview();
+          showToast(`${filesToProcess.length} foto siap diunggah! (${selectedUploadPhotos.length}/${MAX_UPLOAD_FOTO})`, 'success');
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderSelectedPhotosPreview() {
+  const container = document.getElementById('foto-preview-container');
+  const grid = document.getElementById('foto-selected-grid');
+  const counterBadge = document.getElementById('foto-selected-counter-badge');
+
+  if (!container || !grid) return;
+
+  if (selectedUploadPhotos.length === 0) {
+    container.style.display = 'none';
+    if (counterBadge) counterBadge.style.display = 'none';
+    grid.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  if (counterBadge) {
+    counterBadge.style.display = 'inline-block';
+    counterBadge.textContent = `${selectedUploadPhotos.length} / ${MAX_UPLOAD_FOTO} Foto Terpilih`;
+  }
+
+  grid.innerHTML = selectedUploadPhotos.map((photo, index) => `
+    <div class="foto-preview-thumb-box">
+      <img src="${photo.base64}" alt="${escapeHtmlStr(photo.name)}">
+      <button type="button" class="foto-preview-thumb-remove" onclick="removeSelectedFotoUpload(${index})" title="Hapus foto ini">✕</button>
+      <span class="foto-preview-thumb-idx">#${index + 1}</span>
     </div>
   `).join('');
 }
 
-function openAddFoto() {
-  document.getElementById('form-foto').reset();
-  document.getElementById('modal-foto').classList.add('open');
+function removeSelectedFotoUpload(index) {
+  selectedUploadPhotos.splice(index, 1);
+  renderSelectedPhotosPreview();
 }
 
-function saveFoto() {
-  const f = document.getElementById('form-foto');
-  if (!f.judul_foto.value || !f.url_foto.value) {
-    showToast('Harap isi judul dan URL foto!', 'error');
+function clearSelectedFotoUpload() {
+  selectedUploadPhotos = [];
+  renderSelectedPhotosPreview();
+  showToast('Daftar foto yang dipilih telah dibersihkan.', 'info');
+}
+
+async function saveFotoMulti() {
+  const judul = (document.getElementById('foto-judul-kegiatan')?.value || '').trim();
+  const tanggal = document.getElementById('foto-tanggal-kegiatan')?.value || new Date().toISOString().split('T')[0];
+  const kategori = document.getElementById('foto-kategori-kegiatan')?.value || 'Pelatihan';
+  const deskripsi = (document.getElementById('foto-deskripsi-kegiatan')?.value || '').trim();
+  const btn = document.getElementById('btn-submit-foto');
+
+  if (!judul) {
+    showToast('Harap isi nama atau judul kegiatan!', 'error');
     return;
   }
-  const list = DB.get('lhg_foto');
-  list.unshift({
-    id: Date.now(),
-    judul: f.judul_foto.value,
-    tanggal: f.tgl_foto.value || new Date().toISOString().split('T')[0],
-    kategori: f.kat_foto.value,
-    url: f.url_foto.value,
-    deskripsi: f.deskripsi_foto.value
+
+  if (selectedUploadPhotos.length === 0) {
+    showToast('Pilih minimal 1 foto kegiatan untuk diunggah (maksimal 10 foto)!', 'error');
+    return;
+  }
+
+  if (selectedUploadPhotos.length > MAX_UPLOAD_FOTO) {
+    showToast(`Maksimal ${MAX_UPLOAD_FOTO} foto sekali upload!`, 'error');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳ Menyimpan ${selectedUploadPhotos.length} Foto...</span>`;
+  }
+
+  try {
+    const list = DB.get('lhg_foto', []);
+    const newItems = [];
+    const baseTime = Date.now();
+
+    selectedUploadPhotos.forEach((photo, idx) => {
+      const newItem = {
+        id: baseTime + idx,
+        judul: judul,
+        tanggal: tanggal,
+        kategori: kategori,
+        deskripsi: deskripsi,
+        url: photo.base64
+      };
+      newItems.push(newItem);
+      list.unshift(newItem);
+    });
+
+    // Save to Local DB
+    DB.set('lhg_foto', list);
+
+    // Direct cloud sync to Supabase
+    try {
+      const cloudRows = newItems.map(item => toSupabaseRow('lhg_foto', item));
+      await SupabaseAPI.upsert('lhg_foto', cloudRows);
+    } catch(err) {
+      console.warn('Sync foto ke cloud tertunda:', err);
+    }
+
+    closeModal('modal-foto-kegiatan');
+    renderFoto();
+    showToast(`Berhasil mengunggah ${newItems.length} foto untuk kegiatan "${judul}"!`, 'success');
+  } catch (err) {
+    console.error('Gagal menyimpan foto:', err);
+    showToast('Gagal menyimpan foto: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>💾 Simpan & Unggah Foto</span>';
+    }
+  }
+}
+
+async function deleteSingleFoto(id) {
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Foto Kegiatan',
+    message: 'Apakah Anda yakin ingin menghapus foto dokumentasi ini?',
+    subtext: 'Foto yang dihapus tidak dapat dipulihkan kembali.',
+    confirmText: 'Ya, Hapus Foto',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
   });
+  if (!confirmed) return;
+
+  let list = DB.get('lhg_foto', []).filter(f => f.id !== id);
   DB.set('lhg_foto', list);
-  closeModal('modal-foto');
+
+  try {
+    await SupabaseAPI.delete('lhg_foto', 'id', id);
+  } catch(e) {
+    console.warn('Gagal menghapus foto dari cloud:', e);
+  }
+
+  closeLightbox();
   renderFoto();
-  showToast('Foto kegiatan berhasil ditambahkan!');
+  showToast('Foto berhasil dihapus.', 'warning');
+}
+
+async function deleteAlbumKegiatan(judul) {
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Seluruh Album Kegiatan',
+    message: `Apakah Anda yakin ingin menghapus seluruh dokumentasi kegiatan "${judul}"?`,
+    subtext: 'Semua foto di dalam kegiatan ini akan dihapus permanen dari sistem.',
+    confirmText: 'Ya, Hapus Seluruh Album',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
+
+  const rawList = DB.get('lhg_foto', []);
+  const toDelete = rawList.filter(f => (f.judul || '').trim() === judul.trim());
+  const remaining = rawList.filter(f => (f.judul || '').trim() !== judul.trim());
+
+  DB.set('lhg_foto', remaining);
+
+  try {
+    for (const item of toDelete) {
+      await SupabaseAPI.delete('lhg_foto', 'id', item.id);
+    }
+  } catch(e) {
+    console.warn('Gagal menghapus album foto dari cloud:', e);
+  }
+
+  renderFoto();
+  showToast(`Album kegiatan "${judul}" dan ${toDelete.length} foto berhasil dihapus.`, 'warning');
+}
+
+function openLightboxDetail(id) {
+  const list = DB.get('lhg_foto', []);
+  const photo = list.find(p => p.id === id);
+  if (!photo) return;
+
+  currentLightboxPhotoId = id;
+  const imgEl = document.getElementById('lightbox-img');
+  const captionEl = document.getElementById('lightbox-caption');
+  const subEl = document.getElementById('lightbox-sub');
+  const dlBtn = document.getElementById('lightbox-btn-download');
+
+  if (imgEl) imgEl.src = photo.url;
+  if (captionEl) captionEl.textContent = photo.judul || 'Dokumentasi Kegiatan';
+  if (subEl) subEl.textContent = `${formatDate(photo.tanggal)} • Kategori: ${photo.kategori || 'Kegiatan'}${photo.deskripsi ? ' • ' + photo.deskripsi : ''}`;
+  if (dlBtn) {
+    dlBtn.href = photo.url;
+    dlBtn.download = `${(photo.judul || 'foto-kegiatan').toLowerCase().replace(/\s+/g, '-')}-${photo.id}.jpg`;
+  }
+
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.classList.add('open');
 }
 
 function openLightbox(url, caption) {
-  document.getElementById('lightbox-img').src = url;
-  setText('lightbox-caption', caption);
-  document.getElementById('lightbox').classList.add('open');
+  const imgEl = document.getElementById('lightbox-img');
+  const captionEl = document.getElementById('lightbox-caption');
+  if (imgEl) imgEl.src = url;
+  if (captionEl) captionEl.textContent = caption;
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.classList.add('open');
 }
 
 function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
+  currentLightboxPhotoId = null;
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.classList.remove('open');
+}
+
+function deleteCurrentLightboxPhoto() {
+  if (currentLightboxPhotoId !== null) {
+    deleteSingleFoto(currentLightboxPhotoId);
+  }
 }
 
 // ==============================================================================
