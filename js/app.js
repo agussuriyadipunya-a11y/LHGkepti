@@ -90,10 +90,122 @@ const SupabaseAPI = {
   }
 };
 
+// ==============================================================================
+// INDEXEDDB PHOTO & MEDIA STORE (UNLIMITED STORAGE QUOTA)
+// ==============================================================================
+const PhotoStore = {
+  dbName: 'lhg_media_storage_v1',
+  storeName: 'kegiatan_photos',
+  _db: null,
+  _cache: null,
+
+  init: function() {
+    return new Promise((resolve) => {
+      if (this._db) return resolve(this._db);
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        this._cache = this._fallbackGet();
+        return resolve(null);
+      }
+      try {
+        const req = indexedDB.open(this.dbName, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.storeName)) {
+            db.createObjectStore(this.storeName, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => {
+          this._db = e.target.result;
+          this.getAll().then(() => resolve(this._db));
+        };
+        req.onerror = () => {
+          this._cache = this._fallbackGet();
+          resolve(null);
+        };
+      } catch(err) {
+        this._cache = this._fallbackGet();
+        resolve(null);
+      }
+    });
+  },
+
+  getAll: async function() {
+    if (this._cache !== null) return this._cache;
+    if (!this._db) {
+      await this.init();
+      if (!this._db) {
+        this._cache = this._fallbackGet();
+        return this._cache;
+      }
+    }
+    return new Promise((resolve) => {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readonly');
+        const store = tx.objectStore(this.storeName);
+        const req = store.getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (list.length === 0) {
+            const legacy = this._fallbackGet();
+            if (legacy && legacy.length > 0) {
+              list = legacy;
+              this.saveAll(list);
+              try { localStorage.removeItem('lhg_foto'); } catch(e) {}
+            }
+          }
+          this._cache = list;
+          resolve(list);
+        };
+        req.onerror = () => {
+          this._cache = this._fallbackGet();
+          resolve(this._cache);
+        };
+      } catch(e) {
+        this._cache = this._fallbackGet();
+        resolve(this._cache);
+      }
+    });
+  },
+
+  saveAll: function(list) {
+    this._cache = Array.isArray(list) ? list : [];
+    if (this._db) {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+        store.clear();
+        this._cache.forEach(item => {
+          try { store.put(item); } catch(err) {}
+        });
+      } catch(err) {
+        console.warn('Gagal menyimpan foto ke IndexedDB:', err);
+      }
+    }
+    // Remove heavy base64 strings from localStorage to prevent quota errors
+    try {
+      localStorage.removeItem('lhg_foto');
+    } catch(e) {}
+    // Background cloud sync to Supabase
+    syncKeyToSupabase('lhg_foto', this._cache);
+  },
+
+  _fallbackGet: function() {
+    try {
+      return JSON.parse(localStorage.getItem('lhg_foto')) || [];
+    } catch(e) {
+      return [];
+    }
+  }
+};
+
 // HYBRID LOCAL & CLOUD DATABASE WRAPPER
 const DB = {
   get: (key, def) => {
     def = def === undefined ? [] : def;
+    if (key === 'lhg_foto') {
+      if (PhotoStore._cache !== null) return PhotoStore._cache;
+      return PhotoStore._fallbackGet();
+    }
     try {
       const v = JSON.parse(localStorage.getItem(key));
       return v !== null ? v : def;
@@ -102,7 +214,15 @@ const DB = {
     }
   },
   set: (key, val) => {
-    localStorage.setItem(key, JSON.stringify(val));
+    if (key === 'lhg_foto') {
+      PhotoStore.saveAll(val);
+      return;
+    }
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch(e) {
+      console.warn('LocalStorage Quota Warning on key:', key, e);
+    }
     // Asynchronous background sync to Supabase Online
     syncKeyToSupabase(key, val);
   }
@@ -110,6 +230,7 @@ const DB = {
 
 // INITIAL MOCK DATA SETUP (CLEAN EMPTY DATABASE FOR PRODUCTION)
 function initData() {
+  PhotoStore.init();
   // Always ensure dummy data is cleared if old caches exist
   if (!localStorage.getItem('lhg_init_clean_v3')) {
     localStorage.removeItem('lhg_init');
@@ -2290,6 +2411,11 @@ function renderFoto() {
   const container = document.getElementById('photo-grouped-container');
   if (!container) return;
 
+  if (PhotoStore._cache === null && typeof window !== 'undefined' && window.indexedDB) {
+    PhotoStore.getAll().then(() => renderFoto());
+    return;
+  }
+
   const rawList = DB.get('lhg_foto', []);
   const search = (document.getElementById('foto-search-input')?.value || '').toLowerCase().trim();
   const filterKat = (document.getElementById('foto-filter-kategori')?.value || '').trim();
@@ -2535,7 +2661,7 @@ function processSelectedFotoFiles(newFiles) {
   filesToProcess.forEach(file => {
     const reader = new FileReader();
     reader.onload = function(e) {
-      compressImage(e.target.result, 1280, 1280, 0.78, function(compressedBase64) {
+      compressImage(e.target.result, 960, 960, 0.70, function(compressedBase64) {
         selectedUploadPhotos.push({
           name: file.name,
           size: file.size,
@@ -5452,6 +5578,7 @@ async function syncWithSupabase(isManual) {
     if (activePage === 'bantuan') renderBantuanPage();
     if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
     if (activePage === 'arsip-berkas') renderArsip();
+    if (activePage === 'foto-kegiatan') renderFoto();
     if (activePage === 'manajemen-user') renderManajemenUserTable();
   }
 
