@@ -49,8 +49,12 @@ CREATE TABLE IF NOT EXISTS lhg_surat_masuk (
     perihal TEXT NOT NULL,
     keterangan TEXT,
     status VARCHAR(50) DEFAULT 'Diproses',
+    file_name VARCHAR(255),
+    file_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
+ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 -- 4. TABEL SURAT KELUAR
 CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
@@ -61,8 +65,12 @@ CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
     perihal TEXT NOT NULL,
     keterangan TEXT,
     status VARCHAR(50) DEFAULT 'Terkirim',
+    file_name VARCHAR(255),
+    file_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
+ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 -- 5. TABEL ARSIP BERKAS YAYASAN
 CREATE TABLE IF NOT EXISTS lhg_arsip (
@@ -410,6 +418,7 @@ const DB = {
 // INITIAL MOCK DATA SETUP (CLEAN EMPTY DATABASE FOR PRODUCTION)
 function initData() {
   PhotoStore.init();
+  if (typeof SuratStore !== 'undefined') SuratStore.init();
   // Always ensure dummy data is cleared if old caches exist
   if (!localStorage.getItem('lhg_init_clean_v3')) {
     localStorage.removeItem('lhg_init');
@@ -1352,6 +1361,10 @@ function closeModal(id) {
   if (id === 'modal-view-arsip' && typeof activeArsipBlobUrl !== 'undefined' && activeArsipBlobUrl) {
     URL.revokeObjectURL(activeArsipBlobUrl);
     activeArsipBlobUrl = null;
+  }
+  if (id === 'modal-view-surat' && typeof activeSuratBlobUrl !== 'undefined' && activeSuratBlobUrl) {
+    URL.revokeObjectURL(activeSuratBlobUrl);
+    activeSuratBlobUrl = null;
   }
 }
 
@@ -2353,105 +2366,846 @@ async function deleteLaporan(id) {
   showToast('Laporan dihapus', 'warning');
 }
 
-// ================= SURAT MENYURAT =================
+// ================= SURAT MENYURAT MODULE =================
+// IndexedDB Storage dedicated for Surat Attachments & Digital Scans
+const SuratStore = {
+  dbName: 'lhg_surat_storage_v1',
+  storeName: 'surat_documents',
+  _db: null,
+  _cache: {},
+
+  init: function() {
+    return new Promise((resolve) => {
+      if (this._db) return resolve(this._db);
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        return resolve(null);
+      }
+      try {
+        const req = indexedDB.open(this.dbName, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.storeName)) {
+            db.createObjectStore(this.storeName, { keyPath: 'key' });
+          }
+        };
+        req.onsuccess = (e) => {
+          this._db = e.target.result;
+          resolve(this._db);
+        };
+        req.onerror = () => resolve(null);
+      } catch(err) {
+        resolve(null);
+      }
+    });
+  },
+
+  getFile: async function(key) {
+    if (this._cache[key]) return this._cache[key];
+    if (!this._db) await this.init();
+    if (!this._db) {
+      try {
+        const fb = localStorage.getItem('lhg_file_' + key);
+        return fb ? JSON.parse(fb) : null;
+      } catch(e) {
+        return null;
+      }
+    }
+    return new Promise((resolve) => {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readonly');
+        const store = tx.objectStore(this.storeName);
+        const req = store.get(key);
+        req.onsuccess = () => {
+          const res = req.result || null;
+          if (res) this._cache[key] = res;
+          resolve(res);
+        };
+        req.onerror = () => resolve(null);
+      } catch(e) {
+        resolve(null);
+      }
+    });
+  },
+
+  saveFile: async function(key, data) {
+    this._cache[key] = data;
+    if (!this._db) await this.init();
+    if (!this._db) {
+      try {
+        localStorage.setItem('lhg_file_' + key, JSON.stringify(data));
+      } catch(e) {}
+      return;
+    }
+    return new Promise((resolve) => {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+        store.put({ key: key, ...data, updatedAt: Date.now() });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      } catch(e) {
+        resolve(false);
+      }
+    });
+  },
+
+  deleteFile: async function(key) {
+    delete this._cache[key];
+    try { localStorage.removeItem('lhg_file_' + key); } catch(e) {}
+    if (!this._db) await this.init();
+    if (!this._db) return;
+    try {
+      const tx = this._db.transaction(this.storeName, 'readwrite');
+      const store = tx.objectStore(this.storeName);
+      store.delete(key);
+    } catch(e) {}
+  }
+};
+
+let activeSuratBlobUrl = null;
+
+function getSuratPdfBlobUrl(base64Data) {
+  if (!base64Data) return null;
+  try {
+    const parts = base64Data.split(',');
+    const raw = parts.length > 1 ? parts[1] : parts[0];
+    const byteCharacters = atob(raw);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const blob = new Blob([byteNumbers], { type: 'application/pdf' });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.error('Error creating Surat PDF Blob URL:', e);
+    return null;
+  }
+}
+
+async function openSuratPdfInNewTab(type, id) {
+  const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+  const item = DB.get(key).find(x => String(x.id) === String(id));
+  if (!item) return;
+
+  let base64 = item.fileBase64;
+  if (!base64) {
+    const fRec = await SuratStore.getFile(type + '_' + id);
+    if (fRec && fRec.fileBase64) base64 = fRec.fileBase64;
+  }
+
+  if (!base64) {
+    if (item.fileUrl) {
+      window.open(item.fileUrl, '_blank');
+      return;
+    }
+    showToast('File dokumen surat tidak ditemukan!', 'error');
+    return;
+  }
+
+  const blobUrl = getSuratPdfBlobUrl(base64);
+  if (blobUrl) {
+    const win = window.open(blobUrl, '_blank');
+    if (!win) {
+      showToast('Pop-up diblokir oleh browser. Mengunduh file sebagai gantinya...', 'warning');
+      downloadSuratFile(type, id);
+    }
+  } else {
+    showToast('Gagal memproses file PDF!', 'error');
+  }
+}
+
+async function downloadSuratFile(type, id) {
+  const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+  const item = DB.get(key).find(x => String(x.id) === String(id));
+  if (!item) return;
+
+  let fileData = await SuratStore.getFile(type + '_' + id);
+  const base64 = (fileData && fileData.fileBase64) || item.fileBase64;
+  const fileName = (fileData && fileData.fileName) || item.fileName || `Surat_${item.nomor || id}.pdf`;
+
+  if (!base64) {
+    if (item.fileUrl) {
+      window.open(item.fileUrl, '_blank');
+      return;
+    }
+    showToast('Tidak ada file digital untuk diunduh!', 'error');
+    return;
+  }
+
+  try {
+    const isPdf = base64.startsWith('data:application/pdf') || fileName.toLowerCase().endsWith('.pdf');
+    const mimeType = isPdf ? 'application/pdf' : 'application/octet-stream';
+    const parts = base64.split(',');
+    const raw = parts.length > 1 ? parts[1] : parts[0];
+    const byteCharacters = atob(raw);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const blob = new Blob([byteNumbers], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
+    showToast('File surat berhasil diunduh!');
+  } catch (e) {
+    showToast('Gagal mengunduh file: ' + e.message, 'error');
+  }
+}
+
+function handleSuratFileInput(event) {
+  const file = event.target.files[0];
+  const infoEl = document.getElementById('surat-file-preview-info');
+  const base64El = document.getElementById('surat-file-base64');
+  const nameEl = document.getElementById('surat-file-name');
+  const typeEl = document.getElementById('surat-file-type');
+  const sizeEl = document.getElementById('surat-file-size');
+  const removeFlag = document.getElementById('surat-remove-file-flag');
+
+  if (!file) {
+    base64El.value = '';
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('Ukuran file terlalu besar! Maksimal 10MB.', 'error');
+    event.target.value = '';
+    base64El.value = '';
+    return;
+  }
+
+  if (removeFlag) removeFlag.value = 'false';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    base64El.value = e.target.result;
+    nameEl.value = file.name;
+    typeEl.value = file.type;
+    sizeEl.value = file.size;
+
+    if (infoEl) {
+      infoEl.style.display = 'block';
+      const sizeKb = Math.round(file.size / 1024);
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      infoEl.innerHTML = `
+        <div style="background: #F0FDF4; border: 1px solid #86EFAC; padding: 8px 12px; border-radius: 8px; color: #065F46; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span>${isPdf ? '📄' : '🖼️'} <strong>${escapeHtmlStr(file.name)}</strong> (${sizeKb} KB) siap disimpan.</span>
+          <button type="button" class="btn-sec" onclick="removeSuratAttachedFile()" style="padding: 2px 8px; font-size: 11px;">Batal</button>
+        </div>
+      `;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeSuratAttachedFile() {
+  const removeFlag = document.getElementById('surat-remove-file-flag');
+  if (removeFlag) removeFlag.value = 'true';
+  const base64El = document.getElementById('surat-file-base64');
+  if (base64El) base64El.value = '';
+  const nameEl = document.getElementById('surat-file-name');
+  if (nameEl) nameEl.value = '';
+  const typeEl = document.getElementById('surat-file-type');
+  if (typeEl) typeEl.value = '';
+  const sizeEl = document.getElementById('surat-file-size');
+  if (sizeEl) sizeEl.value = '';
+  const fileInput = document.getElementById('surat-file-input');
+  if (fileInput) fileInput.value = '';
+  const infoEl = document.getElementById('surat-file-preview-info');
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.innerHTML = `<span style="color: #D97706; font-weight: 600;">⚠️ Berkas lampiran akan dihapus saat data surat disimpan.</span>`;
+  }
+}
+
+async function uploadSuratDirectlyFromView(type, id, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('Ukuran file terlalu besar! Maksimal 10MB.', 'error');
+    return;
+  }
+
+  showToast('Mengunggah berkas surat...', 'info');
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const fileBase64 = e.target.result;
+    const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+    const list = DB.get(key);
+    const idx = list.findIndex(x => String(x.id) === String(id));
+    if (idx !== -1) {
+      list[idx].fileName = file.name;
+      list[idx].fileType = file.type;
+      list[idx].fileSize = file.size;
+      DB.set(key, list);
+
+      await SuratStore.saveFile(type + '_' + id, {
+        fileBase64: fileBase64,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
+      });
+
+      showToast('Berkas surat berhasil diunggah!', 'success');
+      renderSurat();
+      // Instantly refresh viewer modal to automatically show the letter!
+      viewSurat(type, id);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function printSuratDoc(type, id) {
+  const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+  const list = DB.get(key);
+  const s = list.find(x => String(x.id) === String(id));
+  if (!s) return;
+
+  const isMasuk = type === 'masuk';
+  const printWindow = window.open('', '_blank', 'width=800,height=900');
+  if (!printWindow) {
+    showToast('Izinkan pop-up browser untuk mencetak lembar surat!', 'warning');
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${isMasuk ? 'Lembar Disposisi' : 'Lembar Arsip'} - ${escapeHtmlStr(s.nomor)}</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 36px 44px; color: #0f172a; line-height: 1.5; margin: 0; }
+        .kop-box { text-align: center; border-bottom: 3px double #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
+        .kop-logo { width: 68px; height: 68px; object-fit: contain; margin-bottom: 4px; }
+        .kop-title { font-size: 16px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; color: #0f172a; }
+        .kop-sub { font-size: 11px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kop-addr { font-size: 10.5px; color: #64748b; margin-top: 2px; }
+        .doc-title { font-size: 14px; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0; }
+        table.meta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }
+        table.meta-table th, table.meta-table td { padding: 8px 12px; border: 1px solid #cbd5e1; vertical-align: top; }
+        table.meta-table th { background: #f8fafc; text-align: left; width: 160px; font-weight: 700; color: #334155; }
+        .disposisi-box { border: 1.5px solid #0f172a; border-radius: 6px; padding: 14px; margin-top: 16px; page-break-inside: avoid; }
+        .disposisi-title { font-weight: 800; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 11.5px; margin-bottom: 14px; }
+        .ttd-grid { display: flex; justify-content: space-between; margin-top: 36px; padding: 0 20px; }
+        .ttd-box { text-align: center; width: 220px; }
+        @media print {
+          body { padding: 20px 24px; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+        <button onclick="window.print()" style="padding: 8px 18px; font-size: 13px; font-weight: 700; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer;">
+          🖨️ Cetak Lembar Ini
+        </button>
+      </div>
+
+      <div class="kop-box">
+        <img src="img/logo.png" class="kop-logo" alt="Logo" onerror="this.style.display='none'">
+        <div class="kop-sub">PROVINSI KEPULAUAN RIAU</div>
+        <div class="kop-title">YAYASAN LENTERA HATI GURINDAM</div>
+        <div class="kop-addr">Sekretariat Resmi Administrasi & Pelayanan Sosial Disabilitas • Kota Tanjungpinang</div>
+      </div>
+
+      <div class="doc-title">${isMasuk ? 'LEMBAR DISPOSISI SURAT MASUK' : 'LEMBAR ARSIP KENDALI SURAT KELUAR'}</div>
+
+      <table class="meta-table">
+        <tr>
+          <th>Nomor Surat</th>
+          <td><strong>${escapeHtmlStr(s.nomor)}</strong></td>
+        </tr>
+        <tr>
+          <th>Tanggal Surat</th>
+          <td>${formatDateIndoFull ? formatDateIndoFull(s.tanggal) : formatDate(s.tanggal)}</td>
+        </tr>
+        <tr>
+          <th>${isMasuk ? 'Instansi Pengirim' : 'Pihak / Instansi Tujuan'}</th>
+          <td><strong>${escapeHtmlStr(isMasuk ? s.pengirim : s.tujuan)}</strong></td>
+        </tr>
+        <tr>
+          <th>Perihal Surat</th>
+          <td><strong>${escapeHtmlStr(s.perihal)}</strong></td>
+        </tr>
+        <tr>
+          <th>Status Dokumen</th>
+          <td>${escapeHtmlStr(s.status || (isMasuk ? 'Diproses' : 'Terkirim'))}</td>
+        </tr>
+        <tr>
+          <th>Uraian / Ringkasan Isi</th>
+          <td>${escapeHtmlStr(s.keterangan || '-')}</td>
+        </tr>
+      </table>
+
+      ${isMasuk ? `
+        <div class="disposisi-box">
+          <div class="disposisi-title">ARAHAN / INSTRUKSI DISPOSISI PIMPINAN:</div>
+          <div class="checkbox-grid">
+            <div>[ &nbsp; ] Tindak lanjuti segera</div>
+            <div>[ &nbsp; ] Koordinasikan / Hadiri</div>
+            <div>[ &nbsp; ] Siapkan tanggapan / balasan surat</div>
+            <div>[ &nbsp; ] Buat telaah staf / laporan</div>
+            <div>[ &nbsp; ] Simpan sebagai arsip organisasi</div>
+            <div>[ &nbsp; ] Lainnya: ...........................................</div>
+          </div>
+          <div style="min-height: 80px; border: 1px dashed #cbd5e1; border-radius: 4px; padding: 10px; font-size: 11.5px; color: #64748b;">
+            Catatan Tambahan Pimpinan:
+          </div>
+        </div>
+
+        <div class="ttd-grid">
+          <div class="ttd-box">
+            <div style="font-size: 11.5px; color: #64748b;">Diterima Oleh Petugas,</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; border-top: 1px solid #334155; padding-top: 4px; font-size: 12px;">( Petugas Sekretariat )</div>
+          </div>
+          <div class="ttd-box">
+            <div style="font-size: 11.5px; color: #64748b;">Ketua / Pimpinan Yayasan,</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; border-top: 1px solid #334155; padding-top: 4px; font-size: 12px;">( KAMARIDA )</div>
+          </div>
+        </div>
+      ` : `
+        <div class="disposisi-box">
+          <div class="disposisi-title">CATATAN PENGESAHAN & EKSPEDISI SURAT KELUAR:</div>
+          <div class="checkbox-grid">
+            <div>[ &nbsp; ] Surat Asli telah dikirim</div>
+            <div>[ &nbsp; ] Salinan / Tembusan terkirim</div>
+            <div>[ &nbsp; ] Nomor agenda resmi tercatat</div>
+            <div>[ &nbsp; ] Tanda terima terlampir</div>
+          </div>
+          <div style="min-height: 60px; border: 1px dashed #cbd5e1; border-radius: 4px; padding: 10px; font-size: 11.5px; color: #64748b;">
+            Keterangan Ekspedisi / Kurir Pengantar:
+          </div>
+        </div>
+
+        <div class="ttd-grid">
+          <div class="ttd-box">
+            <div style="font-size: 11.5px; color: #64748b;">Petugas Pengirim / Ekspedisi,</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; border-top: 1px solid #334155; padding-top: 4px; font-size: 12px;">( Petugas Ekspedisi )</div>
+          </div>
+          <div class="ttd-box">
+            <div style="font-size: 11.5px; color: #64748b;">Penerima Surat Resmi,</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; border-top: 1px solid #334155; padding-top: 4px; font-size: 12px;">( ......................................... )</div>
+          </div>
+        </div>
+      `}
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
 function switchSuratTab(type, btn) {
-  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.surat-tabs-group .tab-pill').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.surat-tab-content').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   const target = document.getElementById('tab-surat-' + type);
   if (target) target.classList.add('active');
 }
 
 function renderSurat() {
-  const sm = DB.get('lhg_surat_masuk');
-  const sk = DB.get('lhg_surat_keluar');
+  const smAll = DB.get('lhg_surat_masuk');
+  const skAll = DB.get('lhg_surat_keluar');
 
-  setText('badge-sm-count', sm.length);
-  setText('badge-sk-count', sk.length);
+  setText('badge-sm-count', smAll.length);
+  setText('badge-sk-count', skAll.length);
+
+  const searchInput = document.getElementById('surat-search-input');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const filterSurat = (list, type) => {
+    if (!query) return list;
+    return list.filter(s => {
+      const perihal = (s.perihal || '').toLowerCase();
+      const nomor = (s.nomor || '').toLowerCase();
+      const party = ((type === 'masuk' ? s.pengirim : s.tujuan) || '').toLowerCase();
+      const ket = (s.keterangan || '').toLowerCase();
+      return perihal.includes(query) || nomor.includes(query) || party.includes(query) || ket.includes(query);
+    });
+  };
+
+  const sm = filterSurat(smAll, 'masuk');
+  const sk = filterSurat(skAll, 'keluar');
 
   const smList = document.getElementById('list-surat-masuk');
   if (smList) {
-    smList.innerHTML = sm.map(s => `
-      <div class="surat-item-card">
-        <div style="display: flex; gap: 14px; align-items: flex-start;">
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: #ECFEFF; color: #0891B2; display: flex; align-items: center; justify-content: center; font-size: 18px;">📥</div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px; color: #0F172A;">${s.perihal}</div>
-            <div style="font-size: 11px; color: #64748B;">Pengirim: <strong>${s.pengirim}</strong> • No: ${s.nomor}</div>
-            <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">${formatDate(s.tanggal)}</div>
-          </div>
+    if (sm.length === 0) {
+      smList.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; color: #64748B;">
+          <div style="font-size: 38px; margin-bottom: 8px;">📥</div>
+          <div style="font-weight: 800; font-size: 14px; color: #334155;">Belum Ada Arsip Surat Masuk</div>
+          <p style="font-size: 12px; margin: 4px 0 14px 0;">Catat surat yang masuk dari instansi pemerintah, donatur, atau mitra yayasan.</p>
+          <button class="btn-prim" onclick="openAddSurat('masuk')" style="padding: 7px 16px; font-size: 12px;">➕ Catat Surat Masuk Pertama</button>
         </div>
-        <button class="btn-action-icon danger" onclick="deleteSurat('masuk', ${s.id})" title="Hapus">🗑️</button>
-      </div>
-    `).join('');
+      `;
+    } else {
+      smList.innerHTML = sm.map(s => {
+        const hasFile = Boolean(s.fileName || s.fileUrl);
+        const isPdf = s.fileName && s.fileName.toLowerCase().endsWith('.pdf');
+        const isImg = s.fileName && /\.(jpg|jpeg|png|webp)$/i.test(s.fileName);
+        const statusText = s.status || 'Diproses';
+
+        return `
+          <div class="surat-item-card">
+            <div class="surat-card-left" onclick="viewSurat('masuk', ${s.id})" style="cursor: pointer;" title="Klik untuk membuka surat otomatis">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #ECFEFF; color: #0891B2; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(8, 145, 178, 0.1);">
+                📥
+              </div>
+              <div style="flex: 1;">
+                <div style="font-weight: 800; font-size: 13.5px; color: #0F172A; line-height: 1.4; transition: color 0.15s;" onmouseover="this.style.color='#0284C7'" onmouseout="this.style.color='#0F172A'">
+                  ${escapeHtmlStr(s.perihal)}
+                </div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>Pengirim: <strong>${escapeHtmlStr(s.pengirim || '-')}</strong></span>
+                  <span>•</span>
+                  <span>No: <strong style="font-family: monospace; color: #334155;">${escapeHtmlStr(s.nomor)}</strong></span>
+                  <span>•</span>
+                  <span>📅 ${formatDate(s.tanggal)}</span>
+                </div>
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #E0F2FE; color: #0369A1;">
+                    ${escapeHtmlStr(statusText)}
+                  </span>
+                  ${hasFile ? `
+                    <span onclick="event.stopPropagation(); viewSurat('masuk', ${s.id})" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Klik untuk membuka dokumen">
+                      ${isPdf ? '📄' : isImg ? '🖼️' : '📎'} ${escapeHtmlStr(s.fileName || 'Berkas Terlampir')}
+                    </span>
+                  ` : `
+                    <span onclick="event.stopPropagation(); quickUploadSurat('masuk', ${s.id})" style="background: #FFFBEB; border: 1px dashed #FCD34D; color: #B45309; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Klik untuk mengunggah berkas surat">
+                      📤 Belum ada file • Upload
+                    </span>
+                  `}
+                </div>
+              </div>
+            </div>
+            <div class="surat-card-actions">
+              <button class="btn-action-icon" onclick="viewSurat('masuk', ${s.id})" title="Buka & Pratinjau Surat (Otomatis Membuka Dokumen)" style="color: #0284C7; background: #F0F9FF; border: 1px solid #BAE6FD;">
+                👁️
+              </button>
+              <button class="btn-action-icon edit" onclick="openEditSurat('masuk', ${s.id})" title="Edit Data Surat" style="color: #D97706; background: #FFFBEB; border: 1px solid #FDE68A;">
+                ✏️
+              </button>
+              <button class="btn-action-icon" onclick="quickUploadSurat('masuk', ${s.id})" title="${hasFile ? 'Kelola / Ganti Berkas' : 'Unggah Berkas Surat'}" style="color: #059669; background: #ECFDF5; border: 1px solid #A7F3D0;">
+                ${hasFile ? '📎' : '📤'}
+              </button>
+              <button class="btn-action-icon danger" onclick="deleteSurat('masuk', ${s.id})" title="Hapus Surat">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
   const skList = document.getElementById('list-surat-keluar');
   if (skList) {
-    skList.innerHTML = sk.map(s => `
-      <div class="surat-item-card">
-        <div style="display: flex; gap: 14px; align-items: flex-start;">
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEFCE8; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 18px;">📤</div>
-          <div>
-            <div style="font-weight: 800; font-size: 13px; color: #0F172A;">${s.perihal}</div>
-            <div style="font-size: 11px; color: #64748B;">Tujuan: <strong>${s.tujuan}</strong> • No: ${s.nomor}</div>
-            <div style="font-size: 10px; color: #94A3B8; margin-top: 2px;">${formatDate(s.tanggal)}</div>
-          </div>
+    if (sk.length === 0) {
+      skList.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; color: #64748B;">
+          <div style="font-size: 38px; margin-bottom: 8px;">📤</div>
+          <div style="font-weight: 800; font-size: 14px; color: #334155;">Belum Ada Arsip Surat Keluar</div>
+          <p style="font-size: 12px; margin: 4px 0 14px 0;">Catat surat resmi yang diterbitkan yayasan untuk pihak luar.</p>
+          <button class="btn-prim" onclick="openAddSurat('keluar')" style="padding: 7px 16px; font-size: 12px;">➕ Buat Surat Keluar Pertama</button>
         </div>
-        <button class="btn-action-icon danger" onclick="deleteSurat('keluar', ${s.id})" title="Hapus">🗑️</button>
-      </div>
-    `).join('');
+      `;
+    } else {
+      skList.innerHTML = sk.map(s => {
+        const hasFile = Boolean(s.fileName || s.fileUrl);
+        const isPdf = s.fileName && s.fileName.toLowerCase().endsWith('.pdf');
+        const isImg = s.fileName && /\.(jpg|jpeg|png|webp)$/i.test(s.fileName);
+        const statusText = s.status || 'Terkirim';
+
+        return `
+          <div class="surat-item-card">
+            <div class="surat-card-left" onclick="viewSurat('keluar', ${s.id})" style="cursor: pointer;" title="Klik untuk membuka surat otomatis">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: #FEFCE8; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(217, 119, 6, 0.1);">
+                📤
+              </div>
+              <div style="flex: 1;">
+                <div style="font-weight: 800; font-size: 13.5px; color: #0F172A; line-height: 1.4; transition: color 0.15s;" onmouseover="this.style.color='#D97706'" onmouseout="this.style.color='#0F172A'">
+                  ${escapeHtmlStr(s.perihal)}
+                </div>
+                <div style="font-size: 11px; color: #64748B; margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>Tujuan: <strong>${escapeHtmlStr(s.tujuan || '-')}</strong></span>
+                  <span>•</span>
+                  <span>No: <strong style="font-family: monospace; color: #334155;">${escapeHtmlStr(s.nomor)}</strong></span>
+                  <span>•</span>
+                  <span>📅 ${formatDate(s.tanggal)}</span>
+                </div>
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 12px; background: #FEF3C7; color: #B45309;">
+                    ${escapeHtmlStr(statusText)}
+                  </span>
+                  ${hasFile ? `
+                    <span onclick="event.stopPropagation(); viewSurat('keluar', ${s.id})" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Klik untuk membuka dokumen">
+                      ${isPdf ? '📄' : isImg ? '🖼️' : '📎'} ${escapeHtmlStr(s.fileName || 'Berkas Terlampir')}
+                    </span>
+                  ` : `
+                    <span onclick="event.stopPropagation(); quickUploadSurat('keluar', ${s.id})" style="background: #FFFBEB; border: 1px dashed #FCD34D; color: #B45309; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;" title="Klik untuk mengunggah berkas surat">
+                      📤 Belum ada file • Upload
+                    </span>
+                  `}
+                </div>
+              </div>
+            </div>
+            <div class="surat-card-actions">
+              <button class="btn-action-icon" onclick="viewSurat('keluar', ${s.id})" title="Buka & Pratinjau Surat (Otomatis Membuka Dokumen)" style="color: #0284C7; background: #F0F9FF; border: 1px solid #BAE6FD;">
+                👁️
+              </button>
+              <button class="btn-action-icon edit" onclick="openEditSurat('keluar', ${s.id})" title="Edit Data Surat" style="color: #D97706; background: #FFFBEB; border: 1px solid #FDE68A;">
+                ✏️
+              </button>
+              <button class="btn-action-icon" onclick="quickUploadSurat('keluar', ${s.id})" title="${hasFile ? 'Kelola / Ganti Berkas' : 'Unggah Berkas Surat'}" style="color: #059669; background: #ECFDF5; border: 1px solid #A7F3D0;">
+                ${hasFile ? '📎' : '📤'}
+              </button>
+              <button class="btn-action-icon danger" onclick="deleteSurat('keluar', ${s.id})" title="Hapus Surat">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 }
 
 function openAddSurat(type) {
   document.getElementById('form-surat').reset();
   document.getElementById('surat-type').value = type;
+  document.getElementById('surat-edit-id').value = '';
+  document.getElementById('surat-remove-file-flag').value = 'false';
+
+  document.getElementById('surat-file-base64').value = '';
+  document.getElementById('surat-file-name').value = '';
+  document.getElementById('surat-file-type').value = '';
+  document.getElementById('surat-file-size').value = '';
+
+  const today = new Date().toISOString().split('T')[0];
+  const tglEl = document.getElementById('surat-tgl');
+  if (tglEl) tglEl.value = today;
+
   document.getElementById('surat-pengirim-group').style.display = type === 'masuk' ? 'block' : 'none';
   document.getElementById('surat-tujuan-group').style.display = type === 'keluar' ? 'block' : 'none';
+
   setText('modal-surat-title', type === 'masuk' ? 'Catat Surat Masuk' : 'Buat Surat Keluar');
+  setText('modal-surat-subtitle', 'Catat data administrasi surat resmi dan lampirkan berkas digital dokumen surat.');
+  const btnSave = document.getElementById('btn-save-surat');
+  if (btnSave) btnSave.innerHTML = '<span>💾</span> Simpan Surat';
+
+  const infoEl = document.getElementById('surat-file-preview-info');
+  if (infoEl) {
+    infoEl.style.display = 'none';
+    infoEl.innerHTML = '';
+  }
+
   document.getElementById('modal-surat').classList.add('open');
 }
 
-function saveSurat() {
+async function openEditSurat(type, id) {
+  const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+  const list = DB.get(key);
+  const s = list.find(x => String(x.id) === String(id));
+  if (!s) {
+    showToast('Data surat tidak ditemukan!', 'error');
+    return;
+  }
+
+  document.getElementById('form-surat').reset();
+  document.getElementById('surat-type').value = type;
+  document.getElementById('surat-edit-id').value = s.id;
+  document.getElementById('surat-remove-file-flag').value = 'false';
+
+  document.getElementById('surat-nomor').value = s.nomor || '';
+  document.getElementById('surat-tgl').value = s.tanggal || '';
+  if (document.getElementById('surat-pengirim')) document.getElementById('surat-pengirim').value = s.pengirim || '';
+  if (document.getElementById('surat-tujuan')) document.getElementById('surat-tujuan').value = s.tujuan || '';
+  document.getElementById('surat-perihal').value = s.perihal || '';
+  if (document.getElementById('surat-status')) document.getElementById('surat-status').value = s.status || (type === 'masuk' ? 'Diproses' : 'Terkirim');
+  if (document.getElementById('surat-file-url')) document.getElementById('surat-file-url').value = s.fileUrl || '';
+  if (document.getElementById('surat-ket')) document.getElementById('surat-ket').value = s.keterangan || '';
+
+  document.getElementById('surat-pengirim-group').style.display = type === 'masuk' ? 'block' : 'none';
+  document.getElementById('surat-tujuan-group').style.display = type === 'keluar' ? 'block' : 'none';
+
+  setText('modal-surat-title', type === 'masuk' ? 'Edit Surat Masuk' : 'Edit Surat Keluar');
+  setText('modal-surat-subtitle', 'Perbarui data administrasi dan berkas lampiran surat resmi.');
+  const btnSave = document.getElementById('btn-save-surat');
+  if (btnSave) btnSave.innerHTML = '<span>💾</span> Perbarui Data Surat';
+
+  document.getElementById('surat-file-base64').value = '';
+  document.getElementById('surat-file-name').value = s.fileName || '';
+  document.getElementById('surat-file-type').value = s.fileType || '';
+  document.getElementById('surat-file-size').value = s.fileSize || '';
+
+  const infoEl = document.getElementById('surat-file-preview-info');
+  if (infoEl) {
+    if (s.fileName) {
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = `
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span style="color: #15803D; font-weight: 700;">📎 Berkas tersimpan: <strong>${escapeHtmlStr(s.fileName)}</strong></span>
+          <button type="button" class="btn-sec" onclick="removeSuratAttachedFile()" style="padding: 2px 8px; font-size: 11px; color: #DC2626;">❌ Hapus Berkas</button>
+        </div>
+      `;
+    } else {
+      infoEl.style.display = 'none';
+      infoEl.innerHTML = '';
+    }
+  }
+
+  document.getElementById('modal-surat').classList.add('open');
+}
+
+function quickUploadSurat(type, id) {
+  openEditSurat(type, id);
+  setTimeout(() => {
+    const fileInput = document.getElementById('surat-file-input');
+    if (fileInput) {
+      fileInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fileInput.focus();
+    }
+  }, 150);
+}
+
+async function saveSurat() {
   const f = document.getElementById('form-surat');
   const type = f.surat_type.value;
-  if (!f.nomor_surat.value || !f.perihal.value) {
+  const editId = document.getElementById('surat-edit-id').value;
+
+  const nomor = document.getElementById('surat-nomor').value.trim();
+  const perihal = document.getElementById('surat-perihal').value.trim();
+  const tanggal = document.getElementById('surat-tgl').value || new Date().toISOString().split('T')[0];
+  const pengirim = document.getElementById('surat-pengirim') ? document.getElementById('surat-pengirim').value.trim() : '';
+  const tujuan = document.getElementById('surat-tujuan') ? document.getElementById('surat-tujuan').value.trim() : '';
+  const status = document.getElementById('surat-status') ? document.getElementById('surat-status').value : (type === 'masuk' ? 'Diproses' : 'Terkirim');
+  const keterangan = document.getElementById('surat-ket') ? document.getElementById('surat-ket').value.trim() : '';
+  const fileUrl = document.getElementById('surat-file-url') ? document.getElementById('surat-file-url').value.trim() : '';
+
+  if (!nomor || !perihal) {
     showToast('Harap isi nomor surat dan perihal!', 'error');
     return;
   }
+
   const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
   const list = DB.get(key);
-  list.unshift({
-    id: Date.now(),
-    nomor: f.nomor_surat.value,
-    tanggal: f.tgl_surat.value || new Date().toISOString().split('T')[0],
-    perihal: f.perihal.value,
-    pengirim: f.pengirim ? f.pengirim.value : '',
-    tujuan: f.tujuan ? f.tujuan.value : '',
-    keterangan: f.ket_surat.value
-  });
-  DB.set(key, list);
+
+  const fileBase64 = document.getElementById('surat-file-base64').value;
+  const fileName = document.getElementById('surat-file-name').value;
+  const fileType = document.getElementById('surat-file-type').value;
+  const fileSize = parseInt(document.getElementById('surat-file-size').value) || 0;
+  const removeFileFlag = document.getElementById('surat-remove-file-flag').value === 'true';
+
+  if (editId) {
+    const targetId = parseInt(editId);
+    const idx = list.findIndex(x => x.id === targetId);
+    if (idx !== -1) {
+      let finalFileName = list[idx].fileName || '';
+      let finalFileType = list[idx].fileType || '';
+      let finalFileSize = list[idx].fileSize || 0;
+
+      if (removeFileFlag) {
+        finalFileName = '';
+        finalFileType = '';
+        finalFileSize = 0;
+        await SuratStore.deleteFile(type + '_' + targetId);
+      } else if (fileBase64) {
+        finalFileName = fileName;
+        finalFileType = fileType;
+        finalFileSize = fileSize;
+        await SuratStore.saveFile(type + '_' + targetId, {
+          fileBase64: fileBase64,
+          fileName: fileName,
+          fileType: fileType,
+          fileSize: fileSize
+        });
+      }
+
+      list[idx] = {
+        ...list[idx],
+        nomor: nomor,
+        tanggal: tanggal,
+        perihal: perihal,
+        pengirim: pengirim,
+        tujuan: tujuan,
+        status: status,
+        keterangan: keterangan,
+        fileUrl: fileUrl,
+        fileName: finalFileName,
+        fileType: finalFileType,
+        fileSize: finalFileSize
+      };
+
+      DB.set(key, list);
+      showToast('Data surat berhasil diperbarui!', 'success');
+    }
+  } else {
+    const newId = Date.now();
+    if (fileBase64) {
+      await SuratStore.saveFile(type + '_' + newId, {
+        fileBase64: fileBase64,
+        fileName: fileName,
+        fileType: fileType,
+        fileSize: fileSize
+      });
+    }
+
+    const newRecord = {
+      id: newId,
+      nomor: nomor,
+      tanggal: tanggal,
+      perihal: perihal,
+      pengirim: pengirim,
+      tujuan: tujuan,
+      status: status,
+      keterangan: keterangan,
+      fileUrl: fileUrl,
+      fileName: fileName,
+      fileType: fileType,
+      fileSize: fileSize
+    };
+
+    list.unshift(newRecord);
+    DB.set(key, list);
+    showToast('Data surat berhasil disimpan!', 'success');
+  }
+
   closeModal('modal-surat');
   renderSurat();
   renderDashboard();
-  showToast('Data surat berhasil disimpan!');
 }
 
 async function deleteSurat(type, id) {
   const confirmed = await showModernConfirm({
     title: 'Hapus Surat',
     message: 'Apakah Anda yakin ingin menghapus data surat ini?',
-    subtext: 'Arsip surat yang dihapus tidak dapat dipulihkan kembali.',
+    subtext: 'Arsip dan berkas surat yang dihapus tidak dapat dipulihkan kembali.',
     confirmText: 'Ya, Hapus',
     cancelText: 'Batal',
     type: 'danger',
     icon: 'delete'
   });
   if (!confirmed) return;
+
   const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
   const list = DB.get(key).filter(x => x.id !== id);
   localStorage.setItem(key, JSON.stringify(list));
+
+  await SuratStore.deleteFile(type + '_' + id);
+
   try {
     await SupabaseAPI.delete(key, 'id', id);
   } catch (e) {
@@ -2460,6 +3214,282 @@ async function deleteSurat(type, id) {
   renderSurat();
   renderDashboard();
   showToast('Surat dihapus', 'warning');
+}
+
+async function viewSurat(type, id) {
+  const key = type === 'masuk' ? 'lhg_surat_masuk' : 'lhg_surat_keluar';
+  const list = DB.get(key);
+  const s = list.find(x => String(x.id) === String(id));
+  if (!s) {
+    showToast('Data surat tidak ditemukan!', 'error');
+    return;
+  }
+
+  // Revoke previous blob if any
+  if (activeSuratBlobUrl) {
+    URL.revokeObjectURL(activeSuratBlobUrl);
+    activeSuratBlobUrl = null;
+  }
+
+  const isMasuk = type === 'masuk';
+  const iconBadge = document.getElementById('view-surat-icon-badge');
+  if (iconBadge) {
+    iconBadge.innerHTML = isMasuk ? '📥' : '📤';
+    iconBadge.style.background = isMasuk ? '#ECFEFF' : '#FEFCE8';
+    iconBadge.style.color = isMasuk ? '#0891B2' : '#D97706';
+  }
+
+  const typeTag = document.getElementById('view-surat-type-tag');
+  if (typeTag) {
+    typeTag.textContent = isMasuk ? 'SURAT MASUK' : 'SURAT KELUAR';
+    typeTag.style.background = isMasuk ? '#E0F2FE' : '#FEF3C7';
+    typeTag.style.color = isMasuk ? '#0369A1' : '#B45309';
+  }
+
+  const statusBadge = document.getElementById('view-surat-status-badge');
+  if (statusBadge) {
+    const st = s.status || (isMasuk ? 'Diproses' : 'Terkirim');
+    statusBadge.textContent = st;
+    const stColor = st === 'Disetujui' || st === 'Selesai' ? { bg: '#DCFCE7', text: '#15803D' } :
+                    st === 'Terkirim' ? { bg: '#EFF6FF', text: '#1D4ED8' } :
+                    { bg: '#FEF3C7', text: '#B45309' };
+    statusBadge.style.background = stColor.bg;
+    statusBadge.style.color = stColor.text;
+  }
+
+  setText('view-surat-nomor-title', `No: ${s.nomor || '-'}`);
+
+  const body = document.getElementById('view-surat-body');
+  const leftActions = document.getElementById('view-surat-left-actions');
+  const rightActions = document.getElementById('view-surat-right-actions');
+  if (!body) return;
+
+  // Retrieve file from SuratStore
+  let fileRecord = null;
+  try {
+    fileRecord = await SuratStore.getFile(type + '_' + id);
+  } catch(e) {}
+
+  const fileBase64 = (fileRecord && fileRecord.fileBase64) || s.fileBase64 || '';
+  const fileName = (fileRecord && fileRecord.fileName) || s.fileName || '';
+  const fileSize = (fileRecord && fileRecord.fileSize) || s.fileSize || 0;
+  const fileUrl = s.fileUrl || '';
+
+  const isPdf = fileBase64 && (fileBase64.startsWith('data:application/pdf') || (fileName && fileName.toLowerCase().endsWith('.pdf')));
+  const isImg = fileBase64 && (fileBase64.startsWith('data:image/') || (fileName && /\.(jpg|jpeg|png|webp)$/i.test(fileName)));
+
+  let pdfBlobUrl = null;
+  if (isPdf) {
+    pdfBlobUrl = getSuratPdfBlobUrl(fileBase64);
+    activeSuratBlobUrl = pdfBlobUrl;
+  }
+
+  const sizeText = fileSize ? `(${Math.round(fileSize / 1024)} KB)` : '';
+
+  body.innerHTML = `
+    <!-- HEADER KARTU DETAIL SURAT -->
+    <div style="background: linear-gradient(135deg, #F8FAFC, #F1F5F9); border: 1px solid #CBD5E1; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
+      <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">Informasi Dokumen Surat</div>
+      <div style="font-size: 16px; font-weight: 800; color: #0F172A; line-height: 1.4; margin-bottom: 14px;">
+        ${escapeHtmlStr(s.perihal)}
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 13px;">
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Nomor Surat:</span>
+          <strong style="color: #0F172A; font-family: monospace; font-size: 13.5px;">${escapeHtmlStr(s.nomor || '-')}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Tanggal Surat:</span>
+          <strong style="color: #0F172A;">📅 ${formatDate(s.tanggal)}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">${isMasuk ? 'Instansi Pengirim:' : 'Instansi / Pihak Tujuan:'}</span>
+          <strong style="color: #0F172A;">🏛️ ${escapeHtmlStr(isMasuk ? s.pengirim : s.tujuan || '-')}</strong>
+        </div>
+        <div>
+          <span style="color: #64748B; font-size: 11.5px; display: block;">Status Arsip:</span>
+          <span style="background: #E2E8F0; color: #334155; padding: 2px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700;">
+            ${escapeHtmlStr(s.status || (isMasuk ? 'Diproses' : 'Terkirim'))}
+          </span>
+        </div>
+      </div>
+
+      ${s.keterangan ? `
+        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #CBD5E1;">
+          <span style="color: #64748B; font-size: 11.5px; font-weight: 700; display: block; margin-bottom: 4px;">Keterangan / Ringkasan Isi:</span>
+          <p style="color: #1E293B; font-size: 13px; line-height: 1.6; margin: 0; background: white; padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0;">
+            ${escapeHtmlStr(s.keterangan)}
+          </p>
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- PRATINJAU DOKUMEN / BERKAS DIGITAL SURAT (INTERACTIVE VIEWER) -->
+    <div style="margin-top: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <span style="font-weight: 800; font-size: 13px; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Pratinjau / Dokumen Berkas Surat</span>
+        ${(fileBase64 || fileUrl) ? `
+          <button type="button" class="btn-sec" onclick="openEditSurat('${type}', ${s.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700;">
+            <span>🔄</span> Ganti File Berkas
+          </button>
+        ` : ''}
+      </div>
+
+      ${isPdf && pdfBlobUrl ? `
+        <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <!-- PDF ACTION HEADER -->
+          <div style="background: #F0FDF4; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #86EFAC; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">📄</span>
+              <div>
+                <strong style="font-size: 13.5px; color: #065F46; display: block;">${escapeHtmlStr(fileName || 'Dokumen_Surat.pdf')} ${sizeText}</strong>
+                <span style="font-size: 11px; color: #047857; font-weight: 600;">✓ Dokumen PDF Resmi • Siap Dibaca & Dicetak</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-prim" onclick="openSuratPdfInNewTab('${type}', '${s.id}')" style="padding: 7px 16px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: #059669; border: 1px solid #047857; border-radius: 6px; color: white;">
+                <span>↗️</span> Buka Layar Penuh (Tab Baru)
+              </button>
+              <button type="button" class="btn-sec" onclick="downloadSuratFile('${type}', '${s.id}')" style="padding: 7px 14px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 6px;">
+                <span>⬇️</span> Unduh PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- EMBEDDED OBJECT & IFRAME PDF VIEWER -->
+          <div style="width: 100%; height: 540px; background: #525659; position: relative;">
+            <object data="${pdfBlobUrl}#toolbar=1" type="application/pdf" width="100%" height="100%" style="display: block; width: 100%; height: 100%;">
+              <iframe src="${pdfBlobUrl}" width="100%" height="100%" style="border: none;">
+                <div style="padding: 40px 20px; text-align: center; background: #F8FAFC; color: #475569; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <div style="font-size: 44px; margin-bottom: 12px;">📄</div>
+                  <h4 style="font-size: 16px; color: #0F172A; margin-bottom: 8px; font-weight: 800;">Baca Dokumen PDF</h4>
+                  <p style="font-size: 12.5px; color: #64748B; max-width: 440px; margin-bottom: 16px; line-height: 1.5;">
+                    Pratinjau PDF siap dibaca. Silakan klik tombol di bawah untuk membuka dokumen di jendela penuh atau tab baru.
+                  </p>
+                  <button type="button" class="btn-prim" onclick="openSuratPdfInNewTab('${type}', '${s.id}')" style="padding: 9px 22px; font-size: 13px; font-weight: 700;">
+                    <span>↗️</span> Buka & Baca Dokumen di Tab Baru
+                  </button>
+                </div>
+              </iframe>
+            </object>
+          </div>
+        </div>
+      ` : isImg ? `
+        <div style="background: #0F172A; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #94A3B8; font-size: 12px; padding: 0 4px;">
+            <span>🖼️ Pratinjau Foto Dokumen Surat: <strong>${escapeHtmlStr(fileName)}</strong> ${sizeText}</span>
+            <button type="button" class="btn-prim" onclick="downloadSuratFile('${type}', '${s.id}')" style="padding: 5px 12px; font-size: 11px;">
+              <span>⬇️</span> Unduh Foto
+            </button>
+          </div>
+          <img src="${fileBase64}" style="max-width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);" alt="${escapeHtmlStr(s.perihal)}">
+        </div>
+      ` : fileUrl ? `
+        <div style="background: #EFF6FF; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 46px; height: 46px; border-radius: 12px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;">
+                🌐
+              </div>
+              <div>
+                <div style="font-weight: 800; color: #1E40AF; font-size: 14px;">Tautan Berkas Cloud / Google Drive</div>
+                <div style="font-size: 12px; color: #2563EB; margin-top: 2px; word-break: break-all;">${escapeHtmlStr(fileUrl)}</div>
+              </div>
+            </div>
+            <a href="${escapeHtmlStr(fileUrl)}" target="_blank" rel="noopener noreferrer" class="btn-prim" style="text-decoration: none; padding: 8px 18px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>↗️</span> Buka di Google Drive
+            </a>
+          </div>
+        </div>
+      ` : `
+        <!-- JIKA BELUM ADA FILE: TAMPILKAN KOTAK UPLOAD LANGSUNG & LEMBAR SURAT RESMI -->
+        <div style="background: #FFFBEB; border: 1.5px dashed #F59E0B; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 34px; margin-bottom: 8px;">📤</div>
+          <div style="font-weight: 800; color: #92400E; font-size: 14px;">Belum Ada Berkas Scan / Dokumen Digital yang Diunggah</div>
+          <p style="font-size: 12px; color: #B45309; max-width: 480px; margin: 4px auto 14px auto; line-height: 1.5;">
+            Anda dapat langsung memilih dan mengunggah berkas scan surat (PDF / Foto JPG/PNG) sekarang juga agar dokumen tersimpan rapi dan dapat dibuka kapan saja.
+          </p>
+          <label class="btn-prim" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; font-size: 12.5px; font-weight: 700; background: #D97706; border: none;">
+            <span>📁</span> Pilih & Upload File Surat Sekarang
+            <input type="file" accept=".pdf,image/*" onchange="uploadSuratDirectlyFromView('${type}', ${s.id}, event)" style="display: none;">
+          </label>
+        </div>
+
+        <!-- TAMPILKAN FORMAT LEMBAR KENDALI & SURAT RESMI YAYASAN -->
+        <div style="background: white; border: 1px solid #CBD5E1; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+          <div style="text-align: center; border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #0284C7; letter-spacing: 0.8px; text-transform: uppercase;">YAYASAN LENTERA HATI GURINDAM</div>
+            <div style="font-size: 15px; font-weight: 900; color: #0F172A; text-transform: uppercase; margin-top: 3px;">
+              ${isMasuk ? 'LEMBAR DISPOSISI SURAT MASUK' : 'LEMBAR ARSIP KENDALI SURAT KELUAR'}
+            </div>
+            <div style="font-size: 11px; color: #64748B;">Sekretariat: Tanjungpinang, Provinsi Kepulauan Riau</div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 16px;">
+            <tr>
+              <td style="padding: 6px 10px; width: 140px; color: #64748B; font-weight: 600; border-bottom: 1px solid #E2E8F0;">Nomor Surat</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0;"><strong style="font-family: monospace;">${escapeHtmlStr(s.nomor)}</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; color: #64748B; font-weight: 600; border-bottom: 1px solid #E2E8F0;">Tanggal Surat</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0;"><strong>${formatDate(s.tanggal)}</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; color: #64748B; font-weight: 600; border-bottom: 1px solid #E2E8F0;">${isMasuk ? 'Asal Pengirim' : 'Pihak Tujuan'}</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0;"><strong>${escapeHtmlStr(isMasuk ? s.pengirim : s.tujuan)}</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; color: #64748B; font-weight: 600; border-bottom: 1px solid #E2E8F0;">Perihal Pokok</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0;"><strong>${escapeHtmlStr(s.perihal)}</strong></td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 10px; color: #64748B; font-weight: 600; border-bottom: 1px solid #E2E8F0;">Ringkasan Isi</td>
+              <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; line-height: 1.5;">${escapeHtmlStr(s.keterangan || '-')}</td>
+            </tr>
+          </table>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; font-size: 12px;">
+            <div style="font-weight: 800; color: #334155; margin-bottom: 6px;">
+              ${isMasuk ? '📋 Kolom Arahan / Disposisi Pimpinan:' : '📋 Kolom Lembar Ekspedisi / Tanda Terima:'}
+            </div>
+            <div style="color: #64748B; font-style: italic;">
+              ${isMasuk ? 'Silakan gunakan tombol "Cetak Lembar Disposisi" di bawah untuk mencetak lembar disposisi fisik pimpinan.' : 'Silakan gunakan tombol "Cetak Lembar Arsip" untuk mencetak bukti ekspedisi.'}
+            </div>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+
+  // Left action: Print button
+  if (leftActions) {
+    leftActions.innerHTML = `
+      <button type="button" class="btn-sec" onclick="printSuratDoc('${type}', ${s.id})" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer;">
+        <span>🖨️</span> Cetak Lembar ${isMasuk ? 'Disposisi' : 'Arsip Surat'}
+      </button>
+    `;
+  }
+
+  // Right actions
+  if (rightActions) {
+    rightActions.innerHTML = `
+      ${isPdf && pdfBlobUrl ? `
+        <button type="button" class="btn-prim" onclick="openSuratPdfInNewTab('${type}', '${s.id}')" style="display: inline-flex; align-items: center; gap: 6px; background: #059669; border-color: #047857;">
+          <span>↗️</span> Buka di Tab Baru
+        </button>
+        <button type="button" class="btn-sec" onclick="downloadSuratFile('${type}', '${s.id}')" style="display: inline-flex; align-items: center; gap: 6px;">
+          <span>⬇️</span> Unduh PDF
+        </button>
+      ` : ''}
+      <button type="button" class="btn-prim" onclick="closeModal('modal-view-surat'); openEditSurat('${type}', ${s.id})" style="display: inline-flex; align-items: center; gap: 6px;">
+        <span>✏️</span> Edit Data Surat
+      </button>
+      <button type="button" class="btn-sec" onclick="closeModal('modal-view-surat')">Tutup</button>
+    `;
+  }
+
+  document.getElementById('modal-view-surat').classList.add('open');
 }
 
 // ==============================================================================
@@ -5609,9 +6639,16 @@ async function syncWithSupabase(isManual) {
               await SupabaseAPI.upsert(t, rows);
             }
 
-            // Merge cloud + unpushed
+            // Merge cloud + unpushed (preserve local file attachments & attributes)
             const itemMap = new Map();
-            cloudMapped.forEach(item => itemMap.set(String(item.id), item));
+            cloudMapped.forEach(item => {
+              const existingLocal = (Array.isArray(localList) ? localList : []).find(l => String(l.id) === String(item.id));
+              if (existingLocal) {
+                itemMap.set(String(item.id), { ...existingLocal, ...item });
+              } else {
+                itemMap.set(String(item.id), item);
+              }
+            });
             unpushed.forEach(item => itemMap.set(String(item.id), item));
             const merged = Array.from(itemMap.values());
 
@@ -5658,6 +6695,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof window !== 'undefined' && window.indexedDB) {
     try {
       await PhotoStore.init();
+      if (typeof SuratStore !== 'undefined') await SuratStore.init();
     } catch(e) {}
   }
   updateClock();

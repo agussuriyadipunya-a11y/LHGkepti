@@ -79,8 +79,12 @@ CREATE TABLE IF NOT EXISTS lhg_surat_masuk (
     perihal TEXT NOT NULL,
     keterangan TEXT,
     status VARCHAR(50) DEFAULT 'Diproses',
+    file_name VARCHAR(255),
+    file_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
+ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 -- 6. TABEL SURAT KELUAR
 CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
@@ -91,8 +95,12 @@ CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
     perihal TEXT NOT NULL,
     keterangan TEXT,
     status VARCHAR(50) DEFAULT 'Terkirim',
+    file_name VARCHAR(255),
+    file_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
+ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 -- 7. TABEL GALERI FOTO KEGIATAN
 CREATE TABLE IF NOT EXISTS lhg_foto (
