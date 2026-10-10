@@ -1556,8 +1556,18 @@ function previewKTA() {
   const a = DB.get('lhg_anggota').find(x => x.id === id);
   if (!a) return;
 
-  const rawAlamat = a.kelurahan ? (a.alamat ? a.alamat + ', ' + a.kelurahan : a.kelurahan) : (a.alamat || 'Tanjungpinang');
-  const displayAlamat = rawAlamat.length > 32 ? rawAlamat.substring(0, 30) + '...' : rawAlamat;
+  // Alamat Lengkap Utuh (TIDAK TERPOTONG / TANPA ELIPSIS)
+  let fullAlamat = (a.alamat || '').trim();
+  if (a.kelurahan && a.kelurahan.trim() && a.kelurahan.trim() !== '-') {
+    const kel = a.kelurahan.trim();
+    if (!fullAlamat.toLowerCase().includes(kel.toLowerCase())) {
+      fullAlamat += (fullAlamat ? ', Kel. ' : 'Kel. ') + kel;
+    }
+  }
+  if (!fullAlamat || fullAlamat === '-') {
+    fullAlamat = 'Kota Tanjungpinang, Kepulauan Riau';
+  }
+
   const noReg = a.noAnggota || a.id;
   const tglDaftar = formatDate(a.tglDaftar);
 
@@ -1597,8 +1607,8 @@ function previewKTA() {
             </div>
 
             <div class="idcard-val idcard-val-nama" title="${a.nama}">${a.nama}</div>
-            <div class="idcard-val idcard-val-reg">${noReg}</div>
-            <div class="idcard-val idcard-val-alamat" title="${rawAlamat}">${displayAlamat}</div>
+            <div class="idcard-val idcard-val-reg">NO. REG : ${noReg}</div>
+            <div class="idcard-val idcard-val-alamat" title="${fullAlamat}">${fullAlamat}</div>
             <div class="idcard-val idcard-val-tgl">${tglDaftar}</div>
           ` : `
             <!-- Sisi Belakang Mockup -->
@@ -1668,7 +1678,7 @@ function previewKTA() {
 
         <div style="background: #F8FAFC; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #475569; line-height: 1.5; border-left: 3.5px solid #059669; border: 1px solid var(--border-color); border-left: 3.5px solid #059669;">
           <strong>💡 Format ID Card Resmi:</strong><br>
-          Memuat Logo Yayasan Asli, Foto, Nama, Alamat, No Registrasi, serta Alamat Yayasan resmi di bagian bawah: <em>Perum Bukit Merpati 2 Blok D6 No 2, Tanjungpinang, Kepulauan Riau</em>.
+          Memuat Logo Yayasan Asli, Foto, Nama, Alamat Lengkap, No Registrasi, serta Alamat Yayasan resmi di bagian bawah: <em>Perum Bukit Merpati 2 Blok D6 No 2, Tanjungpinang, Kepulauan Riau</em>.
         </div>
       </div>
     </div>
@@ -1678,6 +1688,33 @@ function previewKTA() {
 function changeKTAModel(id, model) {
   window._currentKTAModel = model;
   previewKTA(id);
+}
+
+function drawKTATextWrapped(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  maxLines = maxLines || 3;
+  const words = (text || '').split(' ');
+  let line = '';
+  let curY = y;
+  let lineCount = 0;
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line.trim(), x, curY);
+      line = words[n] + ' ';
+      curY += lineHeight;
+      lineCount++;
+      if (lineCount >= maxLines - 1 && n < words.length - 1) {
+        const remaining = words.slice(n).join(' ');
+        ctx.fillText(remaining, x, curY);
+        return;
+      }
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, curY);
 }
 
 function generateKTACanvas(id, callback) {
@@ -1716,8 +1753,17 @@ function generateKTACanvas(id, callback) {
       return;
     }
 
-    const rawAlamat = a.kelurahan ? (a.alamat ? a.alamat + ', ' + a.kelurahan : a.kelurahan) : (a.alamat || 'Tanjungpinang');
-    const displayAlamat = rawAlamat.length > 32 ? rawAlamat.substring(0, 30) + '...' : rawAlamat;
+    // Alamat Lengkap Utuh (TIDAK TERPOTONG)
+    let fullAlamat = (a.alamat || '').trim();
+    if (a.kelurahan && a.kelurahan.trim() && a.kelurahan.trim() !== '-') {
+      const kel = a.kelurahan.trim();
+      if (!fullAlamat.toLowerCase().includes(kel.toLowerCase())) {
+        fullAlamat += (fullAlamat ? ', Kel. ' : 'Kel. ') + kel;
+      }
+    }
+    if (!fullAlamat || fullAlamat === '-') {
+      fullAlamat = 'Kota Tanjungpinang, Kepulauan Riau';
+    }
     const noReg = a.noAnggota || a.id;
 
     const finishCanvas = () => {
@@ -1732,7 +1778,7 @@ function generateKTACanvas(id, callback) {
 
         ctx.font = 'bold 16px "Plus Jakarta Sans", Arial, sans-serif';
         ctx.fillStyle = '#1E293B';
-        ctx.fillText(displayAlamat, dataStartX, 721);
+        ctx.fillText(fullAlamat, dataStartX, 721);
 
         ctx.fillStyle = '#0F172A';
         ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
@@ -1743,28 +1789,40 @@ function generateKTACanvas(id, callback) {
         ctx.fillText(formatDate(a.tglDaftar), dataStartX, 841);
       } else {
         // Modern Redesign Layout (2026)
-        // 1. Nama
+        // 1. Nama Lengkap
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#0A1E3C';
         ctx.font = 'bold 22px "Plus Jakarta Sans", Arial, sans-serif';
         ctx.fillText(a.nama.toUpperCase(), 341, 520);
 
-        // 2. No. Registrasi Badge
-        ctx.fillStyle = '#1A4B92';
-        ctx.font = 'bold 12.5px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillText('NO. REG : ' + noReg, 341, 543);
+        // 2. No. Registrasi Badge - Gambar Kotak Pill Presisi 100% & Teks Tepat di Tengah
+        const badgeW = 200;
+        const badgeH = 32;
+        const badgeX = 341 - badgeW / 2;
+        const badgeY = 540;
+        ctx.save();
+        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 16);
+        ctx.fillStyle = curModel === 'model2' ? '#0A1E3C' : (curModel === 'model3' ? '#059669' : '#EEF2FF');
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = curModel === 'model2' ? '#0A1E3C' : (curModel === 'model3' ? '#059669' : '#C7D2FE');
+        ctx.stroke();
 
-        // 3. Alamat
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = (curModel === 'model2' || curModel === 'model3') ? '#FFFFFF' : '#1A4B92';
+        ctx.font = 'bold 13px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText('NO. REG : ' + noReg, 341, badgeY + badgeH / 2);
+        ctx.restore();
+
+        // 3. Alamat Lengkap Utuh - Multi-line wrapping agar semua teks terbaca tanpa terpotong
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillStyle = '#0F172A';
-        ctx.font = 'bold 14px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillText(displayAlamat, 76, 624);
+        ctx.font = 'bold 12.5px "Plus Jakarta Sans", Arial, sans-serif';
 
-        ctx.fillStyle = '#475569';
-        ctx.font = '11px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillText('Kota Tanjungpinang, Kepulauan Riau', 76, 644);
+        drawKTATextWrapped(ctx, fullAlamat, 76, 622, 520, 18, 3);
 
         // 4. Tanggal Terdaftar
         ctx.fillStyle = '#0F172A';

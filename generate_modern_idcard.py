@@ -210,14 +210,14 @@ def generate_model_1_master(sample_data=True):
                   font=get_font(44, bold=True), fill=(10, 30, 60), anchor="mm")
 
     # Nomor Registrasi (Modern Pill Badge)
-    reg_w, reg_h = 340, 52
+    reg_w, reg_h = 400, 64
     reg_x = (W - reg_w) // 2
-    reg_y = 1085
-    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=26,
+    reg_y = 1080
+    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=32,
                fill=(238, 242, 255), outline=(199, 210, 254), width=2)
     if sample_data:
-        draw.text((reg_x + reg_w // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
-                  font=get_font(25, bold=True), fill=(26, 75, 146), anchor="mm")
+        draw.text((W // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
+                  font=get_font(26, bold=True), fill=(26, 75, 146), anchor="mm")
 
     # Modern Metadata Information Card
     card_w = 1140
@@ -231,16 +231,16 @@ def generate_model_1_master(sample_data=True):
     draw.rounded_rectangle([card_x, card_y + 16, card_x + 8, card_y + card_h - 16], radius=4,
                            fill=(10, 30, 60))
 
-    # Field 1: ALAMAT
+    # Field 1: ALAMAT LENGKAP
     row1_y = card_y + 40
     # Label
     draw.text((card_x + 40, row1_y), "ALAMAT DOMISILI",
               font=get_font(20, bold=True), fill=(100, 116, 139), anchor="lm")
     if sample_data:
-        draw.text((card_x + 40, row1_y + 42), "Perm Bhumi Anggrek Residence Blok B...",
-                  font=get_font(28, bold=True), fill=(15, 23, 42), anchor="lm")
-        draw.text((card_x + 40, row1_y + 80), "Kota Tanjungpinang, Kepulauan Riau",
-                  font=get_font(22, bold=False), fill=(71, 85, 105), anchor="lm")
+        draw.text((card_x + 40, row1_y + 40), "Perm Bhumi Anggrek Residence Blok B No. 12, Kel. Batu IX",
+                  font=get_font(26, bold=True), fill=(15, 23, 42), anchor="lm")
+        draw.text((card_x + 40, row1_y + 78), "Kecamatan Tanjungpinang Timur, Kota Tanjungpinang",
+                  font=get_font(23, bold=False), fill=(71, 85, 105), anchor="lm")
 
     # Divider line inside card
     draw.line([(card_x + 35, card_y + 190), (card_x + card_w - 35, card_y + 190)],
@@ -263,6 +263,8 @@ def generate_model_1_master(sample_data=True):
     act_w, act_h = 240, 42
     round_rect(draw, [col2_x, row2_y + 20, col2_x + act_w, row2_y + 20 + act_h], radius=21,
                fill=(236, 253, 245), outline=(167, 243, 208), width=1)
+    draw.text((col2_x + act_w // 2, row2_y + 20 + act_h // 2), "● ANGGOTA AKTIF",
+              font=get_font(20, bold=True), fill=(5, 150, 105), anchor="mm")
     draw.text((col2_x + act_w // 2, row2_y + 20 + act_h // 2), "● ANGGOTA AKTIF",
               font=get_font(20, bold=True), fill=(5, 150, 105), anchor="mm")
 
@@ -458,14 +460,14 @@ def generate_model_2_master(sample_data=True):
                   font=get_font(44, bold=True), fill=(10, 30, 60), anchor="mm")
 
     # Modern registration badge
-    reg_w, reg_h = 360, 52
+    reg_w, reg_h = 400, 64
     reg_x = (W - reg_w) // 2
     reg_y = 1060
-    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=26,
+    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=32,
                fill=(10, 30, 60), outline=(10, 30, 60), width=1)
     if sample_data:
-        draw.text((reg_x + reg_w // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
-                  font=get_font(24, bold=True), fill=(255, 255, 255), anchor="mm")
+        draw.text((W // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
+                  font=get_font(26, bold=True), fill=(255, 255, 255), anchor="mm")
 
     # Clean Modern Minimalist Data Block (Grid / Box Layout)
     box_w = 1160
@@ -475,19 +477,19 @@ def generate_model_2_master(sample_data=True):
     round_rect(draw, [box_x, box_y, box_x + box_w, box_y + box_h], radius=20,
                fill=(255, 255, 255), outline=(226, 232, 240), width=2)
 
-    # Item 1: ALAMAT
+    # Item 1: ALAMAT LENGKAP
     item1_y = box_y + 40
     # Subtle modern icon badge
     round_rect(draw, [box_x + 35, item1_y - 10, box_x + 85, item1_y + 40], radius=12,
                fill=(238, 242, 255))
     draw.text((box_x + 60, item1_y + 15), "📍", font=get_font(22), anchor="mm")
     
-    draw.text((box_x + 105, item1_y - 2), "ALAMAT LENGKAP ANGGOTA",
+    draw.text((box_x + 105, item1_y - 2), "ALAMAT DOMISILI",
               font=get_font(18, bold=True), fill=(100, 116, 139), anchor="lm")
     if sample_data:
-        draw.text((box_x + 105, item1_y + 35), "Perm Bhumi Anggrek Residence Blok B...",
-                  font=get_font(27, bold=True), fill=(15, 23, 42), anchor="lm")
-        draw.text((box_x + 105, item1_y + 70), "Tanjungpinang, Kepulauan Riau",
+        draw.text((box_x + 105, item1_y + 35), "Perm Bhumi Anggrek Residence Blok B No. 12, Kel. Batu IX",
+                  font=get_font(26, bold=True), fill=(15, 23, 42), anchor="lm")
+        draw.text((box_x + 105, item1_y + 72), "Kecamatan Tanjungpinang Timur, Kota Tanjungpinang",
                   font=get_font(22, bold=False), fill=(71, 85, 105), anchor="lm")
 
     # Divider
@@ -667,14 +669,14 @@ def generate_model_3_master(sample_data=True):
         draw.text((W // 2, nama_y), "FAIZ AL GHAZALI . H",
                   font=get_font(44, bold=True), fill=(10, 30, 60), anchor="mm")
 
-    reg_w, reg_h = 340, 50
+    reg_w, reg_h = 400, 64
     reg_x = (W - reg_w) // 2
-    reg_y = 1095
-    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=25,
+    reg_y = 1090
+    round_rect(draw, [reg_x, reg_y, reg_x + reg_w, reg_y + reg_h], radius=32,
                fill=(5, 150, 105), outline=(5, 150, 105))
     if sample_data:
-        draw.text((reg_x + reg_w // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
-                  font=get_font(24, bold=True), fill=(255, 255, 255), anchor="mm")
+        draw.text((W // 2, reg_y + reg_h // 2), "NO. REG : LHG-001",
+                  font=get_font(26, bold=True), fill=(255, 255, 255), anchor="mm")
 
     # Information Card
     card_w = 1140
@@ -688,15 +690,15 @@ def generate_model_3_master(sample_data=True):
     draw.rounded_rectangle([card_x, card_y + 15, card_x + 8, card_y + card_h - 15], radius=4,
                            fill=(5, 150, 105))
 
-    # Field 1: ALAMAT
+    # Field 1: ALAMAT LENGKAP
     row1_y = card_y + 40
-    draw.text((card_x + 40, row1_y), "ALAMAT LENGKAP",
+    draw.text((card_x + 40, row1_y), "ALAMAT DOMISILI",
               font=get_font(20, bold=True), fill=(100, 116, 139), anchor="lm")
     if sample_data:
-        draw.text((card_x + 40, row1_y + 42), "Perm Bhumi Anggrek Residence Blok B...",
-                  font=get_font(28, bold=True), fill=(15, 23, 42), anchor="lm")
-        draw.text((card_x + 40, row1_y + 80), "Kota Tanjungpinang, Kepulauan Riau",
-                  font=get_font(22, bold=False), fill=(71, 85, 105), anchor="lm")
+        draw.text((card_x + 40, row1_y + 40), "Perm Bhumi Anggrek Residence Blok B No. 12, Kel. Batu IX",
+                  font=get_font(26, bold=True), fill=(15, 23, 42), anchor="lm")
+        draw.text((card_x + 40, row1_y + 78), "Kecamatan Tanjungpinang Timur, Kota Tanjungpinang",
+                  font=get_font(23, bold=False), fill=(71, 85, 105), anchor="lm")
 
     draw.line([(card_x + 35, card_y + 190), (card_x + card_w - 35, card_y + 190)],
               fill=(241, 245, 249), width=2)
