@@ -849,6 +849,7 @@ function formatDate(d) {
 // DISABILITY BADGE CLASS HELPER
 function getDisabilityBadgeClass(d) {
   const map = {
+    'Fisik': 'badge-fisik',
     'Tuna Rungu': 'badge-rungu',
     'Tuna Netra': 'badge-netra',
     'Tuna Grahita': 'badge-grahita',
@@ -1232,6 +1233,7 @@ function handleDirectDisabilityChange(val) {
   const subEl = document.getElementById('direct-subDisabilitas');
   if (!subEl) return;
   const presets = {
+    'Fisik': 'Disabilitas Fisik / Gangguan Motorik',
     'Tuna Rungu': 'Gangguan Pendengaran & Wicara',
     'Tuna Netra': 'Hambatan Penglihatan / Low Vision',
     'Tuna Grahita': 'Hambatan Perkembangan Intelektual',
@@ -2460,6 +2462,7 @@ function printFormPendaftaran() {
         <div class="sec-h">B. RAGAM & KATEGORI DISABILITAS</div>
         <div class="sec-b">
           <div class="cb-grid">
+            <div class="cb-item"><div class="sq"></div> Fisik</div>
             <div class="cb-item"><div class="sq"></div> Tuna Rungu</div>
             <div class="cb-item"><div class="sq"></div> Tuna Netra</div>
             <div class="cb-item"><div class="sq"></div> Tuna Grahita</div>
@@ -5052,6 +5055,7 @@ function handleDirectDisabilityChange(val) {
   const subInput = document.getElementById('direct-subDisabilitas');
   if (!subInput) return;
   const suggestions = {
+    'Fisik': 'Disabilitas Fisik / Motorik',
     'Tuna Rungu': 'Tunarungu Wicara',
     'Tuna Netra': 'Low Vision',
     'Tuna Grahita': 'Hambatan Intelektual Ringan',

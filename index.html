@@ -444,6 +444,7 @@
                   <label class="lbl">Ragam Kebutuhan Khusus / Disabilitas *</label>
                   <select id="direct-disabilitas" class="pelangi-select" required onchange="handleDirectDisabilityChange(this.value)">
                     <option value="">-- Pilih Ragam Disabilitas --</option>
+                    <option value="Fisik">Fisik (Disabilitas Fisik)</option>
                     <option value="Tuna Rungu">Tuna Rungu (Gangguan Pendengaran)</option>
                     <option value="Tuna Netra">Tuna Netra (Gangguan Penglihatan)</option>
                     <option value="Tuna Grahita">Tuna Grahita (Hambatan Intelektual)</option>
@@ -547,6 +548,7 @@
                 </div>
                 <select id="filter-disabilitas" class="filter-select" onchange="filterByDisabilitas(this.value)">
                   <option value="">Semua Ragam Disabilitas</option>
+                  <option value="Fisik">Fisik</option>
                   <option value="Tuna Rungu">Tuna Rungu</option>
                   <option value="Tuna Netra">Tuna Netra</option>
                   <option value="Tuna Grahita">Tuna Grahita</option>
@@ -1304,6 +1306,7 @@
               <label class="lbl">Ragam Disabilitas <span class="req">*</span></label>
               <select name="disabilitas" class="pelangi-select" required>
                 <option value="">-- Pilih Ragam Disabilitas --</option>
+                <option value="Fisik">Fisik</option>
                 <option value="Tuna Rungu">Tuna Rungu</option>
                 <option value="Tuna Netra">Tuna Netra</option>
                 <option value="Tuna Grahita">Tuna Grahita</option>

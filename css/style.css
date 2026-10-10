@@ -844,6 +844,7 @@ button, input, select, textarea {
 .badge-tongkat { background: #F5F3FF; color: #9333EA; border: 1px solid #E9D5FF; }
 .badge-kaku { background: #FDF4FF; color: #C026D3; border: 1px solid #F5D0FE; }
 .badge-tangan { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+.badge-fisik { background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
 .badge-default { background: #F1F5F9; color: #475569; }
 
 /* STATUS BADGE */
