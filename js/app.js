@@ -2212,10 +2212,10 @@ function buildSuratPendaftaranHTML(a) {
 
       <!-- PARAGRAF PENUTUP -->
       <p class="surat-paragraph">
-        Demikian surat keterangan bukti pendaftaran ini diterbitkan untuk dipergunakan sebagaimana mestinya. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.
+        Demikian surat keterangan bukti pendaftaran ini diterbitkan untuk dipergunakan sebagaimana mestinya. Atas perhatian <span id="surat-ref-dan">dan</span> kerja sama Bapak/Ibu, kami ucapkan terima kasih.
       </p>
 
-      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR TANGGAL) -->
+      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR KATA 'DAN' & TULISAN 'YAYASAN') -->
       <div class="surat-ttd-container">
         <div class="surat-foto-wrapper">
           <div class="surat-foto-box">
@@ -2233,7 +2233,7 @@ function buildSuratPendaftaranHTML(a) {
 
         <div class="surat-ttd-box">
           <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
-          <div class="surat-ttd-org">Yayasan Lentera Hati Gurindam</div>
+          <div class="surat-ttd-org"><span id="surat-ref-yayasan">Yayasan</span> Lentera Hati Gurindam</div>
           <div class="surat-ttd-role">Ketua Yayasan,</div>
           <div class="surat-ttd-qr">
             <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
@@ -2245,6 +2245,22 @@ function buildSuratPendaftaranHTML(a) {
       </div>
     </div>
   `;
+}
+
+function alignSuratFoto(containerEl) {
+  const root = containerEl || document;
+  const dan = root.querySelector('#surat-ref-dan');
+  const yayasan = root.querySelector('#surat-ref-yayasan');
+  const wrap = root.querySelector('.surat-foto-wrapper');
+  const cont = root.querySelector('.surat-ttd-container');
+  if (dan && wrap && cont) {
+    const dLeft = dan.getBoundingClientRect().left - cont.getBoundingClientRect().left;
+    if (dLeft > 0) wrap.style.marginLeft = dLeft + 'px';
+  }
+  if (yayasan && wrap && cont) {
+    const yTop = yayasan.getBoundingClientRect().top - cont.getBoundingClientRect().top;
+    if (yTop > 0) wrap.style.marginTop = yTop + 'px';
+  }
 }
 
 function previewSuratPendaftaran() {
@@ -2265,6 +2281,7 @@ function previewSuratPendaftaran() {
   }
 
   container.innerHTML = buildSuratPendaftaranHTML(a);
+  alignSuratFoto(container);
 }
 
 function downloadSuratPendaftaranPDF(id) {
@@ -2311,6 +2328,8 @@ function downloadSuratPendaftaranPDF(id) {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
+
+  alignSuratFoto(element);
 
   html2pdf().set(opt).from(element).save().then(() => {
     showToast('PDF berhasil diunduh (1 lembar A4 penuh)!');
@@ -2381,7 +2400,7 @@ function printSuratPendaftaranPDF(id) {
         .surat-col-colon { width: 20px; text-align: center; font-weight: 700; color: #000; }
         .surat-col-val { color: #000; }
         .surat-ttd-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 32px; }
-        .surat-foto-wrapper { display: flex; flex-direction: column; align-items: flex-start; }
+        .surat-foto-wrapper { display: flex; flex-direction: column; align-items: flex-start; margin-left: 54px; margin-top: 22px; }
         .surat-foto-box { width: 3cm; height: 4cm; border: 1px solid #000; background: #fff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .surat-foto-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .surat-foto-empty { width: 100%; height: 100%; border: 1.5px dashed #94a3b8; box-sizing: border-box; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; text-align: center; }
@@ -2401,6 +2420,18 @@ function printSuratPendaftaranPDF(id) {
       ${suratHtml}
       <script>
         window.onload = function() {
+          var dan = document.getElementById('surat-ref-dan');
+          var yayasan = document.getElementById('surat-ref-yayasan');
+          var wrap = document.querySelector('.surat-foto-wrapper');
+          var cont = document.querySelector('.surat-ttd-container');
+          if (dan && wrap && cont) {
+            var dLeft = dan.getBoundingClientRect().left - cont.getBoundingClientRect().left;
+            if (dLeft > 0) wrap.style.marginLeft = dLeft + 'px';
+          }
+          if (yayasan && wrap && cont) {
+            var yTop = yayasan.getBoundingClientRect().top - cont.getBoundingClientRect().top;
+            if (yTop > 0) wrap.style.marginTop = yTop + 'px';
+          }
           setTimeout(function() {
             window.print();
           }, 300);
