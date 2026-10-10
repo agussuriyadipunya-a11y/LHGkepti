@@ -1317,11 +1317,39 @@ function saveDirectInputAnak(event) {
 }
 
 // ================= MODAL TAMBAH & EDIT ANGGOTA =================
+function handleKelurahanChange(val) {
+  const boxKel = document.getElementById('box-kelurahan-lainnya');
+  const inputKel = document.getElementById('input-kelurahan-lainnya');
+  if (!boxKel || !inputKel) return;
+
+  if (val === 'LAINNYA') {
+    boxKel.style.display = 'block';
+    inputKel.required = true;
+    setTimeout(() => {
+      inputKel.focus();
+    }, 50);
+  } else {
+    boxKel.style.display = 'none';
+    inputKel.required = false;
+    inputKel.value = '';
+  }
+}
+
 function openAddAnggota() {
   editId = null;
   setText('modal-anggota-title', 'Tambah Data Anak Disabilitas');
   const f = document.getElementById('form-anggota');
   if (f) f.reset();
+
+  // Reset field kelurahan lainnya
+  const boxKel = document.getElementById('box-kelurahan-lainnya');
+  const inputKel = document.getElementById('input-kelurahan-lainnya');
+  if (boxKel) boxKel.style.display = 'none';
+  if (inputKel) {
+    inputKel.value = '';
+    inputKel.required = false;
+  }
+
   currentModalPhotoBase64 = null;
   updateModalPhotoUI(null);
   document.getElementById('modal-anggota').classList.add('open');
@@ -1333,9 +1361,47 @@ function openEditAnggota(id) {
   if (!a) return;
   setText('modal-anggota-title', 'Edit Data Anak');
   const f = document.getElementById('form-anggota');
-  ['nama', 'nik', 'noKk', 'ttl', 'jk', 'kontakWA', 'alamat', 'kelurahan', 'disabilitas', 'subDisabilitas', 'wali', 'ibu', 'hubWali', 'telWali', 'sekolah', 'kelas', 'status'].forEach(k => {
+  ['nama', 'nik', 'noKk', 'ttl', 'jk', 'kontakWA', 'alamat', 'disabilitas', 'subDisabilitas', 'wali', 'ibu', 'hubWali', 'telWali', 'sekolah', 'kelas', 'status'].forEach(k => {
     if (f[k]) f[k].value = a[k] || '';
   });
+
+  // Sinkronisasi opsi Kelurahan (mendukung LAINNYA & input manual)
+  const kelSelect = f.kelurahan;
+  const rawKel = (a.kelurahan || '').trim();
+  const boxKel = document.getElementById('box-kelurahan-lainnya');
+  const inputKel = document.getElementById('input-kelurahan-lainnya');
+
+  if (kelSelect) {
+    if (!rawKel) {
+      kelSelect.value = '';
+      if (boxKel) boxKel.style.display = 'none';
+      if (inputKel) {
+        inputKel.value = '';
+        inputKel.required = false;
+      }
+    } else {
+      const matchedOpt = Array.from(kelSelect.options).find(opt => 
+        opt.value && opt.value !== 'LAINNYA' && opt.value.toLowerCase() === rawKel.toLowerCase()
+      );
+
+      if (matchedOpt) {
+        kelSelect.value = matchedOpt.value;
+        if (boxKel) boxKel.style.display = 'none';
+        if (inputKel) {
+          inputKel.value = '';
+          inputKel.required = false;
+        }
+      } else {
+        // Kelurahan selain yang ditampilkan di menu dropdown -> set LAINNYA
+        kelSelect.value = 'LAINNYA';
+        if (boxKel) boxKel.style.display = 'block';
+        if (inputKel) {
+          inputKel.value = (rawKel === 'LAINNYA' ? '' : rawKel);
+          inputKel.required = true;
+        }
+      }
+    }
+  }
 
   // Load existing photo
   currentModalPhotoBase64 = a.foto || null;
@@ -1375,6 +1441,19 @@ function saveAnggota() {
     return;
   }
 
+  // Tentukan & validasi nilai Kelurahan
+  let kelurahanVal = f.kelurahan ? f.kelurahan.value.trim() : '';
+  const inputKelLainnya = document.getElementById('input-kelurahan-lainnya');
+  if (kelurahanVal === 'LAINNYA') {
+    const customKel = inputKelLainnya ? inputKelLainnya.value.trim() : '';
+    if (!customKel) {
+      showToast('Harap masukkan nama kelurahan untuk opsi LAINNYA!', 'error');
+      if (inputKelLainnya) inputKelLainnya.focus();
+      return;
+    }
+    kelurahanVal = customKel;
+  }
+
   const anggota = DB.get('lhg_anggota');
   const fd = {
     nama: f.nama.value.toUpperCase(),
@@ -1384,7 +1463,7 @@ function saveAnggota() {
     jk: f.jk.value,
     kontakWA: f.kontakWA ? f.kontakWA.value : (f.telWali ? f.telWali.value : ''),
     alamat: f.alamat.value,
-    kelurahan: f.kelurahan ? f.kelurahan.value : '',
+    kelurahan: kelurahanVal,
     disabilitas: f.disabilitas.value,
     subDisabilitas: f.subDisabilitas.value,
     wali: f.wali.value,
