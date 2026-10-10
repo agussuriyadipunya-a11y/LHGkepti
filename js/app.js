@@ -787,7 +787,7 @@ function navigate(page) {
     'bantuan': ['Catatan Penerimaan Bantuan Anak', 'Daftar semua bantuan yang telah diterima anak lengkap dengan tanggal penyerahan'],
     'rencana-kegiatan': ['Rencana Kegiatan & Program Kerja', 'Penyusunan agenda kerja, sasaran disabilitas, jadwal, dan estimasi anggaran yayasan'],
     'cetak-kta': ['Cetak Kartu Tanda Anggota', 'Penerbitan kartu identitas resmi binaan Lentera Hati Gurindam'],
-    'form-pendaftaran': ['Surat Keterangan Hasil Pendaftaran', 'Pratinjau, unduh berkas PDF resmi format A4, dan cetak blanko fisik'],
+    'form-pendaftaran': ['Surat Keterangan Pendataan', 'Pratinjau, unduh berkas PDF resmi format A4 Surat Keterangan Pendataan Anggota Disabilitas'],
     'laporan-kegiatan': ['Laporan Kegiatan', 'Dokumentasi pelaksanaan agenda kegiatan kemandirian dan terapi anak'],
     'surat-menyurat': ['Surat Menyurat', 'Arsip administrasi surat masuk dan surat keluar resmi organisasi'],
     'foto-kegiatan': ['Galeri Foto Kegiatan', 'Dokumentasi foto kegiatan dan interaksi anak binaan di lapangan'],
@@ -2139,9 +2139,32 @@ function openSuratFor(id) {
 
 function buildSuratPendaftaranHTML(a) {
   const tanggalSurat = formatDateIndoFull(a.tglDaftar);
+  const tanggalSelesaiDidata = formatDateIndoFull(a.tglDaftar);
   const alamatLengkap = (a.alamat || '-') + (a.kelurahan ? ', Kelurahan ' + a.kelurahan : '');
-  const kontak = a.kontakWA || a.telWali || '-';
+  const kontak = a.telWali || a.kontakWA || '-';
   const disabilitasText = `${a.disabilitas || '-'}${a.subDisabilitas ? ' (' + a.subDisabilitas + ')' : ''}`;
+  const namaWali = a.wali || a.ibu || '-';
+
+  // Format Jenis Kelamin: Laki-laki / Perempuan
+  let jkText = '-';
+  if (a.jk) {
+    const jkLower = String(a.jk).trim().toLowerCase();
+    if (jkLower === 'l' || jkLower.startsWith('laki')) jkText = 'Laki-laki';
+    else if (jkLower === 'p' || jkLower.startsWith('perempuan') || jkLower.startsWith('wanita')) jkText = 'Perempuan';
+    else jkText = a.jk;
+  }
+
+  // Format Nomor Induk Registrasi (NIR/ID) & Nomor Urut
+  const rawId = (a.noAnggota || a.id || '001').toString().trim();
+  const nomorUrut = rawId.replace(/^LHG-?/i, '') || '001';
+  const nirId = rawId.toUpperCase().startsWith('LHG') ? rawId : `LHG-${rawId}`;
+
+  // Nomor Surat Otomatis: ( diisi otomatis ) / SEK-YLHG / ( bulan romawi saat ini ) / ( tahun saat ini )
+  const today = new Date();
+  const bulanRomawiList = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  const bulanRomawi = bulanRomawiList[today.getMonth()];
+  const tahunSaatIni = today.getFullYear();
+  const nomorSurat = `${nomorUrut} / SEK-YLHG / ${bulanRomawi} / ${tahunSaatIni}`;
 
   return `
     <div class="a4-paper" id="surat-a4-document">
@@ -2156,66 +2179,81 @@ function buildSuratPendaftaranHTML(a) {
         <div class="kop-divider-double"></div>
       </div>
 
-      <!-- JUDUL SURAT -->
-      <div class="surat-doc-title">SURAT KETERANGAN HASIL PENDAFTARAN</div>
+      <!-- JUDUL SURAT & NOMOR SURAT -->
+      <div class="surat-doc-title">SURAT KETERANGAN PENDATAAN ANGGOTA DISABILITAS</div>
+      <div class="surat-doc-nomor">Nomor: ${nomorSurat}</div>
 
       <!-- PARAGRAF PEMBUKA -->
       <p class="surat-paragraph">
-        Dengan ini menerangkan bahwa calon peserta/pendaftar di bawah ini telah menyelesaikan proses administrasi dan <strong>DINYATAKAN BERHASIL TERDAFTAR</strong> pada Yayasan Lentera Hati Gurindam:
+        Pengurus Yayasan Lentera Hati Gurindam menerangkan bahwa berdasarkan hasil verifikasi dan asesmen pendataan lapangan yang telah dilaksanakan, nama berikut:
       </p>
 
       <!-- TABEL DATA LENGKAP -->
       <table class="surat-data-table">
         <tbody>
           <tr>
-            <td class="surat-col-label">Nomor Registrasi</td>
+            <td class="surat-col-label">Nama Lengkap Anak</td>
             <td class="surat-col-colon">:</td>
-            <td class="surat-col-val"><strong>${a.noAnggota || a.id}</strong></td>
+            <td class="surat-col-val"><strong>${(a.nama || '-').toUpperCase()}</strong></td>
           </tr>
           <tr>
-            <td class="surat-col-label">Nama Lengkap</td>
+            <td class="surat-col-label">Nomor Induk Registrasi (NIR/ID)</td>
             <td class="surat-col-colon">:</td>
-            <td class="surat-col-val"><strong>${(a.nama || '').toUpperCase()}</strong></td>
+            <td class="surat-col-val"><strong>${nirId}</strong></td>
           </tr>
           <tr>
-            <td class="surat-col-label">Tempat / Tanggal Lahir</td>
+            <td class="surat-col-label">Nomor Induk Kependudukan (NIK)</td>
+            <td class="surat-col-colon">:</td>
+            <td class="surat-col-val">${a.nik || '-'}</td>
+          </tr>
+          <tr>
+            <td class="surat-col-label">Tempat, Tanggal Lahir</td>
             <td class="surat-col-colon">:</td>
             <td class="surat-col-val">${a.ttl || '-'}</td>
           </tr>
           <tr>
-            <td class="surat-col-label">Alamat Lengkap</td>
+            <td class="surat-col-label">Jenis Kelamin</td>
             <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${alamatLengkap}</td>
+            <td class="surat-col-val">${jkText}</td>
           </tr>
           <tr>
-            <td class="surat-col-label">Nomor Ponsel / WhatsApp</td>
+            <td class="surat-col-label">Ragam Disabilitas</td>
+            <td class="surat-col-colon">:</td>
+            <td class="surat-col-val">${disabilitasText}</td>
+          </tr>
+          <tr>
+            <td class="surat-col-label">Nama Orang Tua / Wali</td>
+            <td class="surat-col-colon">:</td>
+            <td class="surat-col-val">${namaWali}</td>
+          </tr>
+          <tr>
+            <td class="surat-col-label">Nomor Kontak Wali</td>
             <td class="surat-col-colon">:</td>
             <td class="surat-col-val">${kontak}</td>
           </tr>
           <tr>
-            <td class="surat-col-label">Nama Ayah</td>
+            <td class="surat-col-label">Alamat Domisili</td>
             <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${a.wali || '-'}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Nama Ibu</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${a.ibu || '-'}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Jenis Disabilitas</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${disabilitasText}</td>
+            <td class="surat-col-val">${alamatLengkap}</td>
           </tr>
         </tbody>
       </table>
 
-      <!-- PARAGRAF PENUTUP -->
+      <!-- PARAGRAF PENETAPAN & KETERANGAN -->
       <p class="surat-paragraph">
-        Demikian surat keterangan bukti pendaftaran ini diterbitkan untuk dipergunakan sebagaimana mestinya. Atas perhatian <span id="surat-ref-dan">dan</span> kerja sama Bapak/Ibu, kami ucapkan terima kasih.
+        Telah resmi <strong>TERDAFTAR &amp; MASUK DALAM BASIS DATA</strong> binaan Yayasan Lentera Hati Gurindam per tanggal ${tanggalSelesaiDidata}.
       </p>
 
-      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR KATA 'DAN' & TULISAN 'YAYASAN') -->
+      <p class="surat-paragraph">
+        Surat keterangan ini diterbitkan sebagai bukti kepesertaan terdata yang sah untuk keperluan koordinasi program pemantauan, pendampingan, serta penyaluran program sosial yayasan.
+      </p>
+
+      <!-- PARAGRAF PENUTUP -->
+      <p class="surat-paragraph">
+        Demikian surat keterangan pendataan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+      </p>
+
+      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR TULISAN 'YAYASAN') -->
       <div class="surat-ttd-container">
         <div class="surat-foto-wrapper">
           <div class="surat-foto-box">
@@ -2233,14 +2271,14 @@ function buildSuratPendaftaranHTML(a) {
 
         <div class="surat-ttd-box">
           <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
-          <div class="surat-ttd-org"><span id="surat-ref-yayasan">Yayasan</span> Lentera Hati Gurindam</div>
-          <div class="surat-ttd-role">Ketua Yayasan,</div>
+          <div class="surat-ttd-org"><span id="surat-ref-yayasan">Yayasan</span> Lentera Hati Gurindam Kepulauan Riau</div>
           <div class="surat-ttd-qr">
             <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
               <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
             </a>
           </div>
           <div class="surat-ttd-name">KAMARIDA</div>
+          <div class="surat-ttd-role">Ketua Yayasan</div>
         </div>
       </div>
     </div>
@@ -2249,14 +2287,9 @@ function buildSuratPendaftaranHTML(a) {
 
 function alignSuratFoto(containerEl) {
   const root = containerEl || document;
-  const dan = root.querySelector('#surat-ref-dan');
   const yayasan = root.querySelector('#surat-ref-yayasan');
   const wrap = root.querySelector('.surat-foto-wrapper');
   const cont = root.querySelector('.surat-ttd-container');
-  if (dan && wrap && cont) {
-    const dLeft = dan.getBoundingClientRect().left - cont.getBoundingClientRect().left;
-    if (dLeft > 0) wrap.style.marginLeft = dLeft + 'px';
-  }
   if (yayasan && wrap && cont) {
     const yTop = yayasan.getBoundingClientRect().top - cont.getBoundingClientRect().top;
     if (yTop > 0) wrap.style.marginTop = yTop + 'px';
@@ -2318,7 +2351,7 @@ function downloadSuratPendaftaranPDF(id) {
   showToast('Memproses file PDF A4...');
 
   const cleanNama = (a.nama || 'Anak').replace(/[^a-zA-Z0-9]/g, '_');
-  const filename = `Surat_Pendaftaran_LHG_${a.noAnggota || a.id}_${cleanNama}.pdf`;
+  const filename = `Surat_Keterangan_Pendataan_LHG_${a.noAnggota || a.id}_${cleanNama}.pdf`;
 
   const opt = {
     margin: [10, 14, 10, 14],
@@ -2360,7 +2393,7 @@ function printSuratPendaftaranPDF(id) {
     <html>
     <head>
       <base href="${window.location.href}">
-      <title>Surat Keterangan Pendaftaran - ${a.nama}</title>
+      <title>Surat Keterangan Pendataan - ${a.nama}</title>
       <style>
         @page {
           size: A4 portrait;
@@ -2380,26 +2413,27 @@ function printSuratPendaftaranPDF(id) {
           width: 100%;
           max-width: 100%;
           margin: 0;
-          padding: 8px 0 0 0;
+          padding: 6px 0 0 0;
           box-shadow: none;
           page-break-inside: avoid;
           break-inside: avoid;
         }
-        .kop-surat { text-align: center; margin-bottom: 20px; }
+        .kop-surat { text-align: center; margin-bottom: 16px; }
         .kop-logo-box { display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
-        .kop-logo-img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 3px; }
+        .kop-logo-img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 3px; }
         .kop-sublogo { font-size: 8.5px; font-weight: 800; letter-spacing: 0.5px; color: #000; text-transform: uppercase; }
-        .kop-org-name { font-size: 16px; font-weight: 900; letter-spacing: 0.4px; color: #000; margin: 7px 0 2px 0; text-transform: uppercase; line-height: 1.25; }
-        .kop-org-prov { font-size: 13.5px; font-weight: 800; letter-spacing: 0.4px; color: #000; text-transform: uppercase; margin-bottom: 10px; }
+        .kop-org-name { font-size: 16px; font-weight: 900; letter-spacing: 0.4px; color: #000; margin: 6px 0 2px 0; text-transform: uppercase; line-height: 1.25; }
+        .kop-org-prov { font-size: 13.5px; font-weight: 800; letter-spacing: 0.4px; color: #000; text-transform: uppercase; margin-bottom: 8px; }
         .kop-divider-double { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 3.5px; width: 100%; margin: 0 auto; }
-        .surat-doc-title { text-align: center; font-size: 14px; font-weight: 800; text-decoration: none; letter-spacing: 0.4px; margin: 24px 0 18px 0; text-transform: uppercase; color: #000; }
-        .surat-paragraph { font-size: 12px; line-height: 1.7; color: #000; text-align: justify; margin-bottom: 16px; }
-        .surat-data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 14px 0 20px 0; }
-        .surat-data-table tr td { padding: 6px 4px; vertical-align: top; line-height: 1.55; }
-        .surat-col-label { width: 215px; font-weight: 700; color: #000; }
-        .surat-col-colon { width: 20px; text-align: center; font-weight: 700; color: #000; }
+        .surat-doc-title { text-align: center; font-size: 13.5px; font-weight: 800; letter-spacing: 0.3px; margin: 16px 0 3px 0; text-transform: uppercase; color: #000; }
+        .surat-doc-nomor { text-align: center; font-size: 11.5px; font-weight: 700; color: #000; margin-bottom: 14px; }
+        .surat-paragraph { font-size: 11.5px; line-height: 1.6; color: #000; text-align: justify; margin-bottom: 10px; }
+        .surat-data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin: 10px 0 12px 0; }
+        .surat-data-table tr td { padding: 4.5px 4px; vertical-align: top; line-height: 1.5; }
+        .surat-col-label { width: 235px; font-weight: 700; color: #000; }
+        .surat-col-colon { width: 18px; text-align: center; font-weight: 700; color: #000; }
         .surat-col-val { color: #000; }
-        .surat-ttd-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 32px; }
+        .surat-ttd-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 18px; }
         .surat-foto-wrapper { display: flex; flex-direction: column; align-items: flex-start; margin-left: 54px; margin-top: 22px; }
         .surat-foto-box { width: 3cm; height: 4cm; border: 1px solid #000; background: #fff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .surat-foto-img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2407,27 +2441,22 @@ function printSuratPendaftaranPDF(id) {
         .surat-foto-empty-icon { font-size: 20px; margin-bottom: 2px; }
         .surat-foto-empty-text { font-size: 10px; font-weight: 800; color: #334155; letter-spacing: 0.5px; }
         .surat-foto-empty-dim { font-size: 9px; font-weight: 700; color: #64748b; margin-top: 2px; }
-        .surat-ttd-box { width: 260px; text-align: center; font-size: 12px; color: #000; }
+        .surat-ttd-box { width: 270px; text-align: center; font-size: 11.5px; color: #000; }
         .surat-ttd-date { margin-bottom: 4px; }
-        .surat-ttd-org { font-weight: 800; margin-bottom: 4px; }
-        .surat-ttd-role { margin-bottom: 6px; }
-        .surat-ttd-qr { display: flex; justify-content: center; align-items: center; margin: 6px 0 8px 0; }
-        .surat-qr-img { width: 76px; height: 76px; object-fit: contain; display: block; margin: 0 auto; }
-        .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: none; }
+        .surat-ttd-org { font-weight: 800; margin-bottom: 6px; line-height: 1.35; }
+        .surat-ttd-qr { display: flex; justify-content: center; align-items: center; margin: 4px 0 6px 0; }
+        .surat-qr-img { width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto; }
+        .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: underline; }
+        .surat-ttd-role { font-weight: 700; font-size: 11.5px; margin-top: 3px; }
       </style>
     </head>
     <body>
       ${suratHtml}
       <script>
         window.onload = function() {
-          var dan = document.getElementById('surat-ref-dan');
           var yayasan = document.getElementById('surat-ref-yayasan');
           var wrap = document.querySelector('.surat-foto-wrapper');
           var cont = document.querySelector('.surat-ttd-container');
-          if (dan && wrap && cont) {
-            var dLeft = dan.getBoundingClientRect().left - cont.getBoundingClientRect().left;
-            if (dLeft > 0) wrap.style.marginLeft = dLeft + 'px';
-          }
           if (yayasan && wrap && cont) {
             var yTop = yayasan.getBoundingClientRect().top - cont.getBoundingClientRect().top;
             if (yTop > 0) wrap.style.marginTop = yTop + 'px';

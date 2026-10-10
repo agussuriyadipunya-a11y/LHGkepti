@@ -1781,42 +1781,50 @@ button, input, select, textarea {
   text-align: center;
   font-size: 14px;
   font-weight: 800;
-  text-decoration: none; /* Garis bawah dihapus */
+  text-decoration: none;
   letter-spacing: 0.4px;
-  margin: 24px 0 18px 0;
+  margin: 18px 0 4px 0;
   text-transform: uppercase;
   color: #000000;
 }
 
+.surat-doc-nomor {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 16px;
+}
+
 .surat-paragraph {
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.65;
   color: #111827;
   text-align: justify;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .surat-data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  margin: 14px 0 20px 0;
+  margin: 10px 0 14px 0;
 }
 
 .surat-data-table tr td {
-  padding: 6px 4px;
+  padding: 5px 4px;
   vertical-align: top;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 .surat-col-label {
-  width: 215px;
+  width: 235px;
   font-weight: 700;
   color: #000000;
 }
 
 .surat-col-colon {
-  width: 20px;
+  width: 18px;
   text-align: center;
   font-weight: 700;
   color: #000000;
@@ -1830,7 +1838,7 @@ button, input, select, textarea {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-top: 32px;
+  margin-top: 22px;
 }
 
 .surat-foto-wrapper {
@@ -1894,7 +1902,7 @@ button, input, select, textarea {
 }
 
 .surat-ttd-box {
-  width: 260px;
+  width: 270px;
   text-align: center;
   font-size: 12px;
   color: #000000;
@@ -1906,11 +1914,14 @@ button, input, select, textarea {
 
 .surat-ttd-org {
   font-weight: 800;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  line-height: 1.35;
 }
 
 .surat-ttd-role {
-  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
 .surat-ttd-qr {
@@ -1932,7 +1943,7 @@ button, input, select, textarea {
   font-weight: 900;
   font-size: 12.5px;
   letter-spacing: 0.3px;
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 /* (Lightbox replaced by standardized modal-view-foto) */
