@@ -1762,7 +1762,18 @@ button, input, select, textarea {
 }
 
 .surat-ttd-role {
-  margin-bottom: 80px; /* Ruang tanda tangan & cap stempel yayasan proporsional */
+  margin-bottom: 6px;
+}
+
+.surat-ttd-qr {
+  margin: 6px 0 8px 0;
+}
+
+.surat-qr-img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  display: block;
 }
 
 .surat-ttd-name {

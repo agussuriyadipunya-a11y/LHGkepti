@@ -2010,6 +2010,9 @@ function buildSuratPendaftaranHTML(a) {
           <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
           <div class="surat-ttd-org">Yayasan Lentera Hati Gurindam</div>
           <div class="surat-ttd-role">Ketua Yayasan,</div>
+          <div class="surat-ttd-qr">
+            <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
+          </div>
           <div class="surat-ttd-name">KAMARIDA</div>
         </div>
       </div>
@@ -2110,6 +2113,7 @@ function printSuratPendaftaranPDF(id) {
     <!DOCTYPE html>
     <html>
     <head>
+      <base href="${window.location.href}">
       <title>Surat Keterangan Pendaftaran - ${a.nama}</title>
       <style>
         @page {
@@ -2153,7 +2157,9 @@ function printSuratPendaftaranPDF(id) {
         .surat-ttd-box { width: 260px; text-align: left; font-size: 12px; color: #000; }
         .surat-ttd-date { margin-bottom: 4px; }
         .surat-ttd-org { font-weight: 800; margin-bottom: 4px; }
-        .surat-ttd-role { margin-bottom: 80px; }
+        .surat-ttd-role { margin-bottom: 6px; }
+        .surat-ttd-qr { margin: 6px 0 8px 0; }
+        .surat-qr-img { width: 76px; height: 76px; object-fit: contain; display: block; }
         .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: none; }
       </style>
     </head>
