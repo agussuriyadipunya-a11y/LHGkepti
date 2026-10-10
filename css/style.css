@@ -1943,7 +1943,7 @@ button, input, select, textarea {
   font-weight: 900;
   font-size: 12.5px;
   letter-spacing: 0.3px;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* (Lightbox replaced by standardized modal-view-foto) */

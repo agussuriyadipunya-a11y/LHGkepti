@@ -2277,7 +2277,7 @@ function buildSuratPendaftaranHTML(a) {
               <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
             </a>
           </div>
-          <div class="surat-ttd-name">KAMARIDA</div>
+          <div class="surat-ttd-name" style="text-decoration: none;">KAMARIDA</div>
           <div class="surat-ttd-role">Ketua Yayasan</div>
         </div>
       </div>
@@ -2446,7 +2446,7 @@ function printSuratPendaftaranPDF(id) {
         .surat-ttd-org { font-weight: 800; margin-bottom: 6px; line-height: 1.35; }
         .surat-ttd-qr { display: flex; justify-content: center; align-items: center; margin: 4px 0 6px 0; }
         .surat-qr-img { width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto; }
-        .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: underline; }
+        .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: none; }
         .surat-ttd-role { font-weight: 700; font-size: 11.5px; margin-top: 3px; }
       </style>
     </head>
