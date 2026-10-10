@@ -1162,6 +1162,9 @@ function renderAnggotaTable(search) {
     return matchSearch && matchDis;
   });
 
+  // Urutkan data anak secara abjad (A - Z) berdasarkan nama anak
+  list.sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id', { sensitivity: 'base' }));
+
   setText('table-total-count-text', `Total: ${list.length} Anak`);
   const tbody = document.getElementById('anggota-tbody');
 
@@ -2118,7 +2121,7 @@ async function deleteAnggota(id) {
 function renderCetakKTA() {
   const sel = document.getElementById('kta-select');
   if (!sel) return;
-  const anggota = DB.get('lhg_anggota');
+  const anggota = [...DB.get('lhg_anggota')].sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id', { sensitivity: 'base' }));
   const currentVal = sel.value;
   sel.innerHTML = '<option value="">-- Pilih Anggota Anak --</option>' +
     anggota.map(a => `<option value="${a.id}">${a.nama} (${a.nik}) - ${a.disabilitas}</option>`).join('');
@@ -2643,7 +2646,7 @@ function formatDateIndoFull(dStr) {
 function renderFormPendaftaranPage(selectedId) {
   const sel = document.getElementById('pdf-anggota-select');
   if (!sel) return;
-  const anggota = DB.get('lhg_anggota');
+  const anggota = [...DB.get('lhg_anggota')].sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id', { sensitivity: 'base' }));
   if (!anggota || anggota.length === 0) {
     sel.innerHTML = '<option value="">-- Belum ada data anak --</option>';
     const container = document.getElementById('pdf-preview-container');
@@ -6207,7 +6210,7 @@ function openDetailBantuan(id) {
 function populateBantuanAnakSelect() {
   const sel = document.getElementById('bantuan-select-anak');
   if (!sel) return;
-  const anggota = DB.get('lhg_anggota', []);
+  const anggota = [...DB.get('lhg_anggota', [])].sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id', { sensitivity: 'base' }));
   
   let opts = '<option value="">-- Pilih Anak Terdaftar di Database --</option>';
   anggota.forEach(a => {
