@@ -1095,6 +1095,63 @@ button, input, select, textarea {
   color: #1E293B;
 }
 
+/* ================= MODERN ID CARD OVERLAY (REDESAIN 2026) ================= */
+.idcard-mockup.modern-mode .idcard-photo-box {
+  top: 25.68%;
+  left: 36.07%;
+  width: 27.86%;
+  height: 22.95%;
+  border-radius: 12px;
+}
+
+.idcard-mockup.modern-mode .idcard-val {
+  height: auto;
+}
+
+.idcard-mockup.modern-mode .idcard-val-nama {
+  top: 50.8%;
+  left: 8%;
+  right: 8%;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0A1E3C;
+}
+
+.idcard-mockup.modern-mode .idcard-val-reg {
+  top: 53.0%;
+  left: 15%;
+  right: 15%;
+  justify-content: center;
+  text-align: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: #1A4B92;
+}
+
+.idcard-mockup.modern-mode .idcard-val-alamat {
+  top: 61.0%;
+  left: 11.2%;
+  right: 11.2%;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.idcard-mockup.modern-mode .idcard-val-tgl {
+  top: 69.8%;
+  left: 11.2%;
+  right: 50%;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
 /* CONTROLS PANEL ON THE RIGHT */
 .idcard-controls-panel {
   flex: 1;

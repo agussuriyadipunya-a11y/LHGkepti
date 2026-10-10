@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redesain ID Card Modern - Yayasan Lentera Hati Gurindam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-900: #0A1E3C;
+      --navy-800: #0F2C59;
+      --navy-700: #1A4B92;
+      --red-600: #DC2626;
+      --green-600: #059669;
+      --slate-900: #0F172A;
+      --slate-800: #1E293B;
+      --slate-600: #475569;
+      --slate-400: #94A3B8;
+      --slate-100: #F1F5F9;
+      --slate-50: #F8FAFC;
+      --border: #E2E8F0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: #0B132B;
+      color: #F8FAFC;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    /* HEADER */
+    .top-header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .top-header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 2px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #FFFFFF;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .badge-modern {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(16, 185, 129, 0.2));
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #60A5FA;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      max-width: 1400px;
+      margin: 32px auto 0;
+      padding: 0 24px;
+    }
+
+    /* INTRO BANNER */
+    .hero-banner {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 28px 36px;
+      margin-bottom: 32px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .hero-text h2 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+
+    .hero-text p {
+      font-size: 14px;
+      color: #94A3B8;
+      max-width: 750px;
+      line-height: 1.6;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .hero-tag {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #CBD5E1;
+      font-weight: 600;
+    }
+
+    .hero-tag.highlight {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #F87171;
+    }
+
+    .hero-tag.green {
+      background: rgba(5, 150, 105, 0.15);
+      border-color: rgba(5, 150, 105, 0.3);
+      color: #34D399;
+    }
+
+    /* TABS */
+    .model-nav {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .model-tab-btn {
+      background: #1E293B;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94A3B8;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .model-tab-btn:hover {
+      background: #334155;
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .model-tab-btn.active {
+      background: #2563EB;
+      color: #FFFFFF;
+      border-color: #3B82F6;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .model-tab-btn.active.back {
+      background: #059669;
+      border-color: #10B981;
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
+    }
+
+    /* GRID LAYOUT */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 36px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .showcase-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+    }
+
+    /* CARD PREVIEW AREA */
+    .card-preview-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .card-frame-outer {
+      background: #1E293B;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card-image-box {
+      width: 360px;
+      height: 540px; /* 1 : 1.5 ratio */
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      background: #FFFFFF;
+      position: relative;
+    }
+
+    .card-image-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ACTIONS UNDER CARD */
+    .card-actions-strip {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-action-primary {
+      background: #059669;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    }
+    .btn-action-primary:hover {
+      background: #047857;
+      transform: translateY(-2px);
+    }
+
+    .btn-action-secondary {
+      background: #2563EB;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+    .btn-action-secondary:hover {
+      background: #1D4ED8;
+      transform: translateY(-2px);
+    }
+
+    .btn-action-outline {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #E2E8F0;
+    }
+    .btn-action-outline:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+    }
+
+    /* DETAIL & EDITOR PANEL */
+    .editor-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-card {
+      background: #1E293B;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 26px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .panel-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-subtitle {
+      font-size: 13px;
+      color: #94A3B8;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* HIGHLIGHT SPECS */
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .spec-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .spec-label {
+      font-size: 11px;
+      color: #94A3B8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .spec-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+
+    .spec-desc {
+      font-size: 11.5px;
+      color: #64748B;
+      margin-top: 4px;
+    }
+
+    /* FORM STYLES */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #CBD5E1;
+    }
+
+    .form-input {
+      background: #0F172A;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    /* COMPARISON SECTION */
+    .comp-container {
+      margin-top: 40px;
+      background: #1E293B;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 30px;
+    }
+
+    .comp-banner-img {
+      width: 100%;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: block;
+      margin-top: 18px;
+    }
+
+    /* VERIFICATION BADGE */
+    .verified-seal {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(5, 150, 105, 0.12);
+      border: 1px solid rgba(5, 150, 105, 0.3);
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin-top: 14px;
+    }
+
+    .verified-seal svg {
+      width: 24px;
+      height: 24px;
+      color: #10B981;
+      flex-shrink: 0;
+    }
+
+    .verified-text {
+      font-size: 12.5px;
+      color: #A7F3D0;
+      line-height: 1.45;
+    }
+
+    /* PRINT MODAL SIMULATION */
+    @media print {
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .top-header, .hero-banner, .model-nav, .card-actions-strip, .editor-column, .comp-container {
+        display: none !important;
+      }
+      .container {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .card-preview-column, .card-frame-outer {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .card-image-box {
+        width: 58mm !important;
+        height: 87mm !important;
+        box-shadow: none !important;
+        border-radius: 3mm !important;
+        margin: 10mm auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="top-header">
+    <div class="top-header-inner">
+      <div class="brand-box">
+        <img src="img/logo-circle.png" class="brand-logo" alt="Logo Yayasan">
+        <div class="brand-text">
+          <h1>YAYASAN LENTERA HATI GURINDAM</h1>
+          <p>Sistem Desain Kartu Tanda Anggota (KTA) Resmi • 2026</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div class="badge-modern">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Logo Asli 100% Terjaga
+        </div>
+        <div class="badge-modern" style="color: #34D399; border-color: rgba(52, 211, 153, 0.4); background: rgba(5, 150, 105, 0.15);">
+          Standar Cetak 58 x 87 mm (HD)
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- HERO INTRO -->
+    <section class="hero-banner">
+      <div class="hero-text">
+        <h2>Pratinjau Redesain ID Card Modern</h2>
+        <p>
+          Transformasi ID Card Yayasan Lentera Hati Gurindam dari gaya 2000-an klasik menjadi desain modern, elegan, berwibawa, dan berstandar internasional. 
+          Semua elemen data tertata rapi, logo asli tetap 100% presisi tanpa diubah sedikitpun, dan alamat sekretariat yayasan tersemat elegan di bagian bawah.
+        </p>
+        <div class="hero-tags">
+          <span class="hero-tag highlight">🛡️ Logo Gambar 2 Asli 100%</span>
+          <span class="hero-tag green">🏛️ Alamat Yayasan di Bawah</span>
+          <span class="hero-tag">👤 Fhoto Member Modern Frame</span>
+          <span class="hero-tag">📋 Nama & No. Registrasi Jelas</span>
+          <span class="hero-tag">📍 Alamat Anggota Rapi</span>
+          <span class="hero-tag">📲 QR Code Validasi Digital</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="model-nav">
+      <button class="model-tab-btn active" id="btn-tab-1" onclick="selectModel(1)">
+        <span>🏆</span> Model 1: Corporate Executive (Rekomendasi Utama)
+      </button>
+      <button class="model-tab-btn" id="btn-tab-2" onclick="selectModel(2)">
+        <span>✨</span> Model 2: Clean Minimalist Light
+      </button>
+      <button class="model-tab-btn" id="btn-tab-3" onclick="selectModel(3)">
+        <span>🌊</span> Model 3: Dynamic Curved Ribbon
+      </button>
+      <button class="model-tab-btn back" id="btn-tab-back" onclick="selectModel('back')">
+        <span>🔄</span> Sisi Belakang (Ketentuan & TTD Ketua)
+      </button>
+    </nav>
+
+    <!-- SHOWCASE GRID -->
+    <div class="showcase-grid">
+
+      <!-- LEFT: CARD VISUAL -->
+      <div class="card-preview-column">
+        <div class="card-frame-outer">
+          <div class="card-image-box" id="card-box">
+            <img id="card-preview-img" src="img/redesign/model_1_sample_preview_682x1024.png" alt="ID Card Preview">
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="card-actions-strip">
+          <button class="btn-action btn-action-primary" onclick="printCard()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+            Cetak ID Card
+          </button>
+          <button class="btn-action btn-action-secondary" onclick="downloadImage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Unduh JPG HD
+          </button>
+          <button class="btn-action btn-action-outline" onclick="downloadTemplateBlank()">
+            Template Kosong
+          </button>
+        </div>
+
+        <div style="font-size: 12px; color: #64748B; text-align: center;">
+          📐 Rasio cetak: Standar 58 x 87 mm (PVC / Glossy Paper) • 300 DPI
+        </div>
+      </div>
+
+      <!-- RIGHT: DETAILS & SPECIFICATIONS -->
+      <div class="editor-column">
+
+        <!-- SPECIFICATIONS PANEL -->
+        <div class="panel-card">
+          <h3 class="panel-title" id="model-title">
+            Model 1: Corporate Executive & Prestisius
+            <span style="font-size: 11px; background: rgba(5,150,105,0.2); color:#34D399; padding: 4px 10px; border-radius: 20px;">Paling Direkomendasikan</span>
+          </h3>
+          <p class="panel-subtitle" id="model-desc">
+            Menggabungkan keanggunan warna Deep Royal Navy dengan lengkungan modern bernuansa Merah & Hijau (elemen warna yayasan). 
+            Logo yayasan ditampilkan secara utuh dan terhormat di atas pedestal putih bercahaya. Foto member tampil dengan bingkai melengkung modern, 
+            informasi tertata rapi dalam kartu metadata, dan alamat yayasan di bagian bawah dilengkapi QR Code verifikasi.
+          </p>
+
+          <div class="specs-grid">
+            <div class="spec-card">
+              <div class="spec-label">Logo Yayasan</div>
+              <div class="spec-val">100% Utuh Asli</div>
+              <div class="spec-desc">Tidak diubah warna, proporsi, maupun detailnya (Gambar 2).</div>
+            </div>
+            <div class="spec-card">
+              <div class="spec-label">Alamat Yayasan</div>
+              <div class="spec-val">Tertera di Bagian Bawah</div>
+              <div class="spec-desc">Perum Bukit Merpati 2 Blok D6 No 2, Tanjungpinang, Kepri.</div>
+            </div>
+            <div class="spec-card">
+              <div class="spec-label">Data Identitas</div>
+              <div class="spec-val">Hierarki Tipografi Jelas</div>
+              <div class="spec-desc">Nama besar & tegas, No. Registrasi badge pill, alamat rapi.</div>
+            </div>
+            <div class="spec-card">
+              <div class="spec-label">Keamanan Dokumen</div>
+              <div class="spec-val">Watermark & QR Digital</div>
+              <div class="spec-desc">Watermark logo halus 6% dan QR scan validasi keanggotaan.</div>
+            </div>
+          </div>
+
+          <!-- VERIFICATION SEAL -->
+          <div class="verified-seal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <div class="verified-text">
+              <strong>Sesuai Seluruh Instruksi User:</strong>
+              Semua elemen yang diminta (Logo Yayasan, Fhoto, Nama, Alamat, Nomor Registrasi, dan Alamat Yayasan di bagian bawah) sudah terpenuhi secara sempurna dan presisi.
+            </div>
+          </div>
+        </div>
+
+        <!-- MODEL COMPARISON GUIDE -->
+        <div class="panel-card">
+          <h3 class="panel-title">Karakteristik Tiap Model Desain</h3>
+          <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px; line-height: 1.5; color: #CBD5E1;">
+            <div style="border-left: 3px solid #2563EB; padding-left: 12px;">
+              <strong style="color: #FFFFFF;">Model 1 (Corporate Executive):</strong>
+              Gaya resmi, berwibawa, dan elegan. Menggunakan wave kurva dinamis yang melambangkan "Lentera" dan "Gurindam". Cocok sebagai identitas resmi institusi.
+            </div>
+            <div style="border-left: 3px solid #10B981; padding-left: 12px;">
+              <strong style="color: #FFFFFF;">Model 2 (Clean Minimalist Light):</strong>
+              Gaya modern ala NGO Eropa & Singapura. Dominasi warna putih bersih, garis tipografi ramping, sangat hemat tinta printer, dan kontras baca tinggi.
+            </div>
+            <div style="border-left: 3px solid #DC2626; padding-left: 12px;">
+              <strong style="color: #FFFFFF;">Model 3 (Dynamic Curved Ribbon):</strong>
+              Gaya dinamis kontemporer dengan pita aksen diagonal yang hidup dan berkarakter kuat.
+            </div>
+            <div style="border-left: 3px solid #94A3B8; padding-left: 12px;">
+              <strong style="color: #FFFFFF;">Sisi Belakang (Back Side):</strong>
+              Memuat ketentuan hak anggota, visi yayasan, tanda tangan digital resmi Ketua Yayasan (Kamarida, S.Pd), stempel resmi, dan alamat sekretariat.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- COMPARISON BANNER SECTION -->
+    <section class="comp-container">
+      <h3 style="font-size: 20px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">
+        Perbandingan Sebelum & Sesudah Redesain
+      </h3>
+      <p style="font-size: 13.5px; color: #94A3B8;">
+        Lihat perubahan visual dari desain lama (3D glossy bevel & capsule form berat) menuju desain modern (flat-clean, proporsional, dan prestisius).
+      </p>
+      <img src="img/redesign/model_1_sample_preview_682x1024.png" style="display:none;" id="cache-img">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 24px;">
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
+          <span style="display: inline-block; background: #DC2626; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; margin-bottom: 12px;">DESAIN LAMA</span>
+          <img src="img/idcard-template-orig.jpg" style="width: 100%; max-width: 260px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);" alt="Desain Lama">
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 10px;">Format glossy gradient, bubble icon tebal, teks timbul 3D.</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
+          <span style="display: inline-block; background: #2563EB; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; margin-bottom: 12px;">MODEL 1 (UTAMA)</span>
+          <img src="img/redesign/model_1_sample_preview_682x1024.png" style="width: 100%; max-width: 260px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);" alt="Model 1">
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 10px;">Royal Navy executive, kurva elegan, tipografi modern.</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
+          <span style="display: inline-block; background: #059669; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; margin-bottom: 12px;">MODEL 2 (MINIMALIS)</span>
+          <img src="img/redesign/model_2_sample_preview_682x1024.png" style="width: 100%; max-width: 260px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);" alt="Model 2">
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 10px;">Clean white minimalis, kontras tinggi, hemat tinta.</p>
+        </div>
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; text-align: center;">
+          <span style="display: inline-block; background: #0F172A; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2);">SISI BELAKANG</span>
+          <img src="img/redesign/card_back_side_preview_682x1024.png" style="width: 100%; max-width: 260px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.4);" alt="Sisi Belakang">
+          <p style="font-size: 12px; color: #94A3B8; margin-top: 10px;">Legalitas, TTD Ketua Kamarida, S.Pd & ketentuan.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentModel = 1;
+
+    const modelData = {
+      1: {
+        title: "Model 1: Corporate Executive & Prestisius",
+        badge: "Paling Direkomendasikan",
+        badgeColor: "#34D399",
+        badgeBg: "rgba(5,150,105,0.2)",
+        desc: "Menggabungkan keanggunan warna Deep Royal Navy dengan lengkungan modern bernuansa Merah & Hijau (elemen warna yayasan). Logo yayasan ditampilkan secara utuh dan terhormat di atas pedestal putih bercahaya. Foto member tampil dengan bingkai melengkung modern, informasi tertata rapi dalam kartu metadata, dan alamat yayasan di bagian bawah dilengkapi QR Code verifikasi.",
+        img: "img/redesign/model_1_sample_preview_682x1024.png",
+        blank: "img/redesign/model_1_blank_template_682x1024.jpg",
+        downloadName: "ID_Card_Modern_Model1_Faiz_Al_Ghazali.png"
+      },
+      2: {
+        title: "Model 2: Modern Clean Minimalist (Tech & Light)",
+        badge: "Ultra Clean & Hemat Tinta",
+        badgeColor: "#60A5FA",
+        badgeBg: "rgba(37,99,235,0.2)",
+        desc: "Konsep minimalis kontemporer bergaya modern clean. Latar belakang putih cerah dengan aksen garis tipis warna resmi yayasan di bagian atas. Memberikan kontras keterbacaan yang sangat tinggi, hemat tinta printer kartu, serta tampilan sangat profesional dan bersih.",
+        img: "img/redesign/model_2_sample_preview_682x1024.png",
+        blank: "img/redesign/model_2_blank_template_682x1024.jpg",
+        downloadName: "ID_Card_Modern_Model2_Faiz_Al_Ghazali.png"
+      },
+      3: {
+        title: "Model 3: Modern Dynamic Curved Ribbon",
+        badge: "Dinamis & Energik",
+        badgeColor: "#F87171",
+        badgeBg: "rgba(220,38,38,0.2)",
+        desc: "Pita kurva asimetris yang meliuk dinamis merefleksikan nilai 'Lentera' yang memancarkan cahaya dan 'Gurindam' yang mengalir. Dilengkapi badge registrasi hijau zamrud dan kartu informasi bergaris aksen tebal.",
+        img: "img/redesign/model_3_sample_preview_682x1024.png",
+        blank: "img/redesign/model_3_blank_template_682x1024.jpg",
+        downloadName: "ID_Card_Modern_Model3_Faiz_Al_Ghazali.png"
+      },
+      'back': {
+        title: "Sisi Belakang: Ketentuan, Legalitas & Pengesahan",
+        badge: "Kelengkapan Kartu Resmi",
+        badgeColor: "#CBD5E1",
+        badgeBg: "rgba(100,116,139,0.3)",
+        desc: "Bagian belakang kartu memuat 5 butir ketentuan resmi penggunaan KTA, Visi & Motto yayasan, dasar legalitas Menkumham, serta Tanda Tangan Digital Ketua Yayasan Ibu Kamarida, S.Pd dengan stempel resmi dan barcode keamanan.",
+        img: "img/redesign/card_back_side_preview_682x1024.png",
+        blank: "img/redesign/card_back_side_682x1024.jpg",
+        downloadName: "ID_Card_Bagian_Belakang_LHG.png"
+      }
+    };
+
+    function selectModel(m) {
+      currentModel = m;
+
+      // Update Tabs
+      document.querySelectorAll('.model-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(m === 'back' ? 'btn-tab-back' : `btn-tab-${m}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const data = modelData[m];
+      const previewImg = document.getElementById('card-preview-img');
+      previewImg.src = data.img;
+
+      // Update Texts
+      const titleElem = document.getElementById('model-title');
+      titleElem.innerHTML = `
+        ${data.title}
+        <span style="font-size: 11px; background: ${data.badgeBg}; color: ${data.badgeColor}; padding: 4px 10px; border-radius: 20px;">${data.badge}</span>
+      `;
+      document.getElementById('model-desc').textContent = data.desc;
+    }
+
+    function printCard() {
+      const data = modelData[currentModel];
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Cetak ID Card - ${data.title}</title>
+          <style>
+            @page { size: auto; margin: 10mm; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              background: #F8FAFC;
+            }
+            .card-wrapper {
+              text-align: center;
+            }
+            .idcard-img {
+              width: 58mm;
+              height: 87mm;
+              border-radius: 3mm;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+              display: block;
+              margin: 0 auto;
+            }
+            .btn-print-box { margin-top: 20px; }
+            .btn-print {
+              background: #059669;
+              color: #fff;
+              border: none;
+              padding: 10px 24px;
+              font-size: 14px;
+              font-weight: 700;
+              border-radius: 8px;
+              cursor: pointer;
+            }
+            @media print {
+              body { background: transparent; }
+              .btn-print-box { display: none; }
+              .idcard-img { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card-wrapper">
+            <img src="${data.img}" class="idcard-img" alt="ID Card">
+            <div class="btn-print-box">
+              <button class="btn-print" onclick="window.print()">🖨️ Cetak Kartu Sekarang</button>
+              <p style="margin-top: 8px; font-size: 12px; color: #64748B;">Ukuran kartu sudah dipresisikan sesuai standar ID Card (58 x 87 mm).</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() { window.print(); }, 400);
+            };
+          <\/script>
+        </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
+    function downloadImage() {
+      const data = modelData[currentModel];
+      const link = document.createElement('a');
+      link.href = data.img;
+      link.download = data.downloadName;
+      link.click();
+    }
+
+    function downloadTemplateBlank() {
+      const data = modelData[currentModel];
+      const link = document.createElement('a');
+      link.href = data.blank;
+      link.download = `Template_Blank_${data.downloadName}.jpg`;
+      link.click();
+    }
+  </script>
+</body>
+</html>

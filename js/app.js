@@ -1561,31 +1561,76 @@ function previewKTA() {
   const noReg = a.noAnggota || a.id;
   const tglDaftar = formatDate(a.tglDaftar);
 
+  window._currentKTAModel = window._currentKTAModel || 'model1';
+  const curModel = window._currentKTAModel;
+  let templateSrc = 'img/idcard-template-modern-1.jpg';
+  let isModern = true;
+  let isBack = false;
+
+  if (curModel === 'model2') {
+    templateSrc = 'img/idcard-template-modern-2.jpg';
+  } else if (curModel === 'model3') {
+    templateSrc = 'img/idcard-template-modern-3.jpg';
+  } else if (curModel === 'back') {
+    templateSrc = 'img/idcard-template-back.jpg';
+    isBack = true;
+  } else if (curModel === 'orig') {
+    templateSrc = 'img/idcard-template-orig.jpg';
+    isModern = false;
+  }
+
   container.innerHTML = `
     <div class="idcard-layout-flex">
       <!-- MOCKUP ID CARD -->
       <div class="idcard-render-wrapper">
-        <div class="idcard-mockup" id="idcard-mockup">
-          <img src="img/idcard-template.jpg" class="idcard-bg-img" alt="Template ID Card LHG">
+        <div class="idcard-mockup ${isModern ? 'modern-mode' : ''}" id="idcard-mockup">
+          <img src="${templateSrc}" class="idcard-bg-img" alt="Template ID Card LHG">
           
-          <div class="idcard-photo-box" id="preview-photo-box">
-            ${a.foto ? `<img src="${a.foto}" class="idcard-photo-img" alt="${a.nama}">` : `
-              <div class="idcard-photo-placeholder">
-                <span class="idcard-avatar-emoji">${a.jk === 'L' ? '👦' : '👧'}</span>
-                <span class="idcard-avatar-text">PAS FOTO</span>
-              </div>
-            `}
-          </div>
+          ${!isBack ? `
+            <div class="idcard-photo-box" id="preview-photo-box">
+              ${a.foto ? `<img src="${a.foto}" class="idcard-photo-img" alt="${a.nama}">` : `
+                <div class="idcard-photo-placeholder">
+                  <span class="idcard-avatar-emoji">${a.jk === 'L' ? '👦' : '👧'}</span>
+                  <span class="idcard-avatar-text">PAS FOTO</span>
+                </div>
+              `}
+            </div>
 
-          <div class="idcard-val idcard-val-nama" title="${a.nama}">${a.nama}</div>
-          <div class="idcard-val idcard-val-alamat" title="${rawAlamat}">${displayAlamat}</div>
-          <div class="idcard-val idcard-val-reg">${noReg}</div>
-          <div class="idcard-val idcard-val-tgl">${tglDaftar}</div>
+            <div class="idcard-val idcard-val-nama" title="${a.nama}">${a.nama}</div>
+            <div class="idcard-val idcard-val-reg">${noReg}</div>
+            <div class="idcard-val idcard-val-alamat" title="${rawAlamat}">${displayAlamat}</div>
+            <div class="idcard-val idcard-val-tgl">${tglDaftar}</div>
+          ` : `
+            <!-- Sisi Belakang Mockup -->
+            <div style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 10px; color: #94A3B8;">
+              Pratinjau Sisi Belakang (Ketentuan & Tanda Tangan)
+            </div>
+          `}
         </div>
       </div>
 
       <!-- KONTROL & AKSI ID CARD -->
       <div class="idcard-controls-panel">
+        
+        <!-- PILIH MODEL TEMPLATE -->
+        <div style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+          <label class="lbl" style="font-weight: 700; color: #0F172A; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>🎨 Pilihan Model ID Card:</span>
+            <span style="font-size: 11px; background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 12px; font-weight: 800;">Redesain 2026</span>
+          </label>
+          <select id="select-kta-model" class="clean-select" style="width: 100%; font-size: 13px;" onchange="changeKTAModel('${a.id}', this.value)">
+            <option value="model1" ${curModel === 'model1' ? 'selected' : ''}>🏆 Model 1: Corporate Executive (Rekomendasi Utama)</option>
+            <option value="model2" ${curModel === 'model2' ? 'selected' : ''}>✨ Model 2: Clean Minimalist Light</option>
+            <option value="model3" ${curModel === 'model3' ? 'selected' : ''}>🌊 Model 3: Dynamic Curved Ribbon</option>
+            <option value="back" ${curModel === 'back' ? 'selected' : ''}>🔄 Sisi Belakang (Ketentuan & TTD Ketua)</option>
+            <option value="orig" ${curModel === 'orig' ? 'selected' : ''}>📁 Model Klasik (Desain Lama)</option>
+          </select>
+          <div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748B;">
+            <span>Standar cetak resmi 58 x 87 mm (300 DPI).</span>
+            <a href="preview_redesign_idcard.html" target="_blank" style="color: #2563EB; font-weight: 700; text-decoration: none;">Buka Showcase HD ↗</a>
+          </div>
+        </div>
+
         <div class="idcard-info-badge">
           <span class="badge-status-aktif" style="display:inline-block; margin-bottom:8px;">✅ Status: ${a.status}</span>
           <h4 style="font-size: 16px; font-weight: 800; color: #0F172A; margin-bottom: 4px;">${a.nama}</h4>
@@ -1623,101 +1668,128 @@ function previewKTA() {
 
         <div style="background: #F8FAFC; border-radius: 8px; padding: 12px; font-size: 11.5px; color: #475569; line-height: 1.5; border-left: 3.5px solid #059669; border: 1px solid var(--border-color); border-left: 3.5px solid #059669;">
           <strong>💡 Format ID Card Resmi:</strong><br>
-          Ukuran rasio kartu telah disesuaikan dengan template resmi Yayasan Lentera Hati Gurindam. Siap dicetak langsung pada kertas foto atau kartu PVC standar ID Card.
+          Memuat Logo Yayasan Asli, Foto, Nama, Alamat, No Registrasi, serta Alamat Yayasan resmi di bagian bawah: <em>Perum Bukit Merpati 2 Blok D6 No 2, Tanjungpinang, Kepulauan Riau</em>.
         </div>
       </div>
     </div>
   `;
 }
 
-function handleFotoKTAUpload(event, id) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    showToast('File harus berupa gambar (JPG/PNG)!', 'error');
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64 = e.target.result;
-    const anggota = DB.get('lhg_anggota');
-    const idx = anggota.findIndex(x => x.id === id);
-    if (idx > -1) {
-      anggota[idx].foto = base64;
-      DB.set('lhg_anggota', anggota);
-      showToast('Pas foto berhasil dipasang pada ID Card!');
-      previewKTA();
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeFotoKTA(id) {
-  const anggota = DB.get('lhg_anggota');
-  const idx = anggota.findIndex(x => x.id === id);
-  if (idx > -1) {
-    delete anggota[idx].foto;
-    DB.set('lhg_anggota', anggota);
-    showToast('Pas foto dihapus, kembali ke avatar ilustrasi.');
-    previewKTA();
-  }
+function changeKTAModel(id, model) {
+  window._currentKTAModel = model;
+  previewKTA(id);
 }
 
 function generateKTACanvas(id, callback) {
   const a = DB.get('lhg_anggota').find(x => x.id === id);
   if (!a) return;
 
+  const curModel = window._currentKTAModel || 'model1';
   const canvas = document.createElement('canvas');
   canvas.width = 682;
   canvas.height = 1024;
   const ctx = canvas.getContext('2d');
 
+  let bgSrc = 'img/idcard-template-modern-1.jpg';
+  let isBack = false;
+  let isOrig = false;
+
+  if (curModel === 'model2') {
+    bgSrc = 'img/idcard-template-modern-2.jpg';
+  } else if (curModel === 'model3') {
+    bgSrc = 'img/idcard-template-modern-3.jpg';
+  } else if (curModel === 'back') {
+    bgSrc = 'img/idcard-template-back.jpg';
+    isBack = true;
+  } else if (curModel === 'orig') {
+    bgSrc = 'img/idcard-template-orig.jpg';
+    isOrig = true;
+  }
+
   const bgImg = new Image();
   bgImg.crossOrigin = 'anonymous';
   bgImg.onload = function() {
-    // 1. Draw template
     ctx.drawImage(bgImg, 0, 0, 682, 1024);
 
+    if (isBack) {
+      callback(canvas);
+      return;
+    }
+
+    const rawAlamat = a.kelurahan ? (a.alamat ? a.alamat + ', ' + a.kelurahan : a.kelurahan) : (a.alamat || 'Tanjungpinang');
+    const displayAlamat = rawAlamat.length > 32 ? rawAlamat.substring(0, 30) + '...' : rawAlamat;
+    const noReg = a.noAnggota || a.id;
+
     const finishCanvas = () => {
-      // 3. Draw Data Texts (Rata Kiri, Pas di Tengah Vertikal)
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      const dataStartX = 328; // Tepat di sebelah kanan titik dua yang sudah rata
+      if (isOrig) {
+        // Legacy layout
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        const dataStartX = 328;
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'bold 19px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(a.nama.toUpperCase(), dataStartX, 661);
 
-      // Nama
-      ctx.fillStyle = '#0F172A';
-      ctx.font = 'bold 19px "Plus Jakarta Sans", Arial, sans-serif';
-      ctx.fillText(a.nama.toUpperCase(), dataStartX, 661);
+        ctx.font = 'bold 16px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillStyle = '#1E293B';
+        ctx.fillText(displayAlamat, dataStartX, 721);
 
-      // Alamat
-      const rawAlamat = a.kelurahan ? (a.alamat ? a.alamat + ', ' + a.kelurahan : a.kelurahan) : (a.alamat || 'Tanjungpinang');
-      ctx.font = 'bold 16px "Plus Jakarta Sans", Arial, sans-serif';
-      ctx.fillStyle = '#1E293B';
-      const displayAlamat = rawAlamat.length > 32 ? rawAlamat.substring(0, 30) + '...' : rawAlamat;
-      ctx.fillText(displayAlamat, dataStartX, 721);
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(noReg, dataStartX, 781);
 
-      // No. Registrasi
-      ctx.fillStyle = '#0F172A';
-      ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
-      ctx.fillText(a.noAnggota || a.id, dataStartX, 781);
+        ctx.fillStyle = '#1E293B';
+        ctx.font = 'bold 16.5px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(formatDate(a.tglDaftar), dataStartX, 841);
+      } else {
+        // Modern Redesign Layout (2026)
+        // 1. Nama
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#0A1E3C';
+        ctx.font = 'bold 22px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(a.nama.toUpperCase(), 341, 520);
 
-      // Tanggal Terdaftar
-      ctx.fillStyle = '#1E293B';
-      ctx.font = 'bold 16.5px "Plus Jakarta Sans", Arial, sans-serif';
-      ctx.fillText(formatDate(a.tglDaftar), dataStartX, 841);
+        // 2. No. Registrasi Badge
+        ctx.fillStyle = '#1A4B92';
+        ctx.font = 'bold 12.5px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText('NO. REG : ' + noReg, 341, 543);
+
+        // 3. Alamat
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'bold 14px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(displayAlamat, 76, 624);
+
+        ctx.fillStyle = '#475569';
+        ctx.font = '11px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText('Kota Tanjungpinang, Kepulauan Riau', 76, 644);
+
+        // 4. Tanggal Terdaftar
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'bold 13px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(formatDate(a.tglDaftar), 76, 715);
+      }
 
       callback(canvas);
     };
 
-    // 2. Draw Photo
+    // Draw Photo
+    const px = isOrig ? 234 : 246;
+    const py = isOrig ? 361 : 263;
+    const pw = isOrig ? 214 : 190;
+    const ph = isOrig ? 254 : 235;
+    const pr = isOrig ? 16 : 14;
+
     if (a.foto) {
       const pImg = new Image();
       pImg.crossOrigin = 'anonymous';
       pImg.onload = function() {
         ctx.save();
-        roundRect(ctx, 234, 361, 214, 254, 16);
+        roundRect(ctx, px, py, pw, ph, pr);
         ctx.clip();
-        drawImageCover(ctx, pImg, 234, 361, 214, 254);
+        drawImageCover(ctx, pImg, px, py, pw, ph);
         ctx.restore();
         finishCanvas();
       };
@@ -1733,21 +1805,21 @@ function generateKTACanvas(id, callback) {
 
     function drawFallbackAvatar() {
       ctx.save();
-      roundRect(ctx, 234, 361, 214, 254, 16);
+      roundRect(ctx, px, py, pw, ph, pr);
       ctx.clip();
       ctx.fillStyle = '#F0F6FF';
-      ctx.fillRect(234, 361, 214, 254);
-      ctx.font = '72px sans-serif';
+      ctx.fillRect(px, py, pw, ph);
+      ctx.font = '64px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(a.jk === 'L' ? '👦' : '👧', 341, 470);
-      ctx.font = 'bold 14px "Plus Jakarta Sans", Arial, sans-serif';
+      ctx.fillText(a.jk === 'L' ? '👦' : '👧', px + pw / 2, py + ph / 2 - 15);
+      ctx.font = 'bold 13px "Plus Jakarta Sans", Arial, sans-serif';
       ctx.fillStyle = '#64748B';
-      ctx.fillText('PAS FOTO', 341, 545);
+      ctx.fillText('PAS FOTO', px + pw / 2, py + ph / 2 + 40);
       ctx.restore();
     }
   };
-  bgImg.src = 'img/idcard-template.jpg';
+  bgImg.src = bgSrc;
 }
 
 function roundRect(ctx, x, y, w, h, r) {
