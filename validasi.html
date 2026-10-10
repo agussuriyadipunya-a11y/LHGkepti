@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifikasi Tanda Tangan Elektronik - Yayasan Lentera Hati Gurindam</title>
+  <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 40px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* TOP HEADER */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+
+    .brand-logo {
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #f8fafc;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* MAIN CARD */
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* STATUS BADGE */
+    .badge-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      color: #065f46;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+    }
+
+    .badge-status svg {
+      width: 22px;
+      height: 22px;
+      color: #059669;
+      flex-shrink: 0;
+    }
+
+    /* STATEMENT BOX */
+    .statement-box {
+      text-align: center;
+      border-bottom: 1px dashed #cbd5e1;
+      padding-bottom: 22px;
+      margin-bottom: 20px;
+    }
+
+    .statement-intro {
+      font-size: 13.5px;
+      color: #475569;
+      font-weight: 500;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .signer-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .signer-role {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    /* SIGNATURE DISPLAY */
+    .signature-display {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px 16px;
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .signature-img-wrapper {
+      max-width: 240px;
+      height: 120px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .signature-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+    }
+
+    .signature-note {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .signature-note svg {
+      width: 14px;
+      height: 14px;
+      color: #10b981;
+    }
+
+    /* DETAILS LIST */
+    .details-list {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      font-size: 12.5px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px 18px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .detail-label {
+      color: #64748b;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .detail-value {
+      color: #0f172a;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .detail-value.verified {
+      color: #059669;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    /* BUTTONS */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 11px;
+      margin-top: 24px;
+      line-height: 1.6;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- BRAND HEADER -->
+    <header class="brand-header">
+      <img src="img/logo.png" alt="Logo LHG" class="brand-logo" onerror="this.src='img/logo-circle.png'">
+      <h1 class="brand-title">Yayasan Lentera Hati Gurindam</h1>
+      <p class="brand-subtitle">Provinsi Kepulauan Riau • Kota Tanjungpinang</p>
+    </header>
+
+    <!-- CARD VERIFIKASI -->
+    <main class="card">
+      <!-- BADGE STATUS -->
+      <div class="badge-status">
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        Tanda Tangan Elektronik Sah
+      </div>
+
+      <!-- STATEMENT SESUAI REQUEST USER -->
+      <div class="statement-box">
+        <p class="statement-intro">Berkas ini di tanda tangani secara elektronik oleh :</p>
+        <h2 class="signer-name">KAMARIDA</h2>
+        <p class="signer-role">Ketua Yayasan Lentera Hati Gurindam</p>
+      </div>
+
+      <!-- DISPLAY TANDA TANGAN ASLI -->
+      <div class="signature-display">
+        <div class="signature-img-wrapper">
+          <img src="img/ttd-kamarida-transparan.png" alt="Tanda Tangan Asli KAMARIDA" class="signature-img" onerror="this.src='img/ttd-kamarida.png'">
+        </div>
+        <div class="signature-note">
+          <svg fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          Spesimen Tanda Tangan Resmi Yayasan
+        </div>
+      </div>
+
+      <!-- RINCIAN DOKUMEN & INTEGRITAS SISTEM -->
+      <div class="details-list">
+        <div class="detail-item">
+          <span class="detail-label">Lembaga Penerbit</span>
+          <span class="detail-value">Yayasan Lentera Hati Gurindam</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Penandatangan</span>
+          <span class="detail-value">KAMARIDA</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Jabatan Resmi</span>
+          <span class="detail-value">Ketua Yayasan</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Wilayah Pelayanan</span>
+          <span class="detail-value">Kota Tanjungpinang, Kepri</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Status Keabsahan</span>
+          <span class="detail-value verified">
+            <svg style="width: 15px; height: 15px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            Asli & Terdaftar
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Waktu Pengecekan</span>
+          <span class="detail-value" id="waktu-cek">-</span>
+        </div>
+      </div>
+
+      <!-- TOMBOL AKSI -->
+      <div class="actions">
+        <a href="index.html" class="btn btn-primary">
+          <svg style="width: 17px; height: 17px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          Buka Sistem Informasi Yayasan LHG
+        </a>
+        <button type="button" class="btn btn-secondary" onclick="salinTautan()">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          Salin Tautan Verifikasi
+        </button>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>© 2026 Yayasan Lentera Hati Gurindam. Hak Cipta Dilindungi.</p>
+      <p>Sistem Informasi dan Pelayanan Anak Disabilitas Tanjungpinang</p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast">
+    <svg style="width: 16px; height: 16px; color: #10b981;" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+    </svg>
+    Tautan verifikasi berhasil disalin!
+  </div>
+
+  <script>
+    // Format Waktu Cek Real-time
+    const now = new Date();
+    const opts = { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const elTime = document.getElementById('waktu-cek');
+    if (elTime) {
+      elTime.textContent = now.toLocaleDateString('id-ID', opts) + ' WIB';
+    }
+
+    // Salin Tautan
+    function salinTautan() {
+      const url = window.location.href;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(tampilkanToast);
+      } else {
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = url;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        tampilkanToast();
+      }
+    }
+
+    function tampilkanToast() {
+      const toast = document.getElementById('toast');
+      if (toast) {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+      }
+    }
+  </script>
+</body>
+</html>

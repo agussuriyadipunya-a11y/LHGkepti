@@ -1,18 +1,22 @@
 // Service Worker - Lentera Hati Gurindam PWA
-const CACHE_NAME = 'lhg-pwa-v35';
+const CACHE_NAME = 'lhg-pwa-v36';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './validasi.html',
   './css/style.css',
   './js/app.js',
   './js/html2pdf.bundle.min.js',
   './manifest.json',
+  './img/logo.png',
   './img/logo-circle.png',
   './img/idcard-template.jpg',
   './img/icon-192x192.png',
   './img/icon-512x512.png',
   './img/qr-kamarida.png',
-  './img/qr-kamarida.jpg'
+  './img/qr-kamarida.jpg',
+  './img/ttd-kamarida.png',
+  './img/ttd-kamarida-transparan.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -2011,7 +2011,9 @@ function buildSuratPendaftaranHTML(a) {
           <div class="surat-ttd-org">Yayasan Lentera Hati Gurindam</div>
           <div class="surat-ttd-role">Ketua Yayasan,</div>
           <div class="surat-ttd-qr">
-            <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
+            <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
+              <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
+            </a>
           </div>
           <div class="surat-ttd-name">KAMARIDA</div>
         </div>
