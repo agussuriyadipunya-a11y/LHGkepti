@@ -1645,72 +1645,449 @@ function saveAnggota() {
   }
 }
 
+function copyDetailText(text, label) {
+  if (!text || text === '-' || text === 'undefined') {
+    showToast('Tidak ada data untuk disalin', 'warning');
+    return;
+  }
+  const cleanText = String(text).trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cleanText).then(() => {
+      showToast(`${label || 'Teks'} berhasil disalin ke clipboard!`, 'success');
+    }).catch(() => {
+      fallbackCopyDetail(cleanText, label);
+    });
+  } else {
+    fallbackCopyDetail(cleanText, label);
+  }
+}
+
+function fallbackCopyDetail(text, label) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (successful) {
+      showToast(`${label || 'Teks'} berhasil disalin ke clipboard!`, 'success');
+    } else {
+      showToast('Gagal menyalin teks', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal menyalin teks', 'error');
+  }
+}
+
+function openAddBantuanForAnak(anakId) {
+  closeModal('modal-view');
+  if (typeof openAddBantuan === 'function') {
+    openAddBantuan();
+    setTimeout(() => {
+      const selAnak = document.getElementById('bantuan-select-anak');
+      if (selAnak) {
+        selAnak.value = anakId;
+        if (typeof onBantuanAnakChange === 'function') {
+          onBantuanAnakChange(anakId);
+        }
+      }
+    }, 100);
+  }
+}
+
 function viewAnggota(id) {
   const a = DB.get('lhg_anggota').find(x => x.id === id);
   if (!a) return;
 
-  const waNum = a.kontakWA || a.telWali || '';
-  const rows = [
-    ['Nomor NIK', a.nik],
-    ['Nomor Kartu Keluarga (KK)', a.noKk || '-'],
-    ['Tempat, Tanggal Lahir', a.ttl || '-'],
-    ['Usia / Umur', hitungUsia(a)],
-    ['Jenis Kelamin', a.jk === 'L' ? 'Laki-laki' : 'Perempuan'],
-    ['Alamat Lengkap', a.alamat || '-'],
-    ['Kelurahan', a.kelurahan || '-'],
-    ['Ragam Disabilitas', `${a.disabilitas} - ${a.subDisabilitas || '-'}`],
-    ['Nama Orang Tua (Ayah)', a.wali || '-'],
-    ['Nama Orang Tua (Ibu)', a.ibu || '-'],
-    ['Hubungan Keluarga', a.hubWali || 'Orang Tua'],
-    ['Kontak WhatsApp', waNum ? `<a href="javascript:void(0)" onclick="openWhatsApp('${waNum}')" class="wa-click-badge">💬 ${waNum} (Chat WA)</a>` : '-'],
-    ['Sekolah / Kelas', `${a.sekolah || '-'} / ${a.kelas || '-'}`],
-    ['Status Keaktifan', a.status],
-    ['Tanggal Terdaftar', formatDate(a.tglDaftar)]
-  ];
+  const waNum = (a.kontakWA || a.telWali || '').trim();
+  const usiaText = hitungUsia(a);
+  const isAktif = (a.status || 'Aktif').toLowerCase() === 'aktif';
+  const statusBadgeClass = isAktif ? 'status-aktif' : 'status-nonaktif';
 
-  document.getElementById('view-content').innerHTML = `
-    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #E2E8F0;">
-      ${a.foto ? `
-        <img src="${a.foto}" alt="${a.nama}" style="width: 52px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #059669; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-      ` : `
-        <div class="recent-avatar-circle" style="width: 48px; height: 48px; font-size: 16px; background: #ECFDF5; color: #059669; border: 2px solid #A7F3D0;">
-          ${getInitials(a.nama)}
+  // Format Tanggal Terdaftar
+  let tglDaftarFormatted = '-';
+  if (a.tglDaftar || a.createdAt) {
+    try {
+      const d = new Date(a.tglDaftar || a.createdAt);
+      if (!isNaN(d.getTime())) {
+        const dStr = formatDate(a.tglDaftar || a.createdAt);
+        const tStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+        tglDaftarFormatted = `${dStr}, ${tStr}`;
+      } else {
+        tglDaftarFormatted = formatDate(a.tglDaftar || a.createdAt);
+      }
+    } catch (e) {
+      tglDaftarFormatted = formatDate(a.tglDaftar || a.createdAt);
+    }
+  }
+
+  // Maps URL
+  const alamatLengkap = a.alamat || '';
+  const kelurahan = a.kelurahan || '';
+  const mapsQuery = encodeURIComponent([alamatLengkap, kelurahan ? 'Kelurahan ' + kelurahan : '', 'Tanjungpinang'].filter(Boolean).join(', '));
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+  // Helper Copy Button Icon
+  const makeCopyBtn = (val, label) => {
+    if (!val || val === '-') return '';
+    const safeVal = String(val).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    return `
+      <button type="button" class="btn-copy-chip" onclick="copyDetailText('${safeVal}', '${label}')" title="Salin ${label}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+    `;
+  };
+
+  // Aid history from lhg_bantuan
+  const bList = (typeof getBantuanList === 'function' ? getBantuanList() : (DB.get('lhg_bantuan', [])))
+    .filter(b => b.anakId === a.id || (b.anakNama && b.anakNama.toLowerCase().trim() === (a.nama || '').toLowerCase().trim()));
+
+  const html = `
+    <!-- TOP NAVIGATION & BREADCRUMB -->
+    <div class="detail-top-nav">
+      <div class="detail-breadcrumb">
+        <span class="detail-crumb-link" onclick="closeModal('modal-view'); showPage('dashboard');">Dashboard</span>
+        <span class="detail-crumb-sep">›</span>
+        <span class="detail-crumb-link" onclick="closeModal('modal-view'); showPage('anggota');">Data Anak Disabilitas</span>
+        <span class="detail-crumb-sep">›</span>
+        <span class="detail-crumb-active">Detail Anak #${a.noAnggota || a.id}</span>
+      </div>
+      <button type="button" class="detail-btn-back" onclick="closeModal('modal-view')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Kembali ke Daftar
+      </button>
+    </div>
+
+    <!-- HERO PROFILE CARD -->
+    <div class="detail-hero-card">
+      <div class="detail-hero-left">
+        <div class="detail-avatar-wrap">
+          ${a.foto ? `
+            <img src="${a.foto}" alt="${a.nama}" class="detail-hero-avatar-img">
+          ` : `
+            <div class="detail-hero-avatar-placeholder">
+              ${getInitials(a.nama) || 'AN'}
+            </div>
+          `}
         </div>
-      `}
-      <div>
-        <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; text-transform: uppercase;">${a.nama}</h3>
-        <div style="font-size: 12px; color: #059669; font-weight: 700;">Nomor KTA: ${a.noAnggota || a.id}</div>
+        <div class="detail-hero-info">
+          <h2 class="detail-hero-name">${a.nama}</h2>
+          <div class="detail-hero-subtags">
+            <span class="detail-tag-item" style="color:#0284C7; font-weight:700;">${a.subDisabilitas || a.disabilitas || 'Disabilitas'}</span>
+            <span class="detail-tag-dot">•</span>
+            <span class="detail-tag-item">📍 Kel. ${a.kelurahan || '-'}</span>
+            <span class="detail-badge-status ${statusBadgeClass}">
+              <span>●</span> ${a.status || 'Aktif'}
+            </span>
+          </div>
+          <div class="detail-hero-meta">
+            <span>ID: <strong>${a.noAnggota || a.id}</strong></span>
+            <span class="detail-meta-sep">•</span>
+            <span>NIK: <strong>${a.nik || '-'}</strong></span>
+            <span class="detail-meta-sep">•</span>
+            <span>Usia: <strong>${usiaText}</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-hero-actions">
+        <button type="button" class="detail-btn-action detail-btn-edit" onclick="closeModal('modal-view'); openEditAnggota('${a.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          Edit Data
+        </button>
+        <button type="button" class="detail-btn-action detail-btn-secondary" onclick="closeModal('modal-view'); cetakKTAFor('${a.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+          Cetak ID Card / KTA
+        </button>
+        <button type="button" class="detail-btn-action detail-btn-primary" onclick="closeModal('modal-view'); openSuratFor('${a.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          Cetak Berkas PDF
+        </button>
       </div>
     </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-      ${rows.map(([k, v]) => `
-        <div style="background: #F8FAFC; padding: 9px 12px; border-radius: 8px; border: 1px solid #E2E8F0;">
-          <div style="font-size: 10px; color: #64748B; font-weight: 700;">${k}</div>
-          <div style="font-size: 12.5px; font-weight: 700; color: #1E293B; margin-top: 2px;">${v || '-'}</div>
+
+    <!-- TWO-COLUMN BODY LAYOUT -->
+    <div class="detail-body-grid">
+      <!-- LEFT SIDEBAR -->
+      <div class="detail-side-column">
+        <!-- CARD: STATUS DATA -->
+        <div class="detail-card">
+          <div class="detail-side-label">Status Data</div>
+          <div class="detail-side-status">
+            <span style="color: ${isAktif ? '#10B981' : '#EF4444'};">●</span>
+            ${isAktif ? 'Terdaftar & Aktif' : (a.status || 'Nonaktif')}
+          </div>
+          <button type="button" class="detail-btn-pill-cyan" onclick="closeModal('modal-view'); openSuratFor('${a.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            MENU: CETAK BERKAS
+          </button>
+          <div style="margin-top: 6px;">
+            <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="detail-badge-lokasi" title="Buka peta domisili">
+              <span>📍</span> LOKASI DOMISILI ↗
+            </a>
+          </div>
         </div>
-      `).join('')}
+
+        <!-- CARD: ORANG TUA / WALI -->
+        <div class="detail-card">
+          <div class="detail-side-label">Orang Tua / Wali</div>
+          <div class="detail-side-name">${a.wali || a.ibu || '-'}</div>
+          ${waNum ? `
+            <div>
+              <button type="button" class="detail-btn-pill-emerald" onclick="openWhatsApp('${waNum}')">
+                <span>💬</span> WA Wali (${waNum})
+              </button>
+            </div>
+          ` : ''}
+          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: #475569;">
+            <div><strong style="color: #64748B; font-size: 11px;">IBU:</strong> <span style="font-weight: 700; color: #1E293B;">${a.ibu || '-'}</span></div>
+            <div><strong style="color: #64748B; font-size: 11px;">HUBUNGAN:</strong> <span style="font-weight: 700; color: #1E293B;">${a.hubWali || 'Orang Tua'}</span></div>
+          </div>
+        </div>
+
+        <!-- CARD: PENDIDIKAN & SEKOLAH -->
+        <div class="detail-card">
+          <div class="detail-side-label">Pendidikan / Sekolah</div>
+          <div class="detail-side-name">${a.sekolah || 'Belum / Tidak Sekolah'}</div>
+          <div class="detail-side-sub">Kelas / Jenjang: <strong>${a.kelas || '-'}</strong></div>
+        </div>
+
+        <!-- CARD: TANGGAL TERDAFTAR -->
+        <div class="detail-card">
+          <div class="detail-side-label">Tanggal Terdaftar</div>
+          <div class="detail-side-date">${tglDaftarFormatted}</div>
+        </div>
+
+        <!-- CARD: KONTAK CEPAT -->
+        <div class="detail-card">
+          <div class="detail-side-label">Kontak Cepat</div>
+          <div class="detail-quick-contact-list">
+            <div class="detail-quick-item">
+              <span>📞</span>
+              ${waNum ? `<a href="javascript:void(0)" onclick="openWhatsApp('${waNum}')">${waNum}</a>` : '<span>-</span>'}
+            </div>
+            <div class="detail-quick-item">
+              <span>📍</span>
+              <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">Buka Lokasi di Maps</a>
+            </div>
+            <div class="detail-quick-item">
+              <span>💳</span>
+              <span>Nomor KTA: <strong>${a.noAnggota || a.id}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT MAIN COLUMN -->
+      <div class="detail-main-column">
+        <!-- CARD: DATA LENGKAP -->
+        <div class="detail-card">
+          <div class="detail-card-title">
+            <span>Data Lengkap Anak Disabilitas</span>
+            <span style="font-size: 12px; font-weight: 600; color: #64748B;">ID: ${a.noAnggota || a.id}</span>
+          </div>
+
+          <div class="detail-field-grid">
+            <!-- Row 1 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">Nama Lengkap</span>
+              <div class="detail-field-val">
+                <span>${a.nama}</span>
+                ${makeCopyBtn(a.nama, 'Nama Lengkap')}
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Tempat, Tanggal Lahir</span>
+              <div class="detail-field-val">
+                <span>${a.ttl || '-'}</span>
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">Jenis Kelamin</span>
+              <div class="detail-field-val">
+                <span>${a.jk === 'L' ? 'Laki-laki' : 'Perempuan'}</span>
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Usia</span>
+              <div class="detail-field-val">
+                <span>${usiaText}</span>
+              </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">No. KTP (NIK)</span>
+              <div class="detail-field-val">
+                <span>${a.nik || '-'}</span>
+                ${makeCopyBtn(a.nik, 'NIK')}
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Nomor Kartu Keluarga (KK)</span>
+              <div class="detail-field-val">
+                <span>${a.noKk || '-'}</span>
+                ${makeCopyBtn(a.noKk, 'Nomor KK')}
+              </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">Nomor Telepon / WhatsApp</span>
+              <div class="detail-field-val">
+                <span>${waNum || '-'}</span>
+                ${makeCopyBtn(waNum, 'Nomor WhatsApp')}
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Kelurahan</span>
+              <div class="detail-field-val">
+                <span>${a.kelurahan || '-'}</span>
+              </div>
+            </div>
+
+            <!-- Row 5 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">Ragam Disabilitas</span>
+              <div class="detail-field-val">
+                <span style="background: #ECFDF5; color: #059669; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; border: 1px solid #A7F3D0;">
+                  ${a.disabilitas || '-'}
+                </span>
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Sub / Keterangan Disabilitas</span>
+              <div class="detail-field-val">
+                <span>${a.subDisabilitas || a.keterangan || '-'}</span>
+              </div>
+            </div>
+
+            <!-- Row 6 -->
+            <div class="detail-field-item">
+              <span class="detail-field-label">Kode Registrasi (ID)</span>
+              <div class="detail-field-val">
+                <span style="font-family: monospace;">${a.noAnggota || a.id}</span>
+                ${makeCopyBtn(a.noAnggota || a.id, 'Kode Registrasi')}
+              </div>
+            </div>
+            <div class="detail-field-item">
+              <span class="detail-field-label">Status Keaktifan</span>
+              <div class="detail-field-val">
+                <span style="color: ${isAktif ? '#10B981' : '#EF4444'};">●</span>
+                <span style="margin-left: 5px;">${a.status || 'Aktif'}</span>
+              </div>
+            </div>
+
+            <!-- Row 7: Full width Alamat -->
+            <div class="detail-field-item full-col">
+              <span class="detail-field-label">Alamat Lengkap</span>
+              <div class="detail-field-val">
+                <span>${a.alamat || '-'}</span>
+                ${makeCopyBtn(a.alamat, 'Alamat')}
+              </div>
+            </div>
+
+            <!-- Row 8: Full width Catatan Khusus (jika ada) -->
+            ${a.catatan || (a.keterangan && a.keterangan !== a.subDisabilitas) ? `
+              <div class="detail-field-item full-col">
+                <span class="detail-field-label">Catatan Tambahan</span>
+                <div class="detail-field-val" style="font-weight: 500; color: #475569; background: #F8FAFC; padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                  ${a.catatan || a.keterangan}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- CARD: DATA PEMBACAAN DATABASE & RIWAYAT BANTUAN -->
+        <div class="detail-card">
+          <div class="detail-card-title">
+            <span>Data Pembacaan Database & Bantuan</span>
+            ${bList.length > 0 ? `
+              <span class="badge" style="background: #ECFDF5; color: #059669; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 9999px;">
+                ${bList.length} Bantuan Diterima
+              </span>
+            ` : ''}
+          </div>
+
+          ${bList.length > 0 ? `
+            <div class="detail-aid-table-wrap">
+              <table class="detail-aid-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Nama / Jenis Bantuan</th>
+                    <th>Kategori</th>
+                    <th>Keterangan / Jumlah</th>
+                    <th>Petugas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${bList.map(b => `
+                    <tr>
+                      <td style="font-weight: 700; white-space: nowrap;">${formatDate(b.tanggal || b.tgl)}</td>
+                      <td style="font-weight: 800; color: #0F172A;">${b.namaBantuan || b.jenis || '-'}</td>
+                      <td>
+                        <span style="background: #E0F2FE; color: #0369A1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">
+                          ${b.kategori || 'Bantuan'}
+                        </span>
+                      </td>
+                      <td style="color: #475569;">${b.keterangan || (b.jumlah ? b.jumlah + ' ' + (b.satuan || '') : '-')}</td>
+                      <td style="color: #64748B; font-size: 11.5px;">${b.petugas || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="detail-aid-empty">
+              <div class="detail-aid-empty-left">
+                <span style="font-size: 24px;">📦</span>
+                <div>
+                  <div style="font-weight: 800; color: #1E293B;">Belum ada riwayat bantuan sosial untuk anak ini</div>
+                  <div style="font-size: 12px; color: #64748B;">Catat penyaluran sembako, alat bantu, atau nutrisi melalui menu Bantuan.</div>
+                </div>
+              </div>
+              <button type="button" class="btn-top-add" style="padding: 7px 16px; font-size: 12.5px;" onclick="openAddBantuanForAnak('${a.id}')">
+                + Catat Bantuan Baru
+              </button>
+            </div>
+          `}
+        </div>
+      </div>
     </div>
   `;
 
-  // Aktifkan tombol aksi di footer modal
-  const btnKta = document.getElementById('modal-view-btn-kta');
-  const btnSurat = document.getElementById('modal-view-btn-surat');
-  const btnEdit = document.getElementById('modal-view-btn-edit');
-  if (btnKta) {
-    btnKta.style.display = 'inline-flex';
-    btnKta.onclick = () => { closeModal('modal-view'); cetakKTAFor(a.id); };
-  }
-  if (btnSurat) {
-    btnSurat.style.display = 'inline-flex';
-    btnSurat.onclick = () => { closeModal('modal-view'); openSuratFor(a.id); };
-  }
-  if (btnEdit) {
-    btnEdit.style.display = 'inline-flex';
-    btnEdit.onclick = () => { closeModal('modal-view'); openEditAnggota(a.id); };
-  }
-
+  document.getElementById('view-content').innerHTML = html;
   document.getElementById('modal-view').classList.add('open');
 }
+
 
 async function deleteAnggota(id) {
   const confirmed = await showModernConfirm({

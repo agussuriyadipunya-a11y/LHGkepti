@@ -1395,21 +1395,8 @@
 
   <!-- MODAL: VIEW DETAIL ANGGOTA (DATA ANAK) -->
   <div id="modal-view" class="modal-overlay">
-    <div class="modal-dialog">
-      <div class="modal-header-clean">
-        <div>
-          <h3 class="modal-title">Detail Informasi Lengkap Anak</h3>
-          <p class="modal-subtitle">Biodata resmi anak disabilitas binaan Yayasan Lentera Hati Gurindam</p>
-        </div>
-        <button class="btn-close-modal" onclick="closeModal('modal-view')">&times;</button>
-      </div>
-      <div class="modal-body-clean" id="view-content"></div>
-      <div class="modal-footer-clean">
-        <button type="button" class="btn-sec" onclick="closeModal('modal-view')">Tutup</button>
-        <button type="button" id="modal-view-btn-surat" class="btn-outline-action" style="display:none;">📄 Cetak Berkas PDF</button>
-        <button type="button" id="modal-view-btn-kta" class="btn-outline-action" style="display:none;">💳 Cetak ID Card / KTA</button>
-        <button type="button" id="modal-view-btn-edit" class="btn-top-add" style="display:none;">✏️ Edit Data Anak</button>
-      </div>
+    <div class="modal-dialog modal-dialog-xl detail-modal-dialog">
+      <div class="detail-modal-scroll" id="view-content"></div>
     </div>
   </div>
 
