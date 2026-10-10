@@ -446,6 +446,7 @@ function initData() {
   }
 
   initUsersData();
+  if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
 }
 
 // ================= USER DATABASE & AUTHENTICATION =================
@@ -997,6 +998,144 @@ function renderChart() {
   });
 }
 
+// ================= PERHITUNGAN USIA ANAK OTOMATIS =================
+function hitungUsia(a) {
+  if (!a) return '-';
+  
+  if (typeof a === 'string') {
+    a = { ttl: a };
+  }
+
+  let birthDate = null;
+  const today = new Date();
+
+  // 1. Coba parse dari a.ttl terlebih dahulu
+  if (a.ttl && typeof a.ttl === 'string') {
+    const rawTtl = a.ttl.trim();
+    
+    // a. Format teks Indonesia: misal "Tanjungpinang, 15 Mei 2012" atau "15 Mei 2012"
+    const indoMatch = rawTtl.match(/(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/);
+    if (indoMatch) {
+      const d = parseInt(indoMatch[1], 10);
+      const mStr = indoMatch[2].toLowerCase();
+      const y = parseInt(indoMatch[3], 10);
+      
+      const bulanMap = {
+        'januari': 0, 'jan': 0, 'january': 0,
+        'februari': 1, 'feb': 1, 'february': 1,
+        'maret': 2, 'mar': 2, 'march': 2,
+        'april': 3, 'apr': 3,
+        'mei': 4, 'may': 4,
+        'juni': 5, 'jun': 5, 'june': 5,
+        'juli': 6, 'jul': 6, 'july': 6,
+        'agustus': 7, 'agu': 7, 'agt': 7, 'august': 7,
+        'september': 8, 'sep': 8, 'sept': 8,
+        'oktober': 9, 'okt': 9, 'october': 9,
+        'november': 10, 'nov': 10,
+        'desember': 11, 'des': 11, 'december': 11
+      };
+
+      if (bulanMap[mStr] !== undefined && d >= 1 && d <= 31 && y >= 1920 && y <= today.getFullYear()) {
+        birthDate = new Date(y, bulanMap[mStr], d);
+      }
+    }
+
+    // b. Format angka dengan pemisah: YYYY-MM-DD
+    if (!birthDate) {
+      const ymdMatch = rawTtl.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+      if (ymdMatch) {
+        const y = parseInt(ymdMatch[1], 10);
+        const m = parseInt(ymdMatch[2], 10) - 1;
+        const d = parseInt(ymdMatch[3], 10);
+        if (d >= 1 && d <= 31 && m >= 0 && m <= 11 && y >= 1920 && y <= today.getFullYear()) {
+          birthDate = new Date(y, m, d);
+        }
+      }
+    }
+
+    // c. Format angka dengan pemisah: DD-MM-YYYY
+    if (!birthDate) {
+      const dmyMatch = rawTtl.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+      if (dmyMatch) {
+        const d = parseInt(dmyMatch[1], 10);
+        const m = parseInt(dmyMatch[2], 10) - 1;
+        const y = parseInt(dmyMatch[3], 10);
+        if (d >= 1 && d <= 31 && m >= 0 && m <= 11 && y >= 1920 && y <= today.getFullYear()) {
+          birthDate = new Date(y, m, d);
+        }
+      }
+    }
+
+    // d. Hanya ada 4 digit tahun: misal "Tanjungpinang, 2012"
+    if (!birthDate) {
+      const yearMatch = rawTtl.match(/\b(19\d{2}|20\d{2})\b/);
+      if (yearMatch) {
+        const y = parseInt(yearMatch[1], 10);
+        if (y <= today.getFullYear()) {
+          birthDate = new Date(y, 6, 1);
+        }
+      }
+    }
+  }
+
+  // 2. Jika dari TTL belum berhasil, parse dari NIK Indonesia (16 digit)
+  if (!birthDate && a.nik) {
+    const cleanNik = String(a.nik).replace(/\D/g, '');
+    if (cleanNik.length === 16) {
+      let d = parseInt(cleanNik.substr(6, 2), 10);
+      if (d > 40) d -= 40; // Perempuan (kode tanggal + 40)
+      const m = parseInt(cleanNik.substr(8, 2), 10) - 1;
+      let y = parseInt(cleanNik.substr(10, 2), 10);
+      
+      const currentYear = today.getFullYear();
+      const current2Digit = currentYear % 100;
+      const fullYear = (y > current2Digit) ? (1900 + y) : (2000 + y);
+
+      if (d >= 1 && d <= 31 && m >= 0 && m <= 11 && fullYear >= 1920 && fullYear <= currentYear) {
+        birthDate = new Date(fullYear, m, d);
+      }
+    }
+  }
+
+  // 3. Hitung usia berdasarkan birthDate
+  if (birthDate && !isNaN(birthDate.getTime())) {
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const mDiff = today.getMonth() - birthDate.getMonth();
+    if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age > 0 && age < 120) {
+      return age + ' Thn';
+    } else if (age === 0) {
+      let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+      if (today.getDate() < birthDate.getDate()) months--;
+      return (months > 0 ? months : 1) + ' Bln';
+    }
+  }
+
+  // 4. Jika ada umur tersimpan yang valid (bukan '12 Thn' default dummy)
+  if (a.umur && typeof a.umur === 'string' && a.umur !== '12 Thn' && a.umur !== '-') {
+    return a.umur;
+  }
+
+  return '-';
+}
+
+function syncSemuaUmurAnggota() {
+  const all = DB.get('lhg_anggota', []);
+  let changed = false;
+  all.forEach(a => {
+    const u = hitungUsia(a);
+    if (u && u !== '-' && a.umur !== u) {
+      a.umur = u;
+      changed = true;
+    }
+  });
+  if (changed) {
+    DB.set('lhg_anggota', all);
+  }
+}
+
 // ================= DATA ANAK TABLE & FILTER =================
 let editId = null;
 let currentSearch = '';
@@ -1008,6 +1147,7 @@ function filterByDisabilitas(val) {
 }
 
 function renderAnggotaTable(search) {
+  syncSemuaUmurAnggota();
   if (search !== undefined) currentSearch = search;
   const list = DB.get('lhg_anggota').filter(a => {
     const s = (currentSearch || '').toLowerCase();
@@ -1053,7 +1193,7 @@ function renderAnggotaTable(search) {
             </div>
           ` : ''}
         </td>
-        <td style="text-align: center; font-weight: 600; color: #475569;">${a.umur || '12 Thn'}</td>
+        <td style="text-align: center; font-weight: 600; color: #475569;">${hitungUsia(a)}</td>
         <td style="text-align: center;">
           <span class="disability-pill ${getDisabilityBadgeClass(a.disabilitas)}">${a.disabilitas}</span>
           ${a.subDisabilitas ? `<div style="font-size: 9.5px; color: #64748B; margin-top: 2px;">${a.subDisabilitas}</div>` : ''}
@@ -1296,7 +1436,7 @@ function saveDirectInputAnak(event) {
     ibu: ibu,
     hubWali: hubWali,
     telWali: kontakWA,
-    umur: '12 Thn',
+    umur: hitungUsia({ ttl: ttl, nik: nik }),
     tglDaftar: new Date().toISOString().split('T')[0],
     foto: currentDirectPhotoBase64 || null
   };
@@ -1475,7 +1615,7 @@ function saveAnggota() {
     sekolah: f.sekolah.value,
     kelas: f.kelas.value || '101',
     status: f.status.value,
-    umur: '12 Thn',
+    umur: hitungUsia({ ttl: f.ttl ? f.ttl.value : '', nik: f.nik ? f.nik.value : '' }),
     foto: currentModalPhotoBase64 || null
   };
 
@@ -1513,7 +1653,8 @@ function viewAnggota(id) {
   const rows = [
     ['Nomor NIK', a.nik],
     ['Nomor Kartu Keluarga (KK)', a.noKk || '-'],
-    ['Tempat, Tanggal Lahir', a.ttl],
+    ['Tempat, Tanggal Lahir', a.ttl || '-'],
+    ['Usia / Umur', hitungUsia(a)],
     ['Jenis Kelamin', a.jk === 'L' ? 'Laki-laki' : 'Perempuan'],
     ['Alamat Lengkap', a.alamat || '-'],
     ['Kelurahan', a.kelurahan || '-'],
@@ -5225,7 +5366,7 @@ async function saveDirectInputAnak(e) {
     sekolah: sekolah || '-',
     kelas: kelas || '-',
     status: status,
-    umur: '12 Thn',
+    umur: hitungUsia({ ttl: ttl, nik: nik }),
     tglDaftar: new Date().toISOString().split('T')[0],
     foto: null
   };
@@ -6974,6 +7115,7 @@ async function syncWithSupabase(isManual) {
             const merged = Array.from(itemMap.values());
 
             localStorage.setItem(t, JSON.stringify(merged));
+            if (t === 'lhg_anggota' && typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
           } else {
             // Cloud is empty: push local data to cloud so other devices can access
             if (Array.isArray(localList) && localList.length > 0) {
