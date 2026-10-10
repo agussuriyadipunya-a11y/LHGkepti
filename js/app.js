@@ -1688,8 +1688,8 @@ function previewKTA() {
             </div>
 
             <div class="idcard-val idcard-val-nama" title="${a.nama}">${a.nama}</div>
-            <div class="idcard-val idcard-val-reg">NO. REG : ${noReg}</div>
-            <div class="idcard-val idcard-val-alamat" title="${fullAlamat}">${fullAlamat}</div>
+            <div class="idcard-val idcard-val-alamat ${fullAlamat.length > 34 ? 'is-long-addr' : ''}" title="${fullAlamat}">${fullAlamat}</div>
+            <div class="idcard-val idcard-val-reg">${isModern ? `NO. REG : ${noReg}` : noReg}</div>
             <div class="idcard-val idcard-val-tgl">${tglDaftar}</div>
           ` : `
             <!-- Sisi Belakang Mockup -->
@@ -1849,24 +1849,43 @@ function generateKTACanvas(id, callback) {
 
     const finishCanvas = () => {
       if (isOrig) {
-        // Legacy layout
+        // Legacy layout (Model Lama)
+        ctx.textAlign = 'left';
+        const dataStartX = 304;
+
+        // 1. Nama Lengkap (Huruf kapital, tegas & kontras tinggi)
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
+        const namaText = (a.nama || '').toUpperCase();
+        if (ctx.measureText(namaText).width > 330) {
+          ctx.font = 'bold 17px "Plus Jakarta Sans", Arial, sans-serif';
+        }
+        ctx.fillText(namaText, dataStartX, 661);
+
+        // 2. Alamat Lengkap (Multi-line auto-fit agar tampil lengkap tanpa terpotong)
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 15px "Plus Jakarta Sans", Arial, sans-serif';
+        const addrWidth = ctx.measureText(fullAlamat).width;
+        if (addrWidth <= 335) {
+          ctx.textBaseline = 'middle';
+          ctx.fillText(fullAlamat, dataStartX, 721);
+        } else {
+          ctx.font = 'bold 13px "Plus Jakarta Sans", Arial, sans-serif';
+          ctx.textBaseline = 'alphabetic';
+          drawKTATextWrapped(ctx, fullAlamat, dataStartX, 712, 335, 17, 2);
+        }
+
+        // 3. No. Registrasi (Langsung nomor registrasi tanpa duplikasi awalan)
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        const dataStartX = 328;
-        ctx.fillStyle = '#0F172A';
-        ctx.font = 'bold 19px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillText(a.nama.toUpperCase(), dataStartX, 661);
-
-        ctx.font = 'bold 16px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillStyle = '#1E293B';
-        ctx.fillText(fullAlamat, dataStartX, 721);
-
-        ctx.fillStyle = '#0F172A';
-        ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 22px "Plus Jakarta Sans", Arial, sans-serif';
         ctx.fillText(noReg, dataStartX, 781);
 
-        ctx.fillStyle = '#1E293B';
-        ctx.font = 'bold 16.5px "Plus Jakarta Sans", Arial, sans-serif';
+        // 4. Tanggal Terdaftar (Tegas & jelas)
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 17px "Plus Jakarta Sans", Arial, sans-serif';
         ctx.fillText(formatDate(a.tglDaftar), dataStartX, 841);
       } else {
         // Modern Redesign Layout (2026)
