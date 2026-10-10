@@ -2154,12 +2154,12 @@ function printSuratPendaftaranPDF(id) {
         .surat-col-colon { width: 20px; text-align: center; font-weight: 700; color: #000; }
         .surat-col-val { color: #000; }
         .surat-ttd-container { display: flex; justify-content: flex-end; margin-top: 32px; }
-        .surat-ttd-box { width: 260px; text-align: left; font-size: 12px; color: #000; }
+        .surat-ttd-box { width: 260px; text-align: center; font-size: 12px; color: #000; }
         .surat-ttd-date { margin-bottom: 4px; }
         .surat-ttd-org { font-weight: 800; margin-bottom: 4px; }
         .surat-ttd-role { margin-bottom: 6px; }
-        .surat-ttd-qr { margin: 6px 0 8px 0; }
-        .surat-qr-img { width: 76px; height: 76px; object-fit: contain; display: block; }
+        .surat-ttd-qr { display: flex; justify-content: center; align-items: center; margin: 6px 0 8px 0; }
+        .surat-qr-img { width: 76px; height: 76px; object-fit: contain; display: block; margin: 0 auto; }
         .surat-ttd-name { font-weight: 900; font-size: 12.5px; letter-spacing: 0.3px; text-decoration: none; }
       </style>
     </head>
