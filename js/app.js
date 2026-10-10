@@ -2215,8 +2215,22 @@ function buildSuratPendaftaranHTML(a) {
         Demikian surat keterangan bukti pendaftaran ini diterbitkan untuk dipergunakan sebagaimana mestinya. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.
       </p>
 
-      <!-- TANDA TANGAN (RIGHT ALIGNED) -->
+      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR TANGGAL) -->
       <div class="surat-ttd-container">
+        <div class="surat-foto-wrapper">
+          <div class="surat-foto-box">
+            ${a.foto ? `
+              <img src="${a.foto}" alt="Pas Foto ${a.nama}" class="surat-foto-img">
+            ` : `
+              <div class="surat-foto-empty">
+                <span class="surat-foto-empty-icon">📷</span>
+                <span class="surat-foto-empty-text">PAS FOTO</span>
+                <span class="surat-foto-empty-dim">3 x 4</span>
+              </div>
+            `}
+          </div>
+        </div>
+
         <div class="surat-ttd-box">
           <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
           <div class="surat-ttd-org">Yayasan Lentera Hati Gurindam</div>
@@ -2366,7 +2380,14 @@ function printSuratPendaftaranPDF(id) {
         .surat-col-label { width: 215px; font-weight: 700; color: #000; }
         .surat-col-colon { width: 20px; text-align: center; font-weight: 700; color: #000; }
         .surat-col-val { color: #000; }
-        .surat-ttd-container { display: flex; justify-content: flex-end; margin-top: 32px; }
+        .surat-ttd-container { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 32px; }
+        .surat-foto-wrapper { display: flex; flex-direction: column; align-items: flex-start; }
+        .surat-foto-box { width: 3cm; height: 4cm; border: 1px solid #000; background: #fff; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .surat-foto-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .surat-foto-empty { width: 100%; height: 100%; border: 1.5px dashed #94a3b8; box-sizing: border-box; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; text-align: center; }
+        .surat-foto-empty-icon { font-size: 20px; margin-bottom: 2px; }
+        .surat-foto-empty-text { font-size: 10px; font-weight: 800; color: #334155; letter-spacing: 0.5px; }
+        .surat-foto-empty-dim { font-size: 9px; font-weight: 700; color: #64748b; margin-top: 2px; }
         .surat-ttd-box { width: 260px; text-align: center; font-size: 12px; color: #000; }
         .surat-ttd-date { margin-bottom: 4px; }
         .surat-ttd-org { font-weight: 800; margin-bottom: 4px; }
