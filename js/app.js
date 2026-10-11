@@ -2409,7 +2409,7 @@ function previewKTA() {
     templateSrc = 'img/idcard-template-back.jpg';
     isBack = true;
   } else if (curModel === 'orig') {
-    templateSrc = 'img/idcard-template-orig.jpg?v=4';
+    templateSrc = 'img/idcard-template-orig.jpg?v=5';
     isModern = false;
   }
 
@@ -2563,7 +2563,7 @@ function generateKTACanvas(id, callback) {
     bgSrc = 'img/idcard-template-back.jpg';
     isBack = true;
   } else if (curModel === 'orig') {
-    bgSrc = 'img/idcard-template-orig.jpg?v=4';
+    bgSrc = 'img/idcard-template-orig.jpg?v=5';
     isOrig = true;
   }
 
@@ -2597,44 +2597,61 @@ function generateKTACanvas(id, callback) {
         const dataStartX = 330;
         const maxValWidth = 295;
 
-        // 1. Nama Lengkap (Huruf kapital, navy berwibawa, tegas & selaras KTA)
+        // 1. Nama Lengkap (Huruf kapital, navy berwibawa, tepat di tengah kapsul)
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#0A1E3C';
-        ctx.font = 'bold 20px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.font = 'bold 19px "Plus Jakarta Sans", Arial, sans-serif';
         const namaText = (a.nama || '').toUpperCase();
         if (ctx.measureText(namaText).width > maxValWidth) {
-          ctx.font = 'bold 17px "Plus Jakarta Sans", Arial, sans-serif';
+          ctx.font = 'bold 16.5px "Plus Jakarta Sans", Arial, sans-serif';
         }
         if (ctx.measureText(namaText).width > maxValWidth) {
-          ctx.font = 'bold 15px "Plus Jakarta Sans", Arial, sans-serif';
+          ctx.font = 'bold 14px "Plus Jakarta Sans", Arial, sans-serif';
         }
-        ctx.fillText(namaText, dataStartX, 661.5);
+        ctx.fillText(namaText, dataStartX, 660);
 
-        // 2. Alamat Lengkap (Multi-line auto-fit agar rapi & tidak menabrak titik dua)
+        // 2. Alamat Lengkap (Multi-line auto-fit, vertikal centered, tidak pernah menabrak garis bawah)
         ctx.fillStyle = '#1E293B';
-        ctx.font = 'bold 14px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.font = 'bold 13.5px "Plus Jakarta Sans", Arial, sans-serif';
         const addrWidth = ctx.measureText(fullAlamat).width;
         if (addrWidth <= maxValWidth) {
           ctx.textBaseline = 'middle';
-          ctx.fillText(fullAlamat, dataStartX, 721.5);
+          ctx.fillText(fullAlamat, dataStartX, 720);
         } else {
-          ctx.font = 'bold 12.5px "Plus Jakarta Sans", Arial, sans-serif';
-          ctx.textBaseline = 'alphabetic';
-          drawKTATextWrapped(ctx, fullAlamat, dataStartX, 712, maxValWidth, 16, 2);
+          ctx.font = 'bold 11px "Plus Jakarta Sans", Arial, sans-serif';
+          ctx.textBaseline = 'middle';
+          const words = fullAlamat.split(' ');
+          let line1 = '';
+          let line2 = '';
+          for (let w of words) {
+            const testLine = line1 ? (line1 + ' ' + w) : w;
+            if (ctx.measureText(testLine).width <= maxValWidth && !line2) {
+              line1 = testLine;
+            } else {
+              line2 = line2 ? (line2 + ' ' + w) : w;
+            }
+          }
+          if (line2) {
+            ctx.fillText(line1, dataStartX, 712);
+            ctx.fillText(line2, dataStartX, 727);
+          } else {
+            ctx.fillText(line1, dataStartX, 720);
+          }
         }
 
         // 3. No. Registrasi (Deep Emerald Navy, huruf renggang khas ID resmi)
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#065F46';
-        ctx.font = '900 20px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.font = '900 19px "Plus Jakarta Sans", Arial, sans-serif';
         const regFormatted = noReg.includes('-') ? noReg.replace('-', ' - ') : noReg;
-        ctx.fillText(regFormatted, dataStartX, 781.5);
+        ctx.fillText(regFormatted, dataStartX, 780);
 
         // 4. Tanggal Terdaftar (Tegas & jelas, slate dark selaras)
         ctx.fillStyle = '#1E293B';
-        ctx.font = 'bold 16px "Plus Jakarta Sans", Arial, sans-serif';
-        ctx.fillText(formatDate(a.tglDaftar), dataStartX, 841.5);
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 15px "Plus Jakarta Sans", Arial, sans-serif';
+        ctx.fillText(formatDate(a.tglDaftar), dataStartX, 840);
       } else {
         // Modern Redesign Layout (2026)
         // 1. Nama Lengkap

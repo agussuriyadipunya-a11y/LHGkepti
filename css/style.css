@@ -1510,7 +1510,7 @@ button, input, select, textarea {
   position: absolute;
   left: 48.5%;
   right: 8.5%;
-  height: 5.5%;
+  height: 5.2%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1536,26 +1536,30 @@ button, input, select, textarea {
 }
 
 .idcard-val-alamat {
-  top: 67.7%;
-  height: 5.5%;
-  font-size: 8.5px;
+  top: 67.9%;
+  height: 4.8%;
+  font-size: 8.2px;
   font-weight: 700;
   color: #1E293B;
-  line-height: 1.22;
+  line-height: 1.15;
   white-space: normal;
   word-break: break-word;
   overflow: hidden;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding-bottom: 0;
 }
 
 .idcard-val-alamat.is-long-addr {
-  font-size: 7.8px;
-  line-height: 1.15;
+  font-size: 7.2px;
+  line-height: 1.12;
 }
 
 .idcard-val-reg {
-  top: 73.6%;
+  top: 73.8%;
+  height: 5.0%;
   font-size: 12.5px;
   font-weight: 900;
   color: #065F46;
@@ -1566,7 +1570,8 @@ button, input, select, textarea {
 }
 
 .idcard-val-tgl {
-  top: 79.4%;
+  top: 79.7%;
+  height: 5.0%;
   font-size: 10.5px;
   font-weight: 800;
   color: #1E293B;
