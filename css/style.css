@@ -3095,12 +3095,12 @@ button, input, select, textarea {
   background: #FFFFFF !important;
 }
 
-.a4-export-page {
+.is-pdf-export-mode .a4-paper {
   width: 794px !important;
   max-width: 794px !important;
-  min-height: 1120px !important;
-  max-height: 1122px !important;
-  height: 1120px !important;
+  min-height: 1115px !important;
+  max-height: 1120px !important;
+  height: 1115px !important;
   box-sizing: border-box !important;
   padding: 38px 52px 30px 52px !important;
   margin: 0 !important;
@@ -3114,9 +3114,23 @@ button, input, select, textarea {
   break-inside: avoid !important;
 }
 
-.a4-export-page.a4-paper-page2 {
+.is-pdf-export-mode .a4-paper.a4-paper-page2 {
   margin-top: 0 !important;
   padding-top: 38px !important;
+}
+
+.is-pdf-export-mode .pdf-page-separator-preview {
+  display: none !important;
+}
+
+.is-pdf-export-mode .html2pdf__page-break {
+  display: block !important;
+  page-break-before: always !important;
+  break-before: page !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 .surat-lampiran-table {

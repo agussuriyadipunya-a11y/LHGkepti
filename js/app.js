@@ -2952,7 +2952,7 @@ function openSuratFor(id) {
   }
 }
 
-function buildSuratPendaftaranHTML(a, isExport = false) {
+function buildSuratPendaftaranHTML(a) {
   const customDateInput = document.getElementById('pdf-custom-date');
   // Tanggal terdaftar dan tanggal tanda tangan mengikuti data real saat disubmit / dipilih
   const realDate = (customDateInput && customDateInput.value) || a.tglDaftar || a.createdAt || getTodayLocalDateStr();
@@ -3003,18 +3003,12 @@ function buildSuratPendaftaranHTML(a, isExport = false) {
 
   let halaman2Html = '';
   if (hasHalaman2) {
-    const separatorHtml = isExport ? '' : `
+    halaman2Html = `
       <div class="pdf-page-separator-preview" data-html2canvas-ignore="true">
         <span>📄</span> HALAMAN 2: LAMPIRAN RIWAYAT PARTISIPASI PELATIHAN &amp; PERJALANAN BINAAN
       </div>
-    `;
-    const page2Class = isExport ? 'a4-paper a4-export-page a4-paper-page2' : 'a4-paper a4-paper-page2';
-    const page2Style = isExport ? 'style="width: 794px; min-height: 1120px; max-height: 1122px; height: 1120px; box-sizing: border-box; padding: 38px 52px 30px 52px; margin: 0; box-shadow: none; border-radius: 0; border: none; overflow: hidden; background: #ffffff; position: relative;"' : '';
-
-    halaman2Html = `
-      ${separatorHtml}
       <div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0; border: none;"></div>
-      <div class="${page2Class}" id="surat-a4-page2" ${page2Style}>
+      <div class="a4-paper a4-paper-page2" id="surat-a4-page2">
         <!-- KOP SURAT LAMPIRAN -->
         <div class="kop-surat">
           <div class="kop-logo-box">
@@ -3150,14 +3144,9 @@ function buildSuratPendaftaranHTML(a, isExport = false) {
     `;
   }
 
-  const wrapperClass = isExport ? 'is-pdf-export-mode' : '';
-  const wrapperStyle = isExport ? 'style="width: 794px; margin: 0; padding: 0; background: #ffffff;"' : '';
-  const page1Class = isExport ? 'a4-paper a4-export-page' : 'a4-paper';
-  const page1Style = isExport ? 'style="width: 794px; min-height: 1120px; max-height: 1122px; height: 1120px; box-sizing: border-box; padding: 38px 52px 30px 52px; margin: 0; box-shadow: none; border-radius: 0; border: none; overflow: hidden; background: #ffffff; position: relative;"' : '';
-
   return `
-    <div id="surat-a4-document-wrapper" class="${wrapperClass}" ${wrapperStyle}>
-      <div class="${page1Class}" id="surat-a4-document" ${page1Style}>
+    <div id="surat-a4-document-wrapper">
+      <div class="a4-paper" id="surat-a4-document">
         <!-- KOP SURAT YAYASAN -->
         <div class="kop-surat">
           <div class="kop-logo-box">
@@ -3343,21 +3332,14 @@ function downloadSuratPendaftaranPDF(id) {
   const prList = (typeof getPerjalananForAnak === 'function') ? getPerjalananForAnak(a.id) : [];
   const hasHalaman2 = (pList.length > 0 || prList.length > 0);
 
-  // Buat kontainer render PDF khusus (presisi A4 794x1120 px, tanpa shadow, margin 0)
-  const exportContainer = document.createElement('div');
-  exportContainer.id = 'surat-pdf-render-temp';
-  exportContainer.style.position = 'fixed';
-  exportContainer.style.left = '0';
-  exportContainer.style.top = '0';
-  exportContainer.style.width = '794px';
-  exportContainer.style.zIndex = '-99999';
-  exportContainer.style.opacity = '0.01';
-  exportContainer.style.pointerEvents = 'none';
-  exportContainer.style.background = '#FFFFFF';
-  exportContainer.innerHTML = buildSuratPendaftaranHTML(a, true);
-  document.body.appendChild(exportContainer);
+  const wrapper = document.getElementById('surat-a4-document-wrapper') || document.getElementById('surat-a4-document');
+  if (!wrapper) {
+    showToast('Elemen surat tidak ditemukan!', 'error');
+    return;
+  }
 
-  alignSuratFoto(exportContainer);
+  alignSuratFoto(wrapper);
+  wrapper.classList.add('is-pdf-export-mode');
 
   const opt = {
     margin: 0,
@@ -3368,7 +3350,7 @@ function downloadSuratPendaftaranPDF(id) {
     pagebreak: { mode: ['css', 'legacy'] }
   };
 
-  html2pdf().set(opt).from(exportContainer).toPdf().get('pdf').then(pdf => {
+  html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
     // JAMINAN MUTLAK: Batasi total halaman tepat 2 lembar (jika ada lampiran) atau tepat 1 lembar
     const maxAllowedPages = hasHalaman2 ? 2 : 1;
     while (pdf.internal.getNumberOfPages() > maxAllowedPages) {
@@ -3376,14 +3358,10 @@ function downloadSuratPendaftaranPDF(id) {
     }
     return pdf.save(filename);
   }).then(() => {
-    if (exportContainer && exportContainer.parentNode) {
-      exportContainer.parentNode.removeChild(exportContainer);
-    }
+    wrapper.classList.remove('is-pdf-export-mode');
     showToast(hasHalaman2 ? 'PDF berhasil diunduh (Pas 2 lembar rapi)!' : 'PDF berhasil diunduh (Pas 1 lembar A4 penuh)!', 'success');
   }).catch(err => {
-    if (exportContainer && exportContainer.parentNode) {
-      exportContainer.parentNode.removeChild(exportContainer);
-    }
+    wrapper.classList.remove('is-pdf-export-mode');
     console.error('Error generating PDF:', err);
     showToast('Gagal download PDF, beralih ke jendela cetak...');
     printSuratPendaftaranPDF(targetId);
