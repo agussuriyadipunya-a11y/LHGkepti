@@ -115,6 +115,9 @@ ALTER TABLE lhg_surat_keluar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lhg_arsip ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lhg_rencana_kegiatan ENABLE ROW LEVEL SECURITY;
 
+-- TABEL PENGGUNA (AKUN) & FOTO PROFIL
+ALTER TABLE lhg_users ADD COLUMN IF NOT EXISTS foto TEXT;
+
 CREATE POLICY "Public full access lhg_kegiatan" ON lhg_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Public full access lhg_foto" ON lhg_foto FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Public full access lhg_surat_masuk" ON lhg_surat_masuk FOR ALL TO anon USING (true) WITH CHECK (true);
@@ -536,13 +539,29 @@ function initUsersData() {
     users[idx].status = 'Aktif';
   }
 
+  // Sinkronkan foto profil tersimpan
+  try {
+    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    users.forEach(u => {
+      if (!u.foto && userPhotos[u.username]) {
+        u.foto = userPhotos[u.username];
+      }
+    });
+  } catch (e) {}
+
   localStorage.setItem('lhg_users', JSON.stringify(users));
 }
 
 function getAuthUser() {
   try {
     const raw = localStorage.getItem('lhg_auth_user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    if (!user.foto && userPhotos[user.username]) {
+      user.foto = userPhotos[user.username];
+    }
+    return user;
   } catch (e) {
     return null;
   }
@@ -672,7 +691,17 @@ function applyRoleUI(user) {
   // Sidebar profile
   setText('sidebar-user-name', user.nama || user.username);
   setText('sidebar-user-role', user.role);
-  setText('sidebar-user-avatar', getInitials(user.nama || user.username));
+  
+  const avatarEl = document.getElementById('sidebar-user-avatar');
+  if (avatarEl) {
+    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    const photoSrc = user.foto || userPhotos[user.username];
+    if (photoSrc) {
+      avatarEl.innerHTML = `<img src="${photoSrc}" alt="${escapeHtml(user.nama || user.username)}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`;
+    } else {
+      avatarEl.textContent = getInitials(user.nama || user.username);
+    }
+  }
 
   // Topbar role badge
   setText('topbar-role-text', user.role);
@@ -6253,23 +6282,33 @@ function renderManajemenUserTable(search, filterRole) {
   const currentUser = getAuthUser();
 
   if (tbody) {
+    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+
     tbody.innerHTML = users.map((u, i) => {
       const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
       const isSelf = currentUser && currentUser.username === u.username;
+      const fotoUrl = u.foto || userPhotos[u.username];
 
       return `
         <tr>
           <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
           <td>
-            <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${u.username}</span>
+            <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${escapeHtml(u.username)}</span>
             ${isSelf ? '<span style="margin-left: 6px; font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
           </td>
           <td>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div style="width: 32px; height: 32px; border-radius: 50%; background: #F1F5F9; color: #334155; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px;">
-                ${getInitials(u.nama || u.username)}
+            <div style="display: flex; align-items: center; gap: 10px;">
+              ${fotoUrl ? `
+                <img src="${fotoUrl}" alt="${escapeHtml(u.nama || u.username)}" class="table-user-img" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #0D7A84; flex-shrink: 0; box-shadow: 0 2px 6px rgba(13, 122, 132, 0.2);">
+              ` : `
+                <div class="table-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #E6F4F5, #CFE8EC); color: #0D7A84; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1.5px solid #B3DEE2; flex-shrink: 0;">
+                  ${getInitials(u.nama || u.username)}
+                </div>
+              `}
+              <div style="min-width: 0;">
+                <strong style="color: #0F172A; font-size: 13.5px; display: block; line-height: 1.25;">${escapeHtml(u.nama || '-')}</strong>
+                <span style="font-size: 11px; color: #64748B;">NIK: ${escapeHtml(u.username)}</span>
               </div>
-              <strong style="color: #0F172A;">${u.nama || '-'}</strong>
             </div>
           </td>
           <td style="text-align: center;">
@@ -6281,9 +6320,21 @@ function renderManajemenUserTable(search, filterRole) {
           <td style="font-size: 12px; color: #64748B;">${u.createdAt || '-'}</td>
           <td style="text-align: center;">
             <div class="action-buttons-group">
-              <button class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna">✏️</button>
+              <button class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna & Foto Profil">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
               ${!isSelf && u.username !== '2172041908850002' ? `
-                <button class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">🗑️</button>
+                <button class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
               ` : ''}
             </div>
           </td>
@@ -6298,8 +6349,92 @@ function filterUsersByRole(role) {
   renderManajemenUserTable(search, role);
 }
 
+// ==============================================================================
+// MANAJEMEN FOTO PROFIL PENGGUNA (AVATAR)
+// ==============================================================================
+let currentUserPhotoBase64 = null;
+
+function handleUserPhotoSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Harap pilih file gambar (JPG, PNG, WebP)!', 'error');
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Ukuran foto maksimal 5 MB!', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    compressImage(e.target.result, 300, 300, 0.85, function(compressedBase64) {
+      currentUserPhotoBase64 = compressedBase64;
+      updateUserPhotoUI(compressedBase64);
+      showToast('Foto profil berhasil dimuat!', 'success');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateUserPhotoUI(base64, fallbackInitials) {
+  const imgEl = document.getElementById('user-photo-preview-img');
+  const placeholderEl = document.getElementById('user-photo-placeholder');
+  const initialsEl = document.getElementById('user-photo-initials-preview');
+  const btnRemove = document.getElementById('btn-remove-user-photo');
+
+  if (base64) {
+    if (imgEl) {
+      imgEl.src = base64;
+      imgEl.style.display = 'block';
+    }
+    if (placeholderEl) placeholderEl.style.display = 'none';
+    if (btnRemove) btnRemove.style.display = 'inline-flex';
+  } else {
+    if (imgEl) {
+      imgEl.src = '';
+      imgEl.style.display = 'none';
+    }
+    if (placeholderEl) placeholderEl.style.display = 'flex';
+    if (btnRemove) btnRemove.style.display = 'none';
+
+    const namaInput = document.getElementById('user-nama');
+    const uInput = document.getElementById('user-username');
+    const currentName = (namaInput && namaInput.value.trim()) || (uInput && uInput.value.trim()) || '';
+    if (initialsEl) {
+      initialsEl.textContent = fallbackInitials || (currentName ? getInitials(currentName) : 'SA');
+    }
+  }
+}
+
+function removeUserPhoto() {
+  currentUserPhotoBase64 = null;
+  const inputEl = document.getElementById('user-photo-input');
+  if (inputEl) inputEl.value = '';
+  updateUserPhotoUI(null);
+  showToast('Foto profil dihapus dari form.', 'info');
+}
+
+// Pasang live preview inisial saat mengetik nama user
+document.addEventListener('DOMContentLoaded', () => {
+  const userNamaInput = document.getElementById('user-nama');
+  if (userNamaInput) {
+    userNamaInput.addEventListener('input', () => {
+      if (!currentUserPhotoBase64) {
+        const initialsEl = document.getElementById('user-photo-initials-preview');
+        if (initialsEl) {
+          initialsEl.textContent = getInitials(userNamaInput.value.trim() || 'SA');
+        }
+      }
+    });
+  }
+});
+
 function openAddUser() {
   userEditTarget = null;
+  currentUserPhotoBase64 = null;
   setText('modal-user-title', 'Tambah Pengguna Baru');
   document.getElementById('user-edit-username').value = '';
   document.getElementById('user-username').value = '';
@@ -6311,6 +6446,11 @@ function openAddUser() {
   document.getElementById('user-password').required = true;
   document.getElementById('user-password').placeholder = 'Masukkan Kata Sandi';
   setText('user-password-hint', 'Kata sandi minimal 6 karakter.');
+
+  const fileInput = document.getElementById('user-photo-input');
+  if (fileInput) fileInput.value = '';
+  updateUserPhotoUI(null, 'SA');
+
   document.getElementById('modal-user').classList.add('open');
 }
 
@@ -6318,6 +6458,9 @@ function openEditUser(username) {
   const users = DB.get('lhg_users', []);
   const u = users.find(x => x.username === username);
   if (!u) return;
+
+  const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+  currentUserPhotoBase64 = u.foto || userPhotos[username] || null;
 
   userEditTarget = username;
   setText('modal-user-title', `Edit Pengguna: ${u.nama || u.username}`);
@@ -6331,6 +6474,11 @@ function openEditUser(username) {
   document.getElementById('user-password').required = false;
   document.getElementById('user-password').placeholder = 'Kosongkan jika tidak ingin mengubah kata sandi';
   setText('user-password-hint', 'Kosongkan jika password tetap sama.');
+
+  const fileInput = document.getElementById('user-photo-input');
+  if (fileInput) fileInput.value = '';
+  updateUserPhotoUI(currentUserPhotoBase64, getInitials(u.nama || u.username));
+
   document.getElementById('modal-user').classList.add('open');
 }
 
@@ -6350,6 +6498,7 @@ function saveUser() {
   }
 
   const users = DB.get('lhg_users', []);
+  const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
 
   if (isEditing) {
     removeDeletedUser(username);
@@ -6358,17 +6507,27 @@ function saveUser() {
       users[idx].nama = nama;
       users[idx].role = role;
       users[idx].status = status;
+      users[idx].foto = currentUserPhotoBase64 || null;
       if (password) {
         users[idx].password = password;
       }
       DB.set('lhg_users', users);
 
-      // If updating current user's profile
+      // Simpan foto di local storage terpisah agar aman
+      if (currentUserPhotoBase64) {
+        userPhotos[username] = currentUserPhotoBase64;
+      } else {
+        delete userPhotos[username];
+      }
+      localStorage.setItem('lhg_user_photos', JSON.stringify(userPhotos));
+
+      // Jika memperbarui profil user yang sedang login saat ini
       const currentUser = getAuthUser();
       if (currentUser && currentUser.username === userEditTarget) {
         currentUser.nama = nama;
         currentUser.role = role;
         currentUser.status = status;
+        currentUser.foto = currentUserPhotoBase64 || null;
         localStorage.setItem('lhg_auth_user', JSON.stringify(currentUser));
         applyRoleUI(currentUser);
       }
@@ -6393,9 +6552,16 @@ function saveUser() {
       nama: nama,
       role: role,
       status: status,
+      foto: currentUserPhotoBase64 || null,
       createdAt: new Date().toISOString().split('T')[0]
     });
     DB.set('lhg_users', users);
+
+    if (currentUserPhotoBase64) {
+      userPhotos[username] = currentUserPhotoBase64;
+      localStorage.setItem('lhg_user_photos', JSON.stringify(userPhotos));
+    }
+
     showToast(`Pengguna baru ${username} (${role}) berhasil ditambahkan!`, 'success');
   }
 
@@ -6430,6 +6596,15 @@ async function deleteUser(username) {
   // 2. Hapus dari database lokal
   const users = DB.get('lhg_users', []).filter(x => x.username !== username);
   localStorage.setItem('lhg_users', JSON.stringify(users));
+
+  // Hapus foto profil tersimpan jika ada
+  try {
+    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    if (userPhotos[username]) {
+      delete userPhotos[username];
+      localStorage.setItem('lhg_user_photos', JSON.stringify(userPhotos));
+    }
+  } catch (e) {}
 
   // 3. Hapus langsung dari Supabase Cloud agar tidak kembali saat refresh atau sync
   try {
@@ -8560,6 +8735,7 @@ function fromSupabaseRow(table, row) {
       nama: row.nama,
       role: row.role,
       status: row.status,
+      foto: row.foto || null,
       createdAt: row.created_at ? row.created_at.split('T')[0] : (row.createdAt || '-')
     };
   }
@@ -8741,11 +8917,19 @@ async function syncWithSupabase(isManual) {
               .filter(u => !deleted.includes(u.username));
 
             // 3. Gabungkan cloud dan local (data local & perubahan tidak akan tertimpa ke default)
+            const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
             const userMap = new Map();
             activeCloud.forEach(r => {
-              userMap.set(r.username, fromSupabaseRow('lhg_users', r));
+              const uObj = fromSupabaseRow('lhg_users', r);
+              if (!uObj.foto && userPhotos[uObj.username]) {
+                uObj.foto = userPhotos[uObj.username];
+              }
+              userMap.set(r.username, uObj);
             });
             localUsers.forEach(u => {
+              if (!u.foto && userPhotos[u.username]) {
+                u.foto = userPhotos[u.username];
+              }
               userMap.set(u.username, u);
             });
 
@@ -8757,14 +8941,23 @@ async function syncWithSupabase(isManual) {
                 nama: 'KAMARIDA',
                 role: 'Superadmin',
                 status: 'Aktif',
-                createdAt: '2024-01-01'
+                createdAt: '2024-01-01',
+                foto: userPhotos['2172041908850002'] || null
               });
             }
 
             const finalUsers = Array.from(userMap.values());
             localStorage.setItem('lhg_users', JSON.stringify(finalUsers));
 
-            // Sync semua akun aktif ke cloud
+            // Perbarui foto user login saat ini jika ada perubahan
+            const curAuth = getAuthUser();
+            if (curAuth && userMap.has(curAuth.username)) {
+              const updatedAuth = userMap.get(curAuth.username);
+              localStorage.setItem('lhg_auth_user', JSON.stringify(updatedAuth));
+              applyRoleUI(updatedAuth);
+            }
+
+            // Sync semua akun aktif ke cloud (tanpa kolom foto jika tabel cloud belum ada kolom foto)
             const rowsToUpsert = finalUsers.map(item => toSupabaseRow('lhg_users', item));
             if (rowsToUpsert.length > 0) {
               await SupabaseAPI.upsert('lhg_users', rowsToUpsert);
