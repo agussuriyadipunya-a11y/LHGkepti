@@ -3086,6 +3086,39 @@ button, input, select, textarea {
   font-size: 15px;
 }
 
+/* FORMAT KHUSUS EKSPOR PDF A4 (PRESISI 2 LEMBAR TANPA LEPASAN) */
+.is-pdf-export-mode {
+  width: 794px !important;
+  max-width: 794px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #FFFFFF !important;
+}
+
+.a4-export-page {
+  width: 794px !important;
+  max-width: 794px !important;
+  min-height: 1120px !important;
+  max-height: 1122px !important;
+  height: 1120px !important;
+  box-sizing: border-box !important;
+  padding: 38px 52px 30px 52px !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  background: #FFFFFF !important;
+  position: relative !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.a4-export-page.a4-paper-page2 {
+  margin-top: 0 !important;
+  padding-top: 38px !important;
+}
+
 .surat-lampiran-table {
   width: 100%;
   border-collapse: collapse;
@@ -4434,6 +4467,7 @@ body.drawer-open {
     box-shadow: none !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-height: auto !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }

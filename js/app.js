@@ -2947,7 +2947,7 @@ function openSuratFor(id) {
   }
 }
 
-function buildSuratPendaftaranHTML(a) {
+function buildSuratPendaftaranHTML(a, isExport = false) {
   const customDateInput = document.getElementById('pdf-custom-date');
   // Tanggal terdaftar dan tanggal tanda tangan mengikuti data real saat disubmit / dipilih
   const realDate = (customDateInput && customDateInput.value) || a.tglDaftar || a.createdAt || getTodayLocalDateStr();
@@ -2998,12 +2998,18 @@ function buildSuratPendaftaranHTML(a) {
 
   let halaman2Html = '';
   if (hasHalaman2) {
-    halaman2Html = `
+    const separatorHtml = isExport ? '' : `
       <div class="pdf-page-separator-preview" data-html2canvas-ignore="true">
         <span>📄</span> HALAMAN 2: LAMPIRAN RIWAYAT PARTISIPASI PELATIHAN &amp; PERJALANAN BINAAN
       </div>
-      <div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0;"></div>
-      <div class="a4-paper a4-paper-page2" id="surat-a4-page2">
+    `;
+    const page2Class = isExport ? 'a4-paper a4-export-page a4-paper-page2' : 'a4-paper a4-paper-page2';
+    const page2Style = isExport ? 'style="width: 794px; min-height: 1120px; max-height: 1122px; height: 1120px; box-sizing: border-box; padding: 38px 52px 30px 52px; margin: 0; box-shadow: none; border-radius: 0; border: none; overflow: hidden; background: #ffffff; position: relative;"' : '';
+
+    halaman2Html = `
+      ${separatorHtml}
+      <div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0; border: none;"></div>
+      <div class="${page2Class}" id="surat-a4-page2" ${page2Style}>
         <!-- KOP SURAT LAMPIRAN -->
         <div class="kop-surat">
           <div class="kop-logo-box">
@@ -3139,9 +3145,14 @@ function buildSuratPendaftaranHTML(a) {
     `;
   }
 
+  const wrapperClass = isExport ? 'is-pdf-export-mode' : '';
+  const wrapperStyle = isExport ? 'style="width: 794px; margin: 0; padding: 0; background: #ffffff;"' : '';
+  const page1Class = isExport ? 'a4-paper a4-export-page' : 'a4-paper';
+  const page1Style = isExport ? 'style="width: 794px; min-height: 1120px; max-height: 1122px; height: 1120px; box-sizing: border-box; padding: 38px 52px 30px 52px; margin: 0; box-shadow: none; border-radius: 0; border: none; overflow: hidden; background: #ffffff; position: relative;"' : '';
+
   return `
-    <div id="surat-a4-document-wrapper">
-      <div class="a4-paper" id="surat-a4-document">
+    <div id="surat-a4-document-wrapper" class="${wrapperClass}" ${wrapperStyle}>
+      <div class="${page1Class}" id="surat-a4-document" ${page1Style}>
         <!-- KOP SURAT YAYASAN -->
         <div class="kop-surat">
           <div class="kop-logo-box">
@@ -3312,12 +3323,6 @@ function downloadSuratPendaftaranPDF(id) {
     previewSuratPendaftaran();
   }
 
-  const element = document.getElementById('surat-a4-document-wrapper') || document.getElementById('surat-a4-document');
-  if (!element) {
-    showToast('Elemen surat tidak ditemukan!', 'error');
-    return;
-  }
-
   if (typeof html2pdf === 'undefined') {
     showToast('Pustaka pembuat PDF sedang dimuat, beralih ke Cetak A4...', 'warning');
     printSuratPendaftaranPDF(targetId);
@@ -3333,8 +3338,24 @@ function downloadSuratPendaftaranPDF(id) {
   const prList = (typeof getPerjalananForAnak === 'function') ? getPerjalananForAnak(a.id) : [];
   const hasHalaman2 = (pList.length > 0 || prList.length > 0);
 
+  // Buat kontainer render PDF khusus (presisi A4 794x1120 px, tanpa shadow, margin 0)
+  const exportContainer = document.createElement('div');
+  exportContainer.id = 'surat-pdf-render-temp';
+  exportContainer.style.position = 'fixed';
+  exportContainer.style.left = '0';
+  exportContainer.style.top = '0';
+  exportContainer.style.width = '794px';
+  exportContainer.style.zIndex = '-99999';
+  exportContainer.style.opacity = '0.01';
+  exportContainer.style.pointerEvents = 'none';
+  exportContainer.style.background = '#FFFFFF';
+  exportContainer.innerHTML = buildSuratPendaftaranHTML(a, true);
+  document.body.appendChild(exportContainer);
+
+  alignSuratFoto(exportContainer);
+
   const opt = {
-    margin: [8, 12, 8, 12],
+    margin: 0,
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
@@ -3342,11 +3363,22 @@ function downloadSuratPendaftaranPDF(id) {
     pagebreak: { mode: ['css', 'legacy'] }
   };
 
-  alignSuratFoto(element);
-
-  html2pdf().set(opt).from(element).save().then(() => {
-    showToast(hasHalaman2 ? 'PDF berhasil diunduh (2 lembar: Surat & Lampiran Kegiatan)!' : 'PDF berhasil diunduh (1 lembar A4 penuh)!', 'success');
+  html2pdf().set(opt).from(exportContainer).toPdf().get('pdf').then(pdf => {
+    // JAMINAN MUTLAK: Batasi total halaman tepat 2 lembar (jika ada lampiran) atau tepat 1 lembar
+    const maxAllowedPages = hasHalaman2 ? 2 : 1;
+    while (pdf.internal.getNumberOfPages() > maxAllowedPages) {
+      pdf.deletePage(pdf.internal.getNumberOfPages());
+    }
+    return pdf.save(filename);
+  }).then(() => {
+    if (exportContainer && exportContainer.parentNode) {
+      exportContainer.parentNode.removeChild(exportContainer);
+    }
+    showToast(hasHalaman2 ? 'PDF berhasil diunduh (Pas 2 lembar rapi)!' : 'PDF berhasil diunduh (Pas 1 lembar A4 penuh)!', 'success');
   }).catch(err => {
+    if (exportContainer && exportContainer.parentNode) {
+      exportContainer.parentNode.removeChild(exportContainer);
+    }
     console.error('Error generating PDF:', err);
     showToast('Gagal download PDF, beralih ke jendela cetak...');
     printSuratPendaftaranPDF(targetId);
@@ -3390,17 +3422,19 @@ function printSuratPendaftaranPDF(id) {
           print-color-adjust: exact;
         }
         .a4-paper {
-          width: 100%;
-          max-width: 100%;
-          margin: 0;
-          padding: 4px 0 0 0;
-          box-shadow: none;
-          page-break-inside: avoid;
-          break-inside: avoid;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-height: auto !important;
+          margin: 0 !important;
+          padding: 4px 0 0 0 !important;
+          box-shadow: none !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
         }
         .a4-paper-page2 {
           page-break-before: always !important;
           break-before: page !important;
+          margin-top: 0 !important;
           padding-top: 8px !important;
         }
         .pdf-page-separator-preview {
