@@ -2409,7 +2409,7 @@ function previewKTA() {
     templateSrc = 'img/idcard-template-back.jpg';
     isBack = true;
   } else if (curModel === 'orig') {
-    templateSrc = 'img/idcard-template-orig.jpg?v=3';
+    templateSrc = 'img/idcard-template-orig.jpg?v=4';
     isModern = false;
   }
 
@@ -2563,7 +2563,7 @@ function generateKTACanvas(id, callback) {
     bgSrc = 'img/idcard-template-back.jpg';
     isBack = true;
   } else if (curModel === 'orig') {
-    bgSrc = 'img/idcard-template-orig.jpg?v=3';
+    bgSrc = 'img/idcard-template-orig.jpg?v=4';
     isOrig = true;
   }
 
