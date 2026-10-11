@@ -4,6 +4,22 @@
 'use strict';
 
 // ==============================================================================
+// GLOBAL HTML SANITIZER HELPER (XSS PROTECTION)
+// ==============================================================================
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
+
+// ==============================================================================
 // SUPABASE ONLINE DATABASE INTEGRATION CONFIGURATION
 // ==============================================================================
 const SUPABASE_CONFIG = {
@@ -500,29 +516,26 @@ function initUsersData() {
   const deletedUsers = getDeletedUsers();
   let users = DB.get('lhg_users', []);
 
-  if (!isSetupDone) {
-    // Hanya saat inisialisasi awal sekali jika data users benar-benar kosong
-    if (!users || users.length === 0) {
-      users = [
-        defaultSuperadmin,
-        {
-          username: 'admin',
-          password: 'admin123',
-          nama: 'Admin Pelayanan LHG',
-          role: 'Admin',
-          status: 'Aktif',
-          createdAt: '2024-02-01'
-        },
-        {
-          username: 'petugas',
-          password: 'petugas123',
-          nama: 'Petugas Pendataan Lapangan',
-          role: 'Petugas',
-          status: 'Aktif',
-          createdAt: '2024-03-01'
-        }
-      ];
-    }
+  if (!users || users.length === 0) {
+    users = [
+      defaultSuperadmin,
+      {
+        username: 'admin',
+        password: 'admin123',
+        nama: 'Admin Pelayanan LHG',
+        role: 'Admin',
+        status: 'Aktif',
+        createdAt: '2024-02-01'
+      },
+      {
+        username: 'petugas',
+        password: 'petugas123',
+        nama: 'Petugas Pendataan Lapangan',
+        role: 'Petugas',
+        status: 'Aktif',
+        createdAt: '2024-03-01'
+      }
+    ];
     localStorage.setItem('lhg_users_setup_v3', '1');
   }
 
@@ -6249,24 +6262,30 @@ async function saveDirectInputAnak(e) {
 let userEditTarget = null;
 
 function renderManajemenUserTable(search, filterRole) {
-  search = (search || '').toLowerCase().trim();
-  filterRole = filterRole || (document.getElementById('user-filter-role') ? document.getElementById('user-filter-role').value : '');
+  try {
+    search = (search || '').toLowerCase().trim();
+    filterRole = filterRole || (document.getElementById('user-filter-role') ? document.getElementById('user-filter-role').value : '');
 
-  let users = DB.get('lhg_users', []);
-  if (search) {
-    users = users.filter(u => 
-      (u.username && u.username.toLowerCase().includes(search)) ||
-      (u.nama && u.nama.toLowerCase().includes(search))
-    );
-  }
-  if (filterRole) {
-    users = users.filter(u => u.role === filterRole);
-  }
+    let users = DB.get('lhg_users', []);
+    if (!users || users.length === 0) {
+      initUsersData();
+      users = DB.get('lhg_users', []);
+    }
 
-  const tbody = document.getElementById('user-tbody');
+    if (search) {
+      users = users.filter(u => 
+        (u.username && u.username.toLowerCase().includes(search)) ||
+        (u.nama && u.nama.toLowerCase().includes(search))
+      );
+    }
+    if (filterRole) {
+      users = users.filter(u => u.role === filterRole);
+    }
 
-  if (users.length === 0) {
-    if (tbody) {
+    const tbody = document.getElementById('user-tbody');
+    if (!tbody) return;
+
+    if (users.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" style="text-align: center; padding: 40px; color: #64748B;">
@@ -6275,19 +6294,20 @@ function renderManajemenUserTable(search, filterRole) {
           </td>
         </tr>
       `;
+      return;
     }
-    return;
-  }
 
-  const currentUser = getAuthUser();
-
-  if (tbody) {
-    const userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    const currentUser = getAuthUser();
+    let userPhotos = {};
+    try {
+      userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
+    } catch(e) {}
 
     tbody.innerHTML = users.map((u, i) => {
       const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
       const isSelf = currentUser && currentUser.username === u.username;
       const fotoUrl = u.foto || userPhotos[u.username];
+      const displayName = u.nama || u.username || '-';
 
       return `
         <tr>
@@ -6299,14 +6319,14 @@ function renderManajemenUserTable(search, filterRole) {
           <td>
             <div style="display: flex; align-items: center; gap: 10px;">
               ${fotoUrl ? `
-                <img src="${fotoUrl}" alt="${escapeHtml(u.nama || u.username)}" class="table-user-img" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #0D7A84; flex-shrink: 0; box-shadow: 0 2px 6px rgba(13, 122, 132, 0.2);">
+                <img src="${fotoUrl}" alt="${escapeHtml(displayName)}" class="table-user-img" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #0D7A84; flex-shrink: 0; box-shadow: 0 2px 6px rgba(13, 122, 132, 0.2);" onerror="this.style.display='none';">
               ` : `
                 <div class="table-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #E6F4F5, #CFE8EC); color: #0D7A84; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1.5px solid #B3DEE2; flex-shrink: 0;">
-                  ${getInitials(u.nama || u.username)}
+                  ${getInitials(displayName)}
                 </div>
               `}
               <div style="min-width: 0;">
-                <strong style="color: #0F172A; font-size: 13.5px; display: block; line-height: 1.25;">${escapeHtml(u.nama || '-')}</strong>
+                <strong style="color: #0F172A; font-size: 13.5px; display: block; line-height: 1.25;">${escapeHtml(displayName)}</strong>
                 <span style="font-size: 11px; color: #64748B;">NIK: ${escapeHtml(u.username)}</span>
               </div>
             </div>
@@ -6341,6 +6361,8 @@ function renderManajemenUserTable(search, filterRole) {
         </tr>
       `;
     }).join('');
+  } catch (err) {
+    console.error('Error in renderManajemenUserTable:', err);
   }
 }
 
