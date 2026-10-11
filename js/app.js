@@ -20,166 +20,49 @@ if (typeof window !== 'undefined') {
 }
 
 // ==============================================================================
-// SUPABASE ONLINE DATABASE INTEGRATION CONFIGURATION
+// FIREBASE REALTIME DATABASE CONFIGURATION & INTEGRATION
 // ==============================================================================
-const SUPABASE_CONFIG = {
-  url: 'https://eimjtamfuyeyhqhfumur.supabase.co',
-  publishableKey: 'sb_publishable_QJjkH8m-pQeJQai4R2OQCw_trYdYVeq',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpbWp0YW1mdXlleWhxaGZ1bXVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMTM1NDEsImV4cCI6MjEwNDg4OTU0MX0.yfvkJzKd1paoDELrcZZzcpUskO8tdcR83FhXjeTotCY'
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC1Hv9zJFsl3mFBGD9EmEzxF4PTzyT5Nqc",
+  authDomain: "lhgkepri.firebaseapp.com",
+  databaseURL: "https://lhgkepri-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "lhgkepri",
+  storageBucket: "lhgkepri.firebasestorage.app",
+  messagingSenderId: "494253533365",
+  appId: "1:494253533365:web:b823f3881e6986344276fc"
 };
 
-// DDL QUERY SCHEMA FOR SUPABASE SETUP
-const SUPABASE_SETUP_SQL = `-- ==============================================================================
--- LENTERA HATI GURINDAM - AKTIVASI TABEL ONLINE SUPABASE
--- ==============================================================================
+// Inisialisasi Firebase App
+let firebaseApp = null;
+let firebaseDb = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+      firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+      firebaseApp = firebase.app();
+    }
+    firebaseDb = firebase.database();
+  }
+} catch (e) {
+  console.warn('Firebase init warning:', e);
+}
 
--- 1. TABEL AGENDA KEGIATAN
-CREATE TABLE IF NOT EXISTS lhg_kegiatan (
-    id BIGINT PRIMARY KEY,
-    judul VARCHAR(255) NOT NULL,
-    tanggal DATE NOT NULL,
-    lokasi VARCHAR(255),
-    peserta INT DEFAULT 0,
-    deskripsi TEXT,
-    status VARCHAR(50) DEFAULT 'Selesai',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. TABEL GALERI FOTO KEGIATAN
-CREATE TABLE IF NOT EXISTS lhg_foto (
-    id BIGINT PRIMARY KEY,
-    judul VARCHAR(255) NOT NULL,
-    tanggal DATE,
-    kategori VARCHAR(100),
-    deskripsi TEXT,
-    url TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 3. TABEL SURAT MASUK
-CREATE TABLE IF NOT EXISTS lhg_surat_masuk (
-    id BIGINT PRIMARY KEY,
-    nomor VARCHAR(100) NOT NULL,
-    tanggal DATE NOT NULL,
-    pengirim VARCHAR(255) NOT NULL,
-    perihal TEXT NOT NULL,
-    keterangan TEXT,
-    status VARCHAR(50) DEFAULT 'Diproses',
-    file_name VARCHAR(255),
-    file_url TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
-ALTER TABLE lhg_surat_masuk ADD COLUMN IF NOT EXISTS file_url TEXT;
-
--- 4. TABEL SURAT KELUAR
-CREATE TABLE IF NOT EXISTS lhg_surat_keluar (
-    id BIGINT PRIMARY KEY,
-    nomor VARCHAR(100) NOT NULL,
-    tanggal DATE NOT NULL,
-    tujuan VARCHAR(255) NOT NULL,
-    perihal TEXT NOT NULL,
-    keterangan TEXT,
-    status VARCHAR(50) DEFAULT 'Terkirim',
-    file_name VARCHAR(255),
-    file_url TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_name VARCHAR(255);
-ALTER TABLE lhg_surat_keluar ADD COLUMN IF NOT EXISTS file_url TEXT;
-
--- 5. TABEL ARSIP BERKAS YAYASAN
-CREATE TABLE IF NOT EXISTS lhg_arsip (
-    id BIGINT PRIMARY KEY,
-    nomor VARCHAR(150),
-    nama VARCHAR(255) NOT NULL,
-    kategori VARCHAR(100) NOT NULL,
-    tanggal DATE,
-    lokasi_fisik VARCHAR(255),
-    penerbit VARCHAR(255),
-    keterangan TEXT,
-    file_url TEXT,
-    file_name VARCHAR(255),
-    uploaded_by VARCHAR(255),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 6. TABEL RENCANA KEGIATAN & PROGRAM KERJA
-CREATE TABLE IF NOT EXISTS lhg_rencana_kegiatan (
-    id BIGINT PRIMARY KEY,
-    judul VARCHAR(255) NOT NULL,
-    kategori VARCHAR(100) NOT NULL,
-    penanggung_jawab VARCHAR(255),
-    target_peserta VARCHAR(255),
-    lokasi VARCHAR(255),
-    tgl_mulai DATE,
-    tgl_selesai DATE,
-    estimasi_biaya VARCHAR(100),
-    sumber_dana VARCHAR(150),
-    prioritas VARCHAR(50) DEFAULT 'Sedang',
-    status VARCHAR(50) DEFAULT 'Draf / Pengajuan',
-    tujuan TEXT,
-    deskripsi TEXT,
-    penyusun VARCHAR(255),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE lhg_kegiatan ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lhg_foto ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lhg_surat_masuk ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lhg_surat_keluar ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lhg_arsip ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lhg_rencana_kegiatan ENABLE ROW LEVEL SECURITY;
-
--- TABEL PENGGUNA (AKUN) & FOTO PROFIL
-ALTER TABLE lhg_users ADD COLUMN IF NOT EXISTS foto TEXT;
-
-CREATE POLICY "Public full access lhg_kegiatan" ON lhg_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "Public full access lhg_foto" ON lhg_foto FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "Public full access lhg_surat_masuk" ON lhg_surat_masuk FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "Public full access lhg_surat_keluar" ON lhg_surat_keluar FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "Public full access lhg_arsip" ON lhg_arsip FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "Public full access lhg_rencana_kegiatan" ON lhg_rencana_kegiatan FOR ALL TO anon USING (true) WITH CHECK (true);`;
-
-// SUPABASE HTTP REST HELPER
-const SupabaseAPI = {
-  headers: {
-    'apikey': SUPABASE_CONFIG.anonKey,
-    'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  },
+// FIREBASE REST & SDK HELPER
+const FirebaseAPI = {
   isOnline: false,
-  tablesReady: false,
-  missingTables: [],
+  tablesReady: true,
   checkConnection: async function() {
     try {
-      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/lhg_users?select=count`, {
-        method: 'HEAD',
-        headers: this.headers
-      });
-      this.isOnline = resp.status !== 404 && resp.status < 500;
-
-      // Check key operational tables
-      const checkTabs = ['lhg_foto', 'lhg_arsip', 'lhg_kegiatan'];
-      const missing = [];
-      for (const t of checkTabs) {
-        try {
-          const r = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${t}?select=count`, {
-            method: 'HEAD',
-            headers: this.headers
-          });
-          if (r.status === 404) missing.push(t);
-        } catch(e) {}
-      }
-      this.missingTables = missing;
-      this.tablesReady = this.isOnline && missing.length === 0;
+      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/.json?shallow=true`);
+      // Jika status 200 (terhubung & read rules public) atau 401/403 (server hidup)
+      this.isOnline = resp.status === 200 || resp.status === 401 || resp.status === 403;
+      this.tablesReady = resp.status === 200;
       this.updateStatusBadge();
-      return this.isOnline;
+      return this.tablesReady;
     } catch(e) {
       this.isOnline = false;
       this.tablesReady = false;
-      this.missingTables = [];
       this.updateStatusBadge();
       return false;
     }
@@ -190,11 +73,11 @@ const SupabaseAPI = {
     if (!dot || !txt) return;
     if (this.isOnline && this.tablesReady) {
       dot.style.background = '#10B981';
-      txt.textContent = 'Supabase Cloud (Sinkron Aktif)';
+      txt.textContent = 'Firebase Cloud (Sinkron Aktif)';
       txt.style.color = '#059669';
     } else if (this.isOnline && !this.tablesReady) {
       dot.style.background = '#F59E0B';
-      txt.textContent = 'Aktivasi Cloud Diperlukan';
+      txt.textContent = 'Aturan Izin Firebase Diperlukan';
       txt.style.color = '#B45309';
     } else {
       dot.style.background = '#EF4444';
@@ -202,7 +85,6 @@ const SupabaseAPI = {
       txt.style.color = '#DC2626';
     }
 
-    // Toggle banners
     const fotoNotice = document.getElementById('foto-cloud-notice');
     if (fotoNotice) {
       fotoNotice.style.display = (!this.tablesReady && this.isOnline) ? 'flex' : 'none';
@@ -214,13 +96,15 @@ const SupabaseAPI = {
   },
   select: async function(table) {
     try {
-      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}?select=*`, {
-        headers: this.headers
-      });
+      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}.json`);
       if (resp.ok) {
         this.isOnline = true;
+        this.tablesReady = true;
         this.updateStatusBadge();
-        return await resp.json();
+        const data = await resp.json();
+        if (!data) return [];
+        if (Array.isArray(data)) return data.filter(x => x !== null && x !== undefined);
+        return Object.values(data);
       }
       return null;
     } catch(e) {
@@ -229,10 +113,22 @@ const SupabaseAPI = {
   },
   upsert: async function(table, data) {
     try {
-      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}`, {
-        method: 'POST',
-        headers: { ...this.headers, 'Prefer': 'resolution=merge-duplicates' },
-        body: JSON.stringify(data)
+      let payload = data;
+      // Simpan sebagai object ber-key id jika array agar rapi di Firebase Realtime DB
+      if (Array.isArray(data)) {
+        const obj = {};
+        data.forEach(item => {
+          if (item) {
+            const k = String(item.id || item.username || Math.random().toString(36).substring(2));
+            obj[k] = item;
+          }
+        });
+        payload = obj;
+      }
+      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       return resp.ok;
     } catch(e) {
@@ -241,9 +137,9 @@ const SupabaseAPI = {
   },
   delete: async function(table, filterCol, filterVal) {
     try {
-      const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}`, {
-        method: 'DELETE',
-        headers: this.headers
+      // Hapus data spesifik dari node tabel di Firebase Realtime Database
+      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}/${filterVal}.json`, {
+        method: 'DELETE'
       });
       return resp.ok;
     } catch(e) {
@@ -252,45 +148,42 @@ const SupabaseAPI = {
   }
 };
 
+// Aliaskan ke SupabaseAPI agar backward-compatible dengan seluruh pemanggilan yang sudah ada
+const SupabaseAPI = FirebaseAPI;
+
 function handleDbBadgeClick() {
-  if (SupabaseAPI.isOnline && !SupabaseAPI.tablesReady) {
-    const area = document.getElementById('supabase-sql-copy-area');
-    if (area) area.value = SUPABASE_SETUP_SQL;
+  if (FirebaseAPI.isOnline && !FirebaseAPI.tablesReady) {
     openModal('modal-supabase-setup');
   } else {
     syncWithSupabase(true);
   }
 }
 
-function copySupabaseSetupSQL() {
-  const area = document.getElementById('supabase-sql-copy-area');
-  if (area) area.value = SUPABASE_SETUP_SQL;
+function copyFirebaseRules() {
+  const rules = `{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(SUPABASE_SETUP_SQL).then(() => {
-      showToast('Script SQL berhasil disalin! Silakan paste di Supabase SQL Editor lalu klik Run.', 'success');
-    }).catch(() => {
-      if (area) {
-        area.select();
-        document.execCommand('copy');
-        showToast('Script SQL disalin ke clipboard!', 'success');
-      }
+    navigator.clipboard.writeText(rules).then(() => {
+      showToast('Aturan Realtime Database disalin ke clipboard! Tempelkan di Firebase Console Rules.', 'success');
     });
-  } else if (area) {
-    area.select();
-    document.execCommand('copy');
-    showToast('Script SQL disalin ke clipboard!', 'success');
+  } else {
+    showToast('Aturan: { "rules": { ".read": true, ".write": true } }', 'info');
   }
 }
 
 async function testAndSyncSupabase() {
-  showToast('Memeriksa aktivasi tabel di Supabase...', 'info');
-  await SupabaseAPI.checkConnection();
-  if (SupabaseAPI.tablesReady) {
+  showToast('Memeriksa koneksi Firebase Realtime Database...', 'info');
+  const ok = await FirebaseAPI.checkConnection();
+  if (ok) {
     closeModal('modal-supabase-setup');
-    showToast('Selamat! Semua tabel berhasil terhubung. Memulai sinkronisasi data...', 'success');
+    showToast('Selamat! Firebase terhubung. Memulai sinkronisasi data...', 'success');
     await syncWithSupabase(true);
   } else {
-    showToast('Tabel lhg_foto belum terdeteksi. Pastikan Anda sudah paste script SQL dan klik RUN di Supabase!', 'warning');
+    showToast('Koneksi belum diizinkan. Pastikan tab Rules di Firebase Realtime Database sudah diatur .read & .write true lalu klik Publish!', 'warning');
   }
 }
 
@@ -9134,7 +9027,7 @@ async function syncWithSupabase(isManual) {
   }
 
   if (isManual) {
-    showToast(`Sinkronisasi Supabase Online selesai! (${syncedCount} tabel)`, 'success');
+    showToast(`Sinkronisasi Firebase Online selesai! (${syncedCount} tabel)`, 'success');
   }
 }
 

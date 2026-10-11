@@ -30,6 +30,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FIREBASE SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="css/style.css?v=30.0">
 </head>
 <body class="app-body">
@@ -262,9 +266,9 @@
         <div class="topbar-right">
           <!-- CONSOLIDATED STATUS & CLOCK CAPSULE -->
           <div class="topbar-status-capsule">
-            <div id="db-status-badge" class="capsule-sub-badge" onclick="handleDbBadgeClick()" title="Status Koneksi Database Online Supabase. Klik untuk aktivasi atau sinkronisasi.">
+            <div id="db-status-badge" class="capsule-sub-badge" onclick="handleDbBadgeClick()" title="Status Koneksi Firebase Realtime Database. Klik untuk sinkronisasi.">
               <span id="db-status-dot" class="pulse-live"></span>
-              <span id="db-status-text">Supabase Cloud</span>
+              <span id="db-status-text">Firebase Cloud</span>
             </div>
             <div class="capsule-divider"></div>
             <div class="capsule-clock-sub" title="Waktu Sistem Saat Ini">
@@ -1170,16 +1174,16 @@
               </div>
             </div>
 
-            <!-- NOTIFIKASI AKTIVASI CLOUD SUPABASE JIKA TABEL BELUM DIBUAT -->
+            <!-- NOTIFIKASI AKTIVASI CLOUD FIREBASE -->
             <div id="foto-cloud-notice" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; color: #92400E; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5;">
                 <span style="font-size: 22px;">⚠️</span>
                 <div>
-                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Foto yang diunggah saat ini baru tersimpan di browser perangkat ini dan belum bisa dilihat di HP. Silakan aktifkan tabel Supabase.
+                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Foto baru tersimpan di browser perangkat ini. Silakan aktifkan izin aturan (rules) Firebase Realtime Database.
                 </div>
               </div>
               <button type="button" class="btn-pri" style="padding: 7px 16px; font-size: 12px; background: #D97706; white-space: nowrap;" onclick="openModal('modal-supabase-setup')">
-                ⚡ Aktifkan Cloud Sekarang
+                ⚡ Atur Izin Firebase
               </button>
             </div>
 
@@ -1253,16 +1257,16 @@
               </button>
             </div>
 
-            <!-- NOTIFIKASI AKTIVASI CLOUD SUPABASE JIKA TABEL BELUM DIBUAT -->
+            <!-- NOTIFIKASI AKTIVASI CLOUD FIREBASE -->
             <div id="arsip-cloud-notice" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; color: #92400E; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 1.5;">
                 <span style="font-size: 22px;">⚠️</span>
                 <div>
-                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Berkas arsip yang diunggah saat ini baru tersimpan di browser perangkat ini dan belum bisa dilihat di HP. Silakan aktifkan tabel Supabase.
+                  <strong>Sinkronisasi Cloud Belum Aktif:</strong> Berkas arsip baru tersimpan di browser perangkat ini. Silakan aktifkan izin aturan (rules) Firebase Realtime Database.
                 </div>
               </div>
               <button type="button" class="btn-pri" style="padding: 7px 16px; font-size: 12px; background: #D97706; white-space: nowrap;" onclick="openModal('modal-supabase-setup')">
-                ⚡ Aktifkan Cloud Sekarang
+                ⚡ Atur Izin Firebase
               </button>
             </div>
 
@@ -2588,45 +2592,50 @@
     </div>
   </div>
 
-  <!-- MODAL SUPABASE TABLE ACTIVATION SETUP -->
+  <!-- MODAL FIREBASE ACTIVATION SETUP -->
   <div id="modal-supabase-setup" class="modal-overlay">
     <div class="modal-dialog modal-dialog-lg" style="max-width: 620px;">
       <div class="modal-header-clean">
         <div class="modal-title-wrap">
-          <span class="modal-icon-badge" style="background: #FEF3C7; color: #D97706;">⚡</span>
+          <span class="modal-icon-badge" style="background: #FEF3C7; color: #D97706;">🔥</span>
           <div>
-            <h3 class="modal-title">Aktivasi Sinkronisasi Supabase Multi-Perangkat</h3>
-            <p class="modal-subtitle">Supaya foto dan berkas dari laptop ini otomatis muncul di HP semua user</p>
+            <h3 class="modal-title">Aktivasi Izin Firebase Realtime Database</h3>
+            <p class="modal-subtitle">Atur izin baca/tulis agar data anak dan berkas otomatis tersimpan di cloud</p>
           </div>
         </div>
         <button class="btn-close-modal" onclick="closeModal('modal-supabase-setup')">&times;</button>
       </div>
       <div class="modal-body-clean" style="padding: 20px;">
-        <div style="background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #991B1B; line-height: 1.6;">
-          <strong>⚠️ Mengapa data di HP masih kosong?</strong><br>
-          Tabel <code>lhg_foto</code>, <code>lhg_arsip</code>, dan <code>lhg_kegiatan</code> belum dibuat di Supabase Cloud. Foto yang diunggah saat ini baru tersimpan di browser laptop ini dan belum bisa dikirim ke internet untuk dibaca oleh HP.
+        <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: #1E40AF; line-height: 1.6;">
+          <strong>💡 Mengaktifkan Izin Realtime Database (Hanya 1 Menit):</strong><br>
+          Secara bawaan, Firebase Realtime Database memblokir akses jika Rules belum diizinkan. Cukup ubah <code>.read</code> dan <code>.write</code> menjadi <code>true</code> di Firebase Console.
         </div>
 
-        <div style="font-size: 13.5px; font-weight: 700; color: #1F2937; margin-bottom: 8px;">Langkah Singkat (Hanya 1 Menit):</div>
+        <div style="font-size: 13.5px; font-weight: 700; color: #1F2937; margin-bottom: 8px;">Langkah-langkah:</div>
         <ol style="margin: 0 0 16px 20px; font-size: 13px; color: #4B5563; line-height: 1.7;">
-          <li>Klik tombol <strong>Salin Script SQL</strong> di bawah ini.</li>
-          <li>Klik tombol <strong>Buka Supabase SQL Editor</strong> (otomatis membuka tab baru).</li>
-          <li>Tempelkan (<em>Paste</em> / Ctrl+V) di editor Supabase, lalu klik tombol <strong>Run (▶)</strong> di pojok kanan bawah.</li>
+          <li>Klik tombol <strong>Buka Firebase Rules</strong> di bawah ini.</li>
+          <li>Klik tab <strong>Rules (Aturan)</strong> di Firebase Console.</li>
+          <li>Ubah aturannya menjadi seperti di bawah ini, lalu klik tombol <strong>Publish (Publikasikan)</strong>.</li>
         </ol>
 
-        <textarea id="supabase-sql-copy-area" readonly style="width: 100%; height: 115px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; resize: none;"></textarea>
+        <textarea id="firebase-rules-copy-area" readonly style="width: 100%; height: 105px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; resize: none;">{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}</textarea>
 
         <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
-          <button type="button" class="btn-pri" style="flex: 1; padding: 11px 16px; font-size: 13px; background: #059669;" onclick="copySupabaseSetupSQL()">
-            <span>📋 Salin Script SQL</span>
+          <button type="button" class="btn-pri" style="flex: 1; padding: 11px 16px; font-size: 13px; background: #059669;" onclick="copyFirebaseRules()">
+            <span>📋 Salin Aturan JSON</span>
           </button>
-          <a href="https://supabase.com/dashboard/project/eimjtamfuyeyhqhfumur/sql/new" target="_blank" class="btn-sec" style="flex: 1; padding: 11px 16px; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <span>↗️ Buka Supabase SQL Editor</span>
+          <a href="https://console.firebase.google.com/project/lhgkepri/database/lhgkepri-default-rtdb/rules" target="_blank" class="btn-sec" style="flex: 1; padding: 11px 16px; font-size: 13px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>↗️ Buka Firebase Rules</span>
           </a>
         </div>
       </div>
       <div class="modal-footer-clean" style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <span style="font-size: 12px; color: #64748B;">Setelah klik RUN di Supabase:</span>
+        <span style="font-size: 12px; color: #64748B;">Setelah klik Publish di Firebase Console:</span>
         <button type="button" class="btn-pri" style="padding: 9px 18px; font-size: 13px;" onclick="testAndSyncSupabase()">
           <span>🔄 Tes Ulang & Sinkronkan Sekarang</span>
         </button>
@@ -2676,6 +2685,6 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=40.0"></script>
+  <script src="js/app.js?v=41.0"></script>
 </body>
 </html>
