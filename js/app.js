@@ -839,12 +839,24 @@ function getInitials(name) {
   return name.slice(0, 2).toUpperCase();
 }
 
+function getTodayLocalDateStr(d) {
+  const now = d ? (d instanceof Date ? d : new Date(d)) : new Date();
+  if (isNaN(now.getTime())) return new Date().toISOString().split('T')[0];
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function formatDate(d) {
   if (!d) return '-';
-  const parts = d.split('-');
+  const clean = String(d).split('T')[0].split(' ')[0];
+  const parts = clean.split('-');
   if (parts.length < 3) return d;
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-  return `${parseInt(parts[2])} ${months[parseInt(parts[1]) - 1]} ${parts[0]}`;
+  const mIdx = parseInt(parts[1], 10) - 1;
+  if (mIdx < 0 || mIdx > 11) return d;
+  return `${parseInt(parts[2], 10)} ${months[mIdx]} ${parts[0]}`;
 }
 
 // DISABILITY BADGE CLASS HELPER
@@ -1362,14 +1374,17 @@ function compressImage(base64, maxW, maxH, quality, callback) {
 
 // ================= DIRECT INPUT FORM (MENU INPUT DATA) =================
 function initDirectInputPage() {
-  // Reset form
   resetDirectInputForm();
+  const directTgl = document.getElementById('direct-tglDaftar');
+  if (directTgl) directTgl.value = getTodayLocalDateStr();
 }
 
 function resetDirectInputForm() {
   const f = document.getElementById('form-direct-input-anak');
   if (f) f.reset();
   removeDirectPhoto();
+  const directTgl = document.getElementById('direct-tglDaftar');
+  if (directTgl) directTgl.value = getTodayLocalDateStr();
 }
 
 function handleDirectDisabilityChange(val) {
@@ -1440,7 +1455,7 @@ function saveDirectInputAnak(event) {
     hubWali: hubWali,
     telWali: kontakWA,
     umur: hitungUsia({ ttl: ttl, nik: nik }),
-    tglDaftar: new Date().toISOString().split('T')[0],
+    tglDaftar: (document.getElementById('direct-tglDaftar') && document.getElementById('direct-tglDaftar').value) ? document.getElementById('direct-tglDaftar').value : getTodayLocalDateStr(),
     foto: currentDirectPhotoBase64 || null
   };
 
@@ -1497,6 +1512,8 @@ function openAddAnggota() {
 
   currentModalPhotoBase64 = null;
   updateModalPhotoUI(null);
+  const modalTgl = document.getElementById('modal-tglDaftar') || (f ? f.tglDaftar : null);
+  if (modalTgl) modalTgl.value = getTodayLocalDateStr();
   document.getElementById('modal-anggota').classList.add('open');
 }
 
@@ -1509,6 +1526,8 @@ function openEditAnggota(id) {
   ['nama', 'nik', 'noKk', 'ttl', 'jk', 'kontakWA', 'alamat', 'disabilitas', 'subDisabilitas', 'wali', 'ibu', 'hubWali', 'telWali', 'sekolah', 'kelas', 'status'].forEach(k => {
     if (f[k]) f[k].value = a[k] || '';
   });
+  const modalTglEdit = document.getElementById('modal-tglDaftar') || (f ? f.tglDaftar : null);
+  if (modalTglEdit) modalTglEdit.value = a.tglDaftar || getTodayLocalDateStr();
 
   // Sinkronisasi opsi Kelurahan (mendukung LAINNYA & input manual)
   const kelSelect = f.kelurahan;
@@ -1622,6 +1641,9 @@ function saveAnggota() {
     foto: currentModalPhotoBase64 || null
   };
 
+  const modalTglInput = document.getElementById('modal-tglDaftar') || f.tglDaftar;
+  const tglDaftarVal = (modalTglInput && modalTglInput.value) ? modalTglInput.value : getTodayLocalDateStr();
+
   if (editId) {
     const idx = anggota.findIndex(a => a.id === editId);
     if (idx > -1) {
@@ -1629,12 +1651,13 @@ function saveAnggota() {
       if (!fd.foto && anggota[idx].foto && currentModalPhotoBase64 !== null) {
         fd.foto = anggota[idx].foto;
       }
+      fd.tglDaftar = tglDaftarVal;
       Object.assign(anggota[idx], fd);
     }
     showToast('Data anak berhasil diperbarui!');
   } else {
     const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
-    anggota.unshift({ ...fd, id: no, noAnggota: no, tglDaftar: new Date().toISOString().split('T')[0] });
+    anggota.unshift({ ...fd, id: no, noAnggota: no, tglDaftar: tglDaftarVal });
     showToast('Data anak baru berhasil ditambahkan!');
   }
 
@@ -2625,22 +2648,59 @@ function printKTA(id) {
 
 // ================= SURAT KETERANGAN HASIL PENDAFTARAN (PDF A4) =================
 function formatDateIndoFull(dStr) {
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   if (!dStr) {
     const now = new Date();
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     return `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   }
-  const parts = dStr.split('-');
-  if (parts.length === 3) {
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const yr = parts[0];
-    const m = parseInt(parts[1], 10) - 1;
-    const d = parseInt(parts[2], 10);
-    if (m >= 0 && m < 12) {
-      return `${d} ${months[m]} ${yr}`;
+  try {
+    const clean = String(dStr).split('T')[0].split(' ')[0];
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const yr = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (!isNaN(d) && m >= 0 && m < 12 && !isNaN(yr)) {
+        return `${d} ${months[m]} ${yr}`;
+      }
     }
+    const dt = new Date(dStr);
+    if (!isNaN(dt.getTime())) {
+      return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+    }
+  } catch (e) {}
+  return String(dStr);
+}
+
+function onSuratPesertaChange() {
+  const sel = document.getElementById('pdf-anggota-select');
+  if (!sel) return;
+  const a = DB.get('lhg_anggota').find(x => x.id === sel.value);
+  const dateInput = document.getElementById('pdf-custom-date');
+  if (a && dateInput) {
+    dateInput.value = a.tglDaftar || getTodayLocalDateStr();
   }
-  return dStr;
+  previewSuratPendaftaran();
+}
+
+function onSuratDateChange() {
+  const sel = document.getElementById('pdf-anggota-select');
+  const dateInput = document.getElementById('pdf-custom-date');
+  if (!sel || !dateInput) return;
+  const newDate = dateInput.value;
+  if (!newDate) return;
+
+  const anggota = DB.get('lhg_anggota');
+  const a = anggota.find(x => x.id === sel.value);
+  if (a) {
+    a.tglDaftar = newDate;
+    DB.set('lhg_anggota', anggota);
+    try {
+      SupabaseAPI.upsert('lhg_anggota', a);
+    } catch (e) {}
+  }
+  previewSuratPendaftaran();
+  showToast('Tanggal terdaftar & tanda tangan berhasil diperbarui!', 'success');
 }
 
 function renderFormPendaftaranPage(selectedId) {
@@ -2665,6 +2725,12 @@ function renderFormPendaftaranPage(selectedId) {
     sel.value = anggota[0].id;
   }
 
+  const curAnak = anggota.find(x => x.id === sel.value);
+  const dateInput = document.getElementById('pdf-custom-date');
+  if (dateInput && curAnak) {
+    dateInput.value = curAnak.tglDaftar || getTodayLocalDateStr();
+  }
+
   previewSuratPendaftaran();
 }
 
@@ -2673,13 +2739,22 @@ function openSuratFor(id) {
   const sel = document.getElementById('pdf-anggota-select');
   if (sel) {
     sel.value = id;
+    const a = DB.get('lhg_anggota').find(x => x.id === id);
+    const dateInput = document.getElementById('pdf-custom-date');
+    if (a && dateInput) {
+      dateInput.value = a.tglDaftar || getTodayLocalDateStr();
+    }
     previewSuratPendaftaran();
   }
 }
 
 function buildSuratPendaftaranHTML(a) {
-  const tanggalSurat = formatDateIndoFull(a.tglDaftar);
-  const tanggalSelesaiDidata = formatDateIndoFull(a.tglDaftar);
+  const customDateInput = document.getElementById('pdf-custom-date');
+  // Tanggal terdaftar dan tanggal tanda tangan mengikuti data real saat disubmit / dipilih
+  const realDate = (customDateInput && customDateInput.value) || a.tglDaftar || a.createdAt || getTodayLocalDateStr();
+  const tanggalFormatted = formatDateIndoFull(realDate);
+  const tanggalSurat = tanggalFormatted;
+  const tanggalSelesaiDidata = tanggalFormatted;
   const alamatLengkap = (a.alamat || '-') + (a.kelurahan ? ', Kelurahan ' + a.kelurahan : '');
   const kontak = a.telWali || a.kontakWA || '-';
   const disabilitasText = `${a.disabilitas || '-'}${a.subDisabilitas ? ' (' + a.subDisabilitas + ')' : ''}`;
@@ -2699,11 +2774,22 @@ function buildSuratPendaftaranHTML(a) {
   const nomorUrut = rawId.replace(/^LHG-?/i, '') || '001';
   const nirId = rawId.toUpperCase().startsWith('LHG') ? rawId : `LHG-${rawId}`;
 
-  // Nomor Surat Otomatis: ( diisi otomatis ) / SEK-YLHG / ( bulan romawi saat ini ) / ( tahun saat ini )
-  const today = new Date();
+  // Nomor Surat Otomatis mengikuti tanggal real: ( diisi otomatis ) / SEK-YLHG / ( bulan romawi ) / ( tahun )
+  let suratDate = new Date();
+  if (realDate) {
+    const p = String(realDate).split('T')[0].split('-');
+    if (p.length === 3) {
+      const yr = parseInt(p[0], 10);
+      const mo = parseInt(p[1], 10) - 1;
+      const da = parseInt(p[2], 10);
+      if (!isNaN(yr) && !isNaN(mo) && !isNaN(da)) {
+        suratDate = new Date(yr, mo, da);
+      }
+    }
+  }
   const bulanRomawiList = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-  const bulanRomawi = bulanRomawiList[today.getMonth()];
-  const tahunSaatIni = today.getFullYear();
+  const bulanRomawi = bulanRomawiList[suratDate.getMonth()];
+  const tahunSaatIni = suratDate.getFullYear();
   const nomorSurat = `${nomorUrut} / SEK-YLHG / ${bulanRomawi} / ${tahunSaatIni}`;
 
   return `
@@ -5747,7 +5833,7 @@ async function saveDirectInputAnak(e) {
     kelas: kelas || '-',
     status: status,
     umur: hitungUsia({ ttl: ttl, nik: nik }),
-    tglDaftar: new Date().toISOString().split('T')[0],
+    tglDaftar: (document.getElementById('direct-tglDaftar') && document.getElementById('direct-tglDaftar').value) ? document.getElementById('direct-tglDaftar').value : getTodayLocalDateStr(),
     foto: null
   };
 

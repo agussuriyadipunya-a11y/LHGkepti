@@ -470,7 +470,7 @@
                 </div>
               </div>
 
-              <div class="form-grid-2" style="margin-top: 14px;">
+              <div class="form-grid-3" style="margin-top: 14px;">
                 <div class="form-field">
                   <label class="lbl">Sekolah / Lembaga Pendidikan</label>
                   <input type="text" id="direct-sekolah" class="pelangi-input" placeholder="Contoh: SLB Negeri 1 Tanjungpinang">
@@ -478,6 +478,10 @@
                 <div class="form-field">
                   <label class="lbl">Tingkat / Kelas</label>
                   <input type="text" id="direct-kelas" class="pelangi-input" placeholder="Contoh: Kelas 4 SDLB">
+                </div>
+                <div class="form-field">
+                  <label class="lbl">Tanggal Pendataan / Terdaftar *</label>
+                  <input type="date" id="direct-tglDaftar" class="pelangi-input" required title="Tanggal resmi anak didata / disubmit">
                 </div>
               </div>
 
@@ -635,9 +639,13 @@
             </div>
 
             <div class="kta-control-bar">
-              <label class="lbl-clean">Pilih Calon Peserta / Anak Terdaftar:</label>
-              <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
-                <select id="pdf-anggota-select" class="clean-select" style="flex: 1; min-width: 260px;" onchange="previewSuratPendaftaran()"></select>
+              <label class="lbl-clean">Pilih Calon Peserta & Tanggal Surat:</label>
+              <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
+                <select id="pdf-anggota-select" class="clean-select" style="flex: 1; min-width: 240px;" onchange="onSuratPesertaChange()"></select>
+                <div style="display: flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 4px 10px;">
+                  <span style="font-size: 12px; color: #64748B; font-weight: 700;">📅 Tgl Surat & TTD:</span>
+                  <input type="date" id="pdf-custom-date" style="border: none; outline: none; font-size: 13px; font-weight: 700; color: #0F172A;" onchange="onSuratDateChange()" title="Tanggal surat dan tanda tangan mengikuti tanggal real submit / pilihan">
+                </div>
                 <button class="btn-top-add" onclick="downloadSuratPendaftaranPDF()" title="Download Berkas PDF Resmi">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <span>Download PDF</span>
@@ -1363,7 +1371,7 @@
             <span class="sec-badge">4</span>
             <span class="sec-title-text">Pendidikan & Status Keaktifan</span>
           </div>
-          <div class="form-grid-3">
+          <div class="form-grid-2">
             <div class="form-field">
               <label class="lbl">Sekolah / Lembaga Pendidikan</label>
               <input type="text" name="sekolah" class="pelangi-input" placeholder="Contoh: SLB Negeri / SDN 001">
@@ -1372,12 +1380,18 @@
               <label class="lbl">Kelas / Tingkat</label>
               <input type="text" name="kelas" class="pelangi-input" placeholder="Contoh: Kelas 3 / Terapi">
             </div>
+          </div>
+          <div class="form-grid-2" style="margin-top: 10px;">
             <div class="form-field">
               <label class="lbl">Status Keaktifan</label>
               <select name="status" class="pelangi-select">
                 <option value="Aktif">Aktif</option>
                 <option value="Tidak Aktif">Tidak Aktif</option>
               </select>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Tanggal Pendataan / Terdaftar</label>
+              <input type="date" name="tglDaftar" id="modal-tglDaftar" class="pelangi-input" title="Tanggal resmi anak didata / disubmit">
             </div>
           </div>
 
