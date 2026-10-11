@@ -867,16 +867,16 @@ button, input, select, textarea {
   background: linear-gradient(90deg, #0D7A84, #14B8A6);
 }
 
-/* ================= MODERN DATA TABLE ================= */
+/* ================= MODERN DATA TABLE & TOOLBAR ================= */
 .table-panel {
-  padding: 20px 22px;
+  padding: 22px 24px;
 }
 
 .table-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -884,7 +884,7 @@ button, input, select, textarea {
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-width: 280px;
 }
@@ -898,7 +898,7 @@ button, input, select, textarea {
 .search-input-box {
   position: relative;
   flex: 1;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .search-icon {
@@ -906,124 +906,288 @@ button, input, select, textarea {
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 13px;
-  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
   pointer-events: none;
 }
 
 .search-field {
   width: 100%;
   height: 38px;
-  padding: 0 14px 0 34px;
-  border: 1.5px solid var(--border-color);
-  border-radius: 8px;
+  padding: 0 14px 0 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
   font-size: 12.5px;
   outline: none;
   background: #FFFFFF;
-  transition: all 0.2s;
+  color: var(--text-main);
+  transition: all 0.15s ease;
 }
 
 .search-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+  box-shadow: 0 0 0 3px rgba(13, 122, 132, 0.12);
 }
 
 .filter-select {
   height: 38px;
   padding: 0 12px;
-  border: 1.5px solid var(--border-color);
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
   font-size: 12px;
   font-weight: 600;
   color: #334155;
   background: #FFFFFF;
   outline: none;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 122, 132, 0.12);
 }
 
 .table-count-text {
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 
+/* TABLE CONTAINER & WRAPPER */
 .table-responsive-wrapper {
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
   background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .modern-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .modern-table thead tr {
   background: #F8FAFC;
-  border-bottom: 1.5px solid var(--border-color);
+  border-bottom: 1.5px solid #E2E8F0;
 }
 
 .modern-table th {
-  padding: 11px 14px;
+  padding: 13px 14px;
   font-size: 10.5px;
   font-weight: 800;
   color: #475569;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
   white-space: nowrap;
+  border-bottom: 1.5px solid #E2E8F0;
 }
 
 .modern-table tbody tr {
   border-bottom: 1px solid #F1F5F9;
-  transition: background 0.15s;
+  transition: background-color 0.15s ease;
+}
+
+.modern-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .modern-table tbody tr:hover {
-  background: #F8FAFC;
+  background-color: #F8FAFC;
 }
 
 .modern-table td {
-  padding: 12px 14px;
+  padding: 13px 14px;
   vertical-align: middle;
+  border-bottom: 1px solid #F1F5F9;
 }
 
-/* IDENTITY PILLS (NIK & KK) */
-.id-badge-pill {
+/* SORT BADGE A-Z */
+.table-sort-badge {
   display: inline-flex;
   align-items: center;
-  background: #F1F5F9;
-  border: 1px solid #E2E8F0;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #0D7A84;
+  background: #E6F4F5;
+  border: 1px solid #B3DEE2;
+  padding: 2px 7px;
   border-radius: 6px;
-  overflow: hidden;
+  margin-left: 5px;
+  letter-spacing: 0.2px;
+  vertical-align: middle;
+  text-transform: none;
+}
+
+/* ROW INDEX NUMBER */
+.table-row-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #F1F5F9;
+  color: #64748B;
+  font-weight: 800;
   font-size: 11px;
 }
 
-.id-tag {
-  background: #E2E8F0;
-  color: #334155;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 6px;
+/* USER CELL (AVATAR & INFO) */
+.table-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 170px;
 }
 
-.id-val {
-  padding: 2px 8px;
-  font-weight: 700;
+.table-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E6F4F5, #CFE8EC);
+  color: #0D7A84;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #B3DEE2;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(13, 122, 132, 0.08);
+}
+
+.table-user-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #0D7A84;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(13, 122, 132, 0.15);
+}
+
+.table-user-info {
+  min-width: 0;
+}
+
+.table-user-name {
+  font-size: 13px;
+  font-weight: 800;
   color: #0F172A;
-  font-family: monospace;
+  line-height: 1.25;
+  letter-spacing: -0.1px;
+}
+
+.table-user-kelurahan {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0D7A84;
+  margin-top: 2px;
+}
+
+.table-user-kelurahan svg {
+  color: #0D7A84;
+  flex-shrink: 0;
+}
+
+/* MODERN ID PILL (NIK & KK) */
+.modern-id-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  font-size: 11px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.modern-id-pill .id-pill-label {
+  background: #F1F5F9;
+  color: #475569;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2.5px 7px;
+  letter-spacing: 0.3px;
+  border-right: 1px solid #E2E8F0;
+}
+
+.modern-id-pill .id-pill-code {
+  padding: 2.5px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1E293B;
+  letter-spacing: 0.3px;
+}
+
+.modern-id-pill.pill-kk {
+  margin-top: 4px;
+}
+
+.modern-id-pill.pill-kk .id-pill-label {
+  background: #EEF2FF;
+  color: #4338CA;
+  border-right-color: #E0E7FF;
+}
+
+/* AGE CHIP */
+.table-age-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0F172A;
+  white-space: nowrap;
 }
 
 /* 10 DISABILITY BADGES SYSTEM */
 .disability-pill {
-  display: inline-block;
-  font-size: 10.5px;
-  font-weight: 800;
-  padding: 3px 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3.5px 10px;
   border-radius: 12px;
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+
+.disability-bullet {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.disability-sub-label {
+  font-size: 10px;
+  color: #64748B;
+  font-weight: 600;
+  margin-top: 3px;
 }
 
 .badge-rungu { background: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD; }
@@ -1037,88 +1201,180 @@ button, input, select, textarea {
 .badge-kaku { background: #FDF4FF; color: #C026D3; border: 1px solid #F5D0FE; }
 .badge-tangan { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
 .badge-fisik { background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
-.badge-default { background: #F1F5F9; color: #475569; }
+.badge-default { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
 
-/* STATUS BADGE */
-.badge-status-aktif {
-  background: #ECFDF5;
-  color: #059669;
-  border: 1px solid #A7F3D0;
-  font-size: 10.5px;
+/* WALI & WHATSAPP CHIP */
+.table-wali-name {
+  font-size: 12px;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 12px;
+  color: #0F172A;
+  line-height: 1.2;
 }
 
-.badge-status-tidak-aktif {
-  background: #FEF2F2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
+.table-ibu-name {
   font-size: 10.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 12px;
+  color: #64748B;
+  margin-top: 1px;
 }
 
-/* WHATSAPP CLICKABLE LINK */
-.table-wa-link {
+.table-ibu-name span {
+  font-weight: 600;
+  color: #334155;
+}
+
+.table-wa-wrapper {
+  margin-top: 4px;
+}
+
+.table-wa-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: #ECFDF5;
-  color: #059669;
   border: 1px solid #A7F3D0;
-  border-radius: 6px;
-  padding: 2px 7px;
+  color: #047857;
   font-size: 11px;
   font-weight: 700;
+  padding: 2.5px 8px;
+  border-radius: 6px;
   text-decoration: none;
-  transition: all 0.15s;
-  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.table-wa-link:hover {
+.table-wa-chip:hover {
   background: #25D366;
   color: #FFFFFF;
   border-color: #25D366;
-  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.3);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+  transform: translateY(-1px);
 }
 
-.table-wa-link svg {
+.table-wa-chip svg {
   fill: currentColor;
+  flex-shrink: 0;
 }
 
-/* ACTION BUTTONS */
-.action-buttons-group {
-  display: flex;
+/* CLASS PILL */
+.table-class-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.table-empty-dash {
+  color: #CBD5E1;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* STATUS PILL */
+.table-status-pill {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.table-status-pill.status-aktif {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.table-status-pill.status-inaktif {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.table-status-pill .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.table-status-pill.status-aktif .status-dot {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+/* ACTION BUTTONS GROUP */
+.action-buttons-group {
+  display: inline-flex;
+  align-items: center;
   gap: 5px;
+  justify-content: center;
 }
 
 .btn-action-icon {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
   background: #FFFFFF;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s;
+  color: #64748B;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  padding: 0;
 }
 
-.btn-action-icon:hover {
-  background: #F1F5F9;
+.btn-action-icon svg {
+  display: block;
+  stroke: currentColor;
+}
+
+.btn-action-icon.btn-action-view:hover {
+  background: #E6F4F5;
+  color: #0D7A84;
+  border-color: #B3DEE2;
   transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(13, 122, 132, 0.18);
 }
 
+.btn-action-icon.btn-action-edit:hover {
+  background: #FEF3C7;
+  color: #D97706;
+  border-color: #FDE68A;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(217, 119, 6, 0.18);
+}
+
+.btn-action-icon.btn-action-kta:hover {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #C7D2FE;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.18);
+}
+
+.btn-action-icon.btn-action-doc:hover {
+  background: #ECFDF5;
+  color: #059669;
+  border-color: #A7F3D0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(5, 150, 105, 0.18);
+}
+
+.btn-action-icon.btn-action-delete:hover,
 .btn-action-icon.danger:hover {
   background: #FEE2E2;
-  border-color: #FCA5A5;
   color: #DC2626;
+  border-color: #FECACA;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.18);
 }
 
 /* ================= CETAK KTA & FORM ================= */

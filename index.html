@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css?v=28.0">
+  <link rel="stylesheet" href="css/style.css?v=29.0">
 </head>
 <body class="app-body">
 
@@ -608,7 +608,9 @@
             <div class="table-toolbar">
               <div class="toolbar-left">
                 <div class="search-input-box">
-                  <span class="search-icon">🔍</span>
+                  <span class="search-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </span>
                   <input type="text" id="anggota-search" class="search-field" placeholder="Cari nama anak, NIK, No KK, kelurahan, disabilitas..." oninput="renderAnggotaTable(this.value)">
                 </div>
                 <select id="filter-disabilitas" class="filter-select" onchange="filterByDisabilitas(this.value)">
@@ -630,7 +632,7 @@
               <div class="toolbar-right">
                 <span id="table-total-count-text" class="table-count-text">Total: 13 Anak</span>
                 <button class="btn-top-add" onclick="openAddAnggota()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                   <span>Tambah Data Anak</span>
                 </button>
               </div>
@@ -640,15 +642,15 @@
               <table class="modern-table">
                 <thead>
                   <tr>
-                    <th style="width: 45px; text-align: center;">NO</th>
-                    <th>NAMA ANAK & KELURAHAN <span style="font-size: 10px; font-weight: 700; color: #059669; background: #ECFDF5; padding: 2px 6px; border-radius: 4px; margin-left: 4px; border: 1px solid #A7F3D0;" title="Data terurut abjad A - Z">A - Z</span></th>
+                    <th style="width: 48px; text-align: center;">NO</th>
+                    <th>NAMA ANAK & KELURAHAN <span class="table-sort-badge" title="Data terurut otomatis secara abjad A - Z"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M6 12h12M10 18h4"/></svg> A - Z</span></th>
                     <th>NOMOR NIK & KK</th>
-                    <th style="text-align: center;">USIA</th>
+                    <th style="text-align: center; width: 85px;">USIA</th>
                     <th style="text-align: center;">RAGAM DISABILITAS</th>
                     <th>ORANG TUA & KONTAK WA</th>
-                    <th style="text-align: center;">KELAS</th>
-                    <th style="text-align: center;">STATUS</th>
-                    <th style="width: 120px; text-align: center;">AKSI</th>
+                    <th style="text-align: center; width: 70px;">KELAS</th>
+                    <th style="text-align: center; width: 95px;">STATUS</th>
+                    <th style="width: 175px; text-align: center;">AKSI</th>
                   </tr>
                 </thead>
                 <tbody id="anggota-tbody"></tbody>
