@@ -445,6 +445,14 @@ function initData() {
     localStorage.setItem('lhg_rencana_kegiatan', JSON.stringify([]));
   }
 
+  if (!localStorage.getItem('lhg_pelatihan')) {
+    localStorage.setItem('lhg_pelatihan', JSON.stringify([]));
+  }
+
+  if (!localStorage.getItem('lhg_perjalanan')) {
+    localStorage.setItem('lhg_perjalanan', JSON.stringify([]));
+  }
+
   initUsersData();
   if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
 }
@@ -700,9 +708,9 @@ function applyRoleUI(user) {
 
 function hasPermission(role, page) {
   const permissions = {
-    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
-    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    Petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
+    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    Petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
   };
   const list = permissions[role] || [];
   return list.includes(page);
@@ -787,6 +795,8 @@ function navigate(page) {
     'input-data': ['Data Anak Disabilitas', 'Kelola pendaftaran lengkap anak, identitas KK, ragam disabilitas, dan kontak wali'],
     'bantuan': ['Catatan Penerimaan Bantuan Anak', 'Daftar semua bantuan yang telah diterima anak lengkap dengan tanggal penyerahan'],
     'rencana-kegiatan': ['Rencana Kegiatan & Program Kerja', 'Penyusunan agenda kerja, sasaran disabilitas, jadwal, dan estimasi anggaran yayasan'],
+    'pelatihan': ['Catatan Pelatihan Anak Disabilitas', 'Kelola agenda pelatihan keterampilan, kemandirian, dan vokasional anak binaan'],
+    'perjalanan': ['Catatan Perjalanan & Outing Anak', 'Pencatatan riwayat perjalanan, rekreasi edukatif, studi alam, dan outing anak disabilitas'],
     'cetak-kta': ['Cetak Kartu Tanda Anggota', 'Penerbitan kartu identitas resmi binaan Lentera Hati Gurindam'],
     'form-pendaftaran': ['Surat Keterangan Pendataan', 'Pratinjau, unduh berkas PDF resmi format A4 Surat Keterangan Pendataan Anggota Disabilitas'],
     'laporan-kegiatan': ['Laporan Kegiatan', 'Dokumentasi pelaksanaan agenda kegiatan kemandirian dan terapi anak'],
@@ -805,6 +815,8 @@ function navigate(page) {
   if (page === 'input-data') renderAnggotaTable();
   if (page === 'bantuan') renderBantuanPage();
   if (page === 'rencana-kegiatan') renderRencanaKegiatanPage();
+  if (page === 'pelatihan') renderPelatihanPage();
+  if (page === 'perjalanan') renderPerjalananPage();
   if (page === 'cetak-kta') renderCetakKTA();
   if (page === 'form-pendaftaran') renderFormPendaftaranPage();
   if (page === 'laporan-kegiatan') renderLaporan();
@@ -896,6 +908,10 @@ function renderDashboard() {
   setText('nav-badge-bantuan', bList.length);
   const rList = DB.get('lhg_rencana_kegiatan', []);
   setText('nav-badge-rencana', rList.length);
+  const pList = DB.get('lhg_pelatihan', []);
+  setText('nav-badge-pelatihan', pList.length);
+  const prList = DB.get('lhg_perjalanan', []);
+  setText('nav-badge-perjalanan', prList.length);
 
   // Recent 5 Children
   const actEl = document.getElementById('dashboard-activity');
@@ -1776,6 +1792,10 @@ function viewAnggota(id) {
   const bList = (typeof getBantuanList === 'function' ? getBantuanList() : (DB.get('lhg_bantuan', [])))
     .filter(b => b.anakId === a.id || (b.anakNama && b.anakNama.toLowerCase().trim() === (a.nama || '').toLowerCase().trim()));
 
+  // Pelatihan & Perjalanan history
+  const pelAnak = (typeof getPelatihanForAnak === 'function') ? getPelatihanForAnak(a.id) : [];
+  const perAnak = (typeof getPerjalananForAnak === 'function') ? getPerjalananForAnak(a.id) : [];
+
   const html = `
     <!-- TOP NAVIGATION & BREADCRUMB -->
     <div class="detail-top-nav">
@@ -2103,6 +2123,100 @@ function viewAnggota(id) {
               <button type="button" class="btn-top-add" style="padding: 7px 16px; font-size: 12.5px;" onclick="openAddBantuanForAnak('${a.id}')">
                 + Catat Bantuan Baru
               </button>
+            </div>
+          `}
+        </div>
+
+        <!-- CARD: RIWAYAT PELATIHAN ANAK -->
+        <div class="detail-card">
+          <div class="detail-card-title">
+            <span>Riwayat Pelatihan Kemandirian &amp; Keterampilan</span>
+            ${pelAnak.length > 0 ? `
+              <span class="badge" style="background: #F5F3FF; color: #7C3AED; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 9999px;">
+                ${pelAnak.length} Pelatihan Diikuti
+              </span>
+            ` : ''}
+          </div>
+
+          ${pelAnak.length > 0 ? `
+            <div class="detail-aid-table-wrap">
+              <table class="detail-aid-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Nama Kegiatan Pelatihan</th>
+                    <th>Tujuan Kegiatan</th>
+                    <th>Lokasi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pelAnak.map(p => `
+                    <tr>
+                      <td style="font-weight: 700; white-space: nowrap;">${formatDateIndoFull(p.tanggal)}</td>
+                      <td style="font-weight: 800; color: #0F172A;">${p.nama}</td>
+                      <td style="color: #475569; font-size: 12px;">${p.tujuan || '-'}</td>
+                      <td style="color: #64748B; font-size: 11.5px;">📍 ${p.lokasi || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="detail-aid-empty">
+              <div class="detail-aid-empty-left">
+                <span style="font-size: 24px;">🎓</span>
+                <div>
+                  <div style="font-weight: 800; color: #1E293B;">Belum ada riwayat pelatihan untuk anak ini</div>
+                  <div style="font-size: 12px; color: #64748B;">Catat pelatihan yang diikuti anak melalui menu Pelatihan (otomatis tersinkron).</div>
+                </div>
+              </div>
+            </div>
+          `}
+        </div>
+
+        <!-- CARD: RIWAYAT PERJALANAN & OUTING ANAK -->
+        <div class="detail-card">
+          <div class="detail-card-title">
+            <span>Riwayat Perjalanan &amp; Outing Edukatif</span>
+            ${perAnak.length > 0 ? `
+              <span class="badge" style="background: #FEF3C7; color: #D97706; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 9999px;">
+                ${perAnak.length} Perjalanan Diikuti
+              </span>
+            ` : ''}
+          </div>
+
+          ${perAnak.length > 0 ? `
+            <div class="detail-aid-table-wrap">
+              <table class="detail-aid-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Nama Kegiatan Perjalanan</th>
+                    <th>Tujuan Kegiatan</th>
+                    <th>Destinasi / Lokasi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${perAnak.map(pr => `
+                    <tr>
+                      <td style="font-weight: 700; white-space: nowrap;">${formatDateIndoFull(pr.tanggal)}</td>
+                      <td style="font-weight: 800; color: #0F172A;">${pr.nama}</td>
+                      <td style="color: #475569; font-size: 12px;">${pr.tujuan || '-'}</td>
+                      <td style="color: #64748B; font-size: 11.5px;">📍 ${pr.lokasi || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div class="detail-aid-empty">
+              <div class="detail-aid-empty-left">
+                <span style="font-size: 24px;">🚗</span>
+                <div>
+                  <div style="font-weight: 800; color: #1E293B;">Belum ada riwayat perjalanan untuk anak ini</div>
+                  <div style="font-size: 12px; color: #64748B;">Catat perjalanan atau outing melalui menu Perjalanan (otomatis tersinkron).</div>
+                </div>
+              </div>
             </div>
           `}
         </div>
@@ -2792,121 +2906,272 @@ function buildSuratPendaftaranHTML(a) {
   const tahunSaatIni = suratDate.getFullYear();
   const nomorSurat = `${nomorUrut} / SEK-YLHG / ${bulanRomawi} / ${tahunSaatIni}`;
 
+  // Periksa apakah anak memiliki riwayat Pelatihan atau Perjalanan
+  const pList = (typeof getPelatihanForAnak === 'function') ? getPelatihanForAnak(a.id) : [];
+  const prList = (typeof getPerjalananForAnak === 'function') ? getPerjalananForAnak(a.id) : [];
+  const hasHalaman2 = (pList.length > 0 || prList.length > 0);
+
+  let halaman2Html = '';
+  if (hasHalaman2) {
+    halaman2Html = `
+      <div class="pdf-page-separator-preview" data-html2canvas-ignore="true">
+        <span>📄</span> HALAMAN 2: LAMPIRAN RIWAYAT PARTISIPASI PELATIHAN &amp; PERJALANAN BINAAN
+      </div>
+      <div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0;"></div>
+      <div class="a4-paper a4-paper-page2" id="surat-a4-page2">
+        <!-- KOP SURAT LAMPIRAN -->
+        <div class="kop-surat">
+          <div class="kop-logo-box">
+            <img src="img/logo.png" alt="Logo LHG" class="kop-logo-img">
+            <div class="kop-sublogo">PROVINSI KEPULAUAN RIAU</div>
+          </div>
+          <div class="kop-org-name">YAYASAN LENTERA HATI GURINDAM</div>
+          <div class="kop-org-prov">PROVINSI KEPULAUAN RIAU</div>
+          <div class="kop-divider-double"></div>
+        </div>
+
+        <!-- JUDUL HALAMAN 2 -->
+        <div class="surat-doc-title">LAMPIRAN SURAT KETERANGAN PENDATAAN</div>
+        <div class="surat-doc-nomor">Nomor: ${nomorSurat}</div>
+        <div style="text-align: center; font-size: 11px; font-weight: 700; color: #1E293B; margin-top: -8px; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.3px;">
+          CATATAN KEIKUTSERTAAN KEGIATAN PELATIHAN &amp; PERJALANAN BINAAN
+        </div>
+
+        <!-- IDENTITAS RINGKAS ANAK -->
+        <table class="surat-data-table" style="margin-bottom: 14px; background: #F8FAFC; border: 1px solid #CBD5E1; padding: 6px 12px; border-radius: 4px;">
+          <tbody>
+            <tr>
+              <td style="width: 145px; font-weight: 700;">Nama Lengkap Anak</td>
+              <td style="width: 14px; text-align: center;">:</td>
+              <td><strong>${(a.nama || '-').toUpperCase()}</strong></td>
+              <td style="width: 135px; font-weight: 700;">NIR / ID Registrasi</td>
+              <td style="width: 14px; text-align: center;">:</td>
+              <td><strong>${nirId}</strong></td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700;">NIK Anak</td>
+              <td style="text-align: center;">:</td>
+              <td>${a.nik || '-'}</td>
+              <td style="font-weight: 700;">Ragam Disabilitas</td>
+              <td style="text-align: center;">:</td>
+              <td>${disabilitasText}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- SEKSI I: RIWAYAT PELATIHAN -->
+        <div style="margin-top: 14px; margin-bottom: 6px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #0F172A; text-transform: uppercase; border-bottom: 1.5px solid #0F172A; padding-bottom: 3px; display: flex; justify-content: space-between;">
+            <span>I. RIWAYAT PELATIHAN YANG DIIKUTI</span>
+            <span style="font-weight: 700; font-size: 11px;">(${pList.length} Kegiatan)</span>
+          </div>
+        </div>
+        ${pList.length > 0 ? `
+          <table class="surat-lampiran-table">
+            <thead>
+              <tr>
+                <th style="width: 32px; text-align: center;">NO</th>
+                <th>NAMA KEGIATAN PELATIHAN</th>
+                <th style="width: 110px; text-align: center;">TANGGAL</th>
+                <th>TUJUAN KEGIATAN</th>
+                <th style="width: 135px;">LOKASI / TEMPAT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pList.map((p, pIdx) => `
+                <tr>
+                  <td style="text-align: center; font-weight: 700;">${pIdx + 1}</td>
+                  <td style="font-weight: 700; color: #0F172A;">${p.nama}</td>
+                  <td style="text-align: center; white-space: nowrap;">${formatDateIndoFull(p.tanggal)}</td>
+                  <td>${p.tujuan || '-'}</td>
+                  <td>${p.lokasi || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : `
+          <div style="padding: 10px; font-size: 11px; color: #64748B; font-style: italic; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 4px; margin-bottom: 10px;">
+            Belum ada riwayat pelatihan yang tercatat untuk peserta ini.
+          </div>
+        `}
+
+        <!-- SEKSI II: RIWAYAT PERJALANAN & OUTING -->
+        <div style="margin-top: 18px; margin-bottom: 6px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #0F172A; text-transform: uppercase; border-bottom: 1.5px solid #0F172A; padding-bottom: 3px; display: flex; justify-content: space-between;">
+            <span>II. RIWAYAT PERJALANAN &amp; OUTING YANG DIIKUTI</span>
+            <span style="font-weight: 700; font-size: 11px;">(${prList.length} Kegiatan)</span>
+          </div>
+        </div>
+        ${prList.length > 0 ? `
+          <table class="surat-lampiran-table">
+            <thead>
+              <tr>
+                <th style="width: 32px; text-align: center;">NO</th>
+                <th>NAMA KEGIATAN PERJALANAN</th>
+                <th style="width: 110px; text-align: center;">TANGGAL</th>
+                <th>TUJUAN KEGIATAN</th>
+                <th style="width: 135px;">LOKASI / DESTINASI</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${prList.map((pr, prIdx) => `
+                <tr>
+                  <td style="text-align: center; font-weight: 700;">${prIdx + 1}</td>
+                  <td style="font-weight: 700; color: #0F172A;">${pr.nama}</td>
+                  <td style="text-align: center; white-space: nowrap;">${formatDateIndoFull(pr.tanggal)}</td>
+                  <td>${pr.tujuan || '-'}</td>
+                  <td>${pr.lokasi || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : `
+          <div style="padding: 10px; font-size: 11px; color: #64748B; font-style: italic; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 4px; margin-bottom: 10px;">
+            Belum ada riwayat perjalanan yang tercatat untuk peserta ini.
+          </div>
+        `}
+
+        <!-- PARAGRAF PENGESAHAN LAMPIRAN -->
+        <p class="surat-paragraph" style="margin-top: 16px;">
+          Lampiran riwayat kegiatan ini dibuat dengan sebenarnya sebagai satu kesatuan yang tidak terpisahkan dari Surat Keterangan Pendataan Nomor: <strong>${nomorSurat}</strong> untuk dapat dipergunakan sebagaimana mestinya.
+        </p>
+
+        <!-- TANDA TANGAN HALAMAN 2 -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+          <div class="surat-ttd-box">
+            <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
+            <div class="surat-ttd-org">Yayasan Lentera Hati Gurindam Kepulauan Riau</div>
+            <div class="surat-ttd-qr">
+              <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
+                <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
+              </a>
+            </div>
+            <div class="surat-ttd-name" style="text-decoration: none;">KAMARIDA</div>
+            <div class="surat-ttd-role">Ketua Yayasan</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   return `
-    <div class="a4-paper" id="surat-a4-document">
-      <!-- KOP SURAT YAYASAN -->
-      <div class="kop-surat">
-        <div class="kop-logo-box">
-          <img src="img/logo.png" alt="Logo LHG" class="kop-logo-img">
-          <div class="kop-sublogo">PROVINSI KEPULAUAN RIAU</div>
+    <div id="surat-a4-document-wrapper">
+      <div class="a4-paper" id="surat-a4-document">
+        <!-- KOP SURAT YAYASAN -->
+        <div class="kop-surat">
+          <div class="kop-logo-box">
+            <img src="img/logo.png" alt="Logo LHG" class="kop-logo-img">
+            <div class="kop-sublogo">PROVINSI KEPULAUAN RIAU</div>
+          </div>
+          <div class="kop-org-name">YAYASAN LENTERA HATI GURINDAM</div>
+          <div class="kop-org-prov">PROVINSI KEPULAUAN RIAU</div>
+          <div class="kop-divider-double"></div>
         </div>
-        <div class="kop-org-name">YAYASAN LENTERA HATI GURINDAM</div>
-        <div class="kop-org-prov">PROVINSI KEPULAUAN RIAU</div>
-        <div class="kop-divider-double"></div>
-      </div>
 
-      <!-- JUDUL SURAT & NOMOR SURAT -->
-      <div class="surat-doc-title">SURAT KETERANGAN PENDATAAN ANGGOTA DISABILITAS</div>
-      <div class="surat-doc-nomor">Nomor: ${nomorSurat}</div>
+        <!-- JUDUL SURAT & NOMOR SURAT -->
+        <div class="surat-doc-title">SURAT KETERANGAN PENDATAAN ANGGOTA DISABILITAS</div>
+        <div class="surat-doc-nomor">Nomor: ${nomorSurat}</div>
 
-      <!-- PARAGRAF PEMBUKA -->
-      <p class="surat-paragraph">
-        Pengurus Yayasan Lentera Hati Gurindam menerangkan bahwa berdasarkan hasil verifikasi dan asesmen pendataan lapangan yang telah dilaksanakan, nama berikut:
-      </p>
+        <!-- PARAGRAF PEMBUKA -->
+        <p class="surat-paragraph">
+          Pengurus Yayasan Lentera Hati Gurindam menerangkan bahwa berdasarkan hasil verifikasi dan asesmen pendataan lapangan yang telah dilaksanakan, nama berikut:
+        </p>
 
-      <!-- TABEL DATA LENGKAP -->
-      <table class="surat-data-table">
-        <tbody>
-          <tr>
-            <td class="surat-col-label">Nama Lengkap Anak</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val"><strong>${(a.nama || '-').toUpperCase()}</strong></td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Nomor Induk Registrasi (NIR/ID)</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val"><strong>${nirId}</strong></td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Nomor Induk Kependudukan (NIK)</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${a.nik || '-'}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Tempat, Tanggal Lahir</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${a.ttl || '-'}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Jenis Kelamin</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${jkText}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Ragam Disabilitas</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${disabilitasText}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Nama Orang Tua / Wali</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${namaWali}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Nomor Kontak Wali</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${kontak}</td>
-          </tr>
-          <tr>
-            <td class="surat-col-label">Alamat Domisili</td>
-            <td class="surat-col-colon">:</td>
-            <td class="surat-col-val">${alamatLengkap}</td>
-          </tr>
-        </tbody>
-      </table>
+        <!-- TABEL DATA LENGKAP -->
+        <table class="surat-data-table">
+          <tbody>
+            <tr>
+              <td class="surat-col-label">Nama Lengkap Anak</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val"><strong>${(a.nama || '-').toUpperCase()}</strong></td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Nomor Induk Registrasi (NIR/ID)</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val"><strong>${nirId}</strong></td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Nomor Induk Kependudukan (NIK)</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${a.nik || '-'}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Tempat, Tanggal Lahir</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${a.ttl || '-'}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Jenis Kelamin</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${jkText}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Ragam Disabilitas</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${disabilitasText}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Nama Orang Tua / Wali</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${namaWali}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Nomor Kontak Wali</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${kontak}</td>
+            </tr>
+            <tr>
+              <td class="surat-col-label">Alamat Domisili</td>
+              <td class="surat-col-colon">:</td>
+              <td class="surat-col-val">${alamatLengkap}</td>
+            </tr>
+          </tbody>
+        </table>
 
-      <!-- PARAGRAF PENETAPAN & KETERANGAN -->
-      <p class="surat-paragraph">
-        Telah resmi <strong>TERDAFTAR &amp; MASUK DALAM BASIS DATA</strong> binaan Yayasan Lentera Hati Gurindam per tanggal ${tanggalSelesaiDidata}.
-      </p>
+        <!-- PARAGRAF PENETAPAN & KETERANGAN -->
+        <p class="surat-paragraph">
+          Telah resmi <strong>TERDAFTAR &amp; MASUK DALAM BASIS DATA</strong> binaan Yayasan Lentera Hati Gurindam per tanggal ${tanggalSelesaiDidata}.
+        </p>
 
-      <p class="surat-paragraph">
-        Surat keterangan ini diterbitkan sebagai bukti kepesertaan terdata yang sah untuk keperluan koordinasi program pemantauan, pendampingan, serta penyaluran program sosial yayasan.
-      </p>
+        <p class="surat-paragraph">
+          Surat keterangan ini diterbitkan sebagai bukti kepesertaan terdata yang sah untuk keperluan koordinasi program pemantauan, pendampingan, serta penyaluran program sosial yayasan.
+        </p>
 
-      <!-- PARAGRAF PENUTUP -->
-      <p class="surat-paragraph">
-        Demikian surat keterangan pendataan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
-      </p>
+        <!-- PARAGRAF PENUTUP -->
+        <p class="surat-paragraph">
+          Demikian surat keterangan pendataan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+        </p>
 
-      <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR TULISAN 'YAYASAN') -->
-      <div class="surat-ttd-container">
-        <div class="surat-foto-wrapper">
-          <div class="surat-foto-box">
-            ${a.foto ? `
-              <img src="${a.foto}" alt="Pas Foto ${a.nama}" class="surat-foto-img">
-            ` : `
-              <div class="surat-foto-empty">
-                <span class="surat-foto-empty-icon">📷</span>
-                <span class="surat-foto-empty-text">PAS FOTO</span>
-                <span class="surat-foto-empty-dim">3 x 4</span>
-              </div>
-            `}
+        <!-- TANDA TANGAN (KANAN) & PAS FOTO 3X4 (KIRI, SEJAJAR TULISAN 'YAYASAN') -->
+        <div class="surat-ttd-container">
+          <div class="surat-foto-wrapper">
+            <div class="surat-foto-box">
+              ${a.foto ? `
+                <img src="${a.foto}" alt="Pas Foto ${a.nama}" class="surat-foto-img">
+              ` : `
+                <div class="surat-foto-empty">
+                  <span class="surat-foto-empty-icon">📷</span>
+                  <span class="surat-foto-empty-text">PAS FOTO</span>
+                  <span class="surat-foto-empty-dim">3 x 4</span>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <div class="surat-ttd-box">
+            <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
+            <div class="surat-ttd-org"><span id="surat-ref-yayasan">Yayasan</span> Lentera Hati Gurindam Kepulauan Riau</div>
+            <div class="surat-ttd-qr">
+              <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
+                <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
+              </a>
+            </div>
+            <div class="surat-ttd-name" style="text-decoration: none;">KAMARIDA</div>
+            <div class="surat-ttd-role">Ketua Yayasan</div>
           </div>
         </div>
-
-        <div class="surat-ttd-box">
-          <div class="surat-ttd-date">Tanjungpinang, ${tanggalSurat}</div>
-          <div class="surat-ttd-org"><span id="surat-ref-yayasan">Yayasan</span> Lentera Hati Gurindam Kepulauan Riau</div>
-          <div class="surat-ttd-qr">
-            <a href="validasi.html" target="_blank" title="Klik untuk verifikasi tanda tangan digital">
-              <img src="img/qr-kamarida.png" alt="QR Code Tanda Tangan Digital" class="surat-qr-img">
-            </a>
-          </div>
-          <div class="surat-ttd-name" style="text-decoration: none;">KAMARIDA</div>
-          <div class="surat-ttd-role">Ketua Yayasan</div>
-        </div>
       </div>
+      ${halaman2Html}
     </div>
   `;
 }
@@ -2962,7 +3227,7 @@ function downloadSuratPendaftaranPDF(id) {
     previewSuratPendaftaran();
   }
 
-  const element = document.getElementById('surat-a4-document');
+  const element = document.getElementById('surat-a4-document-wrapper') || document.getElementById('surat-a4-document');
   if (!element) {
     showToast('Elemen surat tidak ditemukan!', 'error');
     return;
@@ -2979,19 +3244,23 @@ function downloadSuratPendaftaranPDF(id) {
   const cleanNama = (a.nama || 'Anak').replace(/[^a-zA-Z0-9]/g, '_');
   const filename = `Surat_Keterangan_Pendataan_LHG_${a.noAnggota || a.id}_${cleanNama}.pdf`;
 
+  const pList = (typeof getPelatihanForAnak === 'function') ? getPelatihanForAnak(a.id) : [];
+  const prList = (typeof getPerjalananForAnak === 'function') ? getPerjalananForAnak(a.id) : [];
+  const hasHalaman2 = (pList.length > 0 || prList.length > 0);
+
   const opt = {
-    margin: [10, 14, 10, 14],
+    margin: [8, 12, 8, 12],
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    pagebreak: { mode: ['css', 'legacy'] }
   };
 
   alignSuratFoto(element);
 
   html2pdf().set(opt).from(element).save().then(() => {
-    showToast('PDF berhasil diunduh (1 lembar A4 penuh)!');
+    showToast(hasHalaman2 ? 'PDF berhasil diunduh (2 lembar: Surat & Lampiran Kegiatan)!' : 'PDF berhasil diunduh (1 lembar A4 penuh)!', 'success');
   }).catch(err => {
     console.error('Error generating PDF:', err);
     showToast('Gagal download PDF, beralih ke jendela cetak...');
@@ -3023,7 +3292,7 @@ function printSuratPendaftaranPDF(id) {
       <style>
         @page {
           size: A4 portrait;
-          margin: 12mm 18mm 12mm 18mm;
+          margin: 10mm 16mm 10mm 16mm;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
@@ -3039,10 +3308,44 @@ function printSuratPendaftaranPDF(id) {
           width: 100%;
           max-width: 100%;
           margin: 0;
-          padding: 6px 0 0 0;
+          padding: 4px 0 0 0;
           box-shadow: none;
           page-break-inside: avoid;
           break-inside: avoid;
+        }
+        .a4-paper-page2 {
+          page-break-before: always !important;
+          break-before: page !important;
+          padding-top: 8px !important;
+        }
+        .pdf-page-separator-preview {
+          display: none !important;
+        }
+        .html2pdf__page-break {
+          page-break-before: always !important;
+          break-before: page !important;
+          height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: block !important;
+        }
+        .surat-lampiran-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11px;
+          margin: 8px 0 14px 0;
+          color: #000;
+        }
+        .surat-lampiran-table th,
+        .surat-lampiran-table td {
+          border: 1px solid #000;
+          padding: 5px 6px;
+          vertical-align: top;
+          line-height: 1.35;
+        }
+        .surat-lampiran-table th {
+          background: #F1F5F9;
+          font-weight: 800;
         }
         .kop-surat { text-align: center; margin-bottom: 16px; }
         .kop-logo-box { display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
@@ -7144,6 +7447,885 @@ function printRekapRencanaKegiatan() {
 }
 
 // ==============================================================================
+// MENU PELATIHAN & PERJALANAN ANAK DISABILITAS (SINKRON KE DATA ANAK & FORM PENDAFTARAN)
+// ==============================================================================
+
+function getPelatihanList() {
+  return DB.get('lhg_pelatihan', []);
+}
+
+function getPerjalananList() {
+  return DB.get('lhg_perjalanan', []);
+}
+
+function updatePelatihanPerjalananBadges() {
+  const pList = getPelatihanList();
+  const prList = getPerjalananList();
+  setText('nav-badge-pelatihan', pList.length);
+  setText('nav-badge-perjalanan', prList.length);
+}
+
+// Ambil riwayat pelatihan anak tertentu berdasarkan ID
+function getPelatihanForAnak(anakId) {
+  if (!anakId) return [];
+  const list = getPelatihanList();
+  return list.filter(p => Array.isArray(p.peserta) && p.peserta.includes(anakId))
+             .sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+}
+
+// Ambil riwayat perjalanan anak tertentu berdasarkan ID
+function getPerjalananForAnak(anakId) {
+  if (!anakId) return [];
+  const list = getPerjalananList();
+  return list.filter(pr => Array.isArray(pr.peserta) && pr.peserta.includes(anakId))
+             .sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+}
+
+// Sinkronisasi otomatis referensi kegiatan ke dalam profil data anak
+function syncKegiatanToAnggota() {
+  const anggota = DB.get('lhg_anggota', []);
+  const pList = getPelatihanList();
+  const prList = getPerjalananList();
+
+  let modified = false;
+  anggota.forEach(a => {
+    const pel = pList.filter(p => Array.isArray(p.peserta) && p.peserta.includes(a.id)).map(p => ({
+      id: p.id, nama: p.nama, tanggal: p.tanggal, tujuan: p.tujuan, lokasi: p.lokasi || ''
+    }));
+    const perj = prList.filter(pr => Array.isArray(pr.peserta) && pr.peserta.includes(a.id)).map(pr => ({
+      id: pr.id, nama: pr.nama, tanggal: pr.tanggal, tujuan: pr.tujuan, lokasi: pr.lokasi || ''
+    }));
+
+    if (JSON.stringify(a.riwayatPelatihan || []) !== JSON.stringify(pel)) {
+      a.riwayatPelatihan = pel;
+      modified = true;
+    }
+    if (JSON.stringify(a.riwayatPerjalanan || []) !== JSON.stringify(perj)) {
+      a.riwayatPerjalanan = perj;
+      modified = true;
+    }
+  });
+
+  if (modified) {
+    DB.set('lhg_anggota', anggota);
+  }
+}
+
+// ---- POPULATE PESERTA SELECTOR CHECKBOXES ----
+function populatePesertaSelector(containerId, prefix, selectedIds = []) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+
+  const anggota = DB.get('lhg_anggota', []).slice();
+  anggota.sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id'));
+
+  if (anggota.length === 0) {
+    cont.innerHTML = '<div style="padding: 24px; text-align: center; color: #64748B; font-size: 12px; grid-column: 1 / -1;">Belum ada data anak terdaftar di database. Silakan input data anak terlebih dahulu.</div>';
+    return;
+  }
+
+  const selectedSet = new Set(selectedIds || []);
+
+  cont.innerHTML = anggota.map(a => {
+    const isChecked = selectedSet.has(a.id);
+    const searchData = `${a.nama} ${a.nik || ''} ${a.noAnggota || ''} ${a.kelurahan || ''} ${a.disabilitas || ''}`.toLowerCase();
+    return `
+      <label class="peserta-select-card ${isChecked ? 'selected' : ''}" data-search="${searchData}" data-id="${a.id}">
+        <input type="checkbox" name="${prefix}-anak-checkbox" value="${a.id}" ${isChecked ? 'checked' : ''} onchange="onPesertaCheckboxChange(this, '${prefix}')">
+        <div class="peserta-avatar-mini">
+          ${a.foto ? `<img src="${a.foto}" alt="${a.nama}">` : (getInitials(a.nama) || 'AN')}
+        </div>
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-weight: 700; font-size: 12.5px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.nama}</div>
+          <div style="font-size: 11px; color: #64748B;">
+            <span style="font-family: monospace; font-weight: 700; color: #2563EB;">${a.noAnggota || a.id}</span> • ${a.disabilitas || 'Disabilitas'}
+          </div>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  updatePesertaCount(prefix);
+}
+
+function onPesertaCheckboxChange(cb, prefix) {
+  const card = cb.closest('.peserta-select-card');
+  if (card) {
+    card.classList.toggle('selected', cb.checked);
+  }
+  updatePesertaCount(prefix);
+}
+
+function updatePesertaCount(prefix) {
+  const checkboxes = document.querySelectorAll(`input[name="${prefix}-anak-checkbox"]:checked`);
+  const countEl = document.getElementById(`${prefix}-peserta-count`);
+  if (countEl) {
+    countEl.textContent = `${checkboxes.length} Anak Terpilih`;
+  }
+}
+
+function selectAllPeserta(prefix) {
+  const container = document.getElementById(`${prefix}-peserta-list`);
+  if (!container) return;
+  container.querySelectorAll('.peserta-select-card').forEach(card => {
+    if (card.style.display !== 'none') {
+      const cb = card.querySelector(`input[name="${prefix}-anak-checkbox"]`);
+      if (cb) {
+        cb.checked = true;
+        card.classList.add('selected');
+      }
+    }
+  });
+  updatePesertaCount(prefix);
+}
+
+function deselectAllPeserta(prefix) {
+  const container = document.getElementById(`${prefix}-peserta-list`);
+  if (!container) return;
+  container.querySelectorAll('.peserta-select-card').forEach(card => {
+    if (card.style.display !== 'none') {
+      const cb = card.querySelector(`input[name="${prefix}-anak-checkbox"]`);
+      if (cb) {
+        cb.checked = false;
+        card.classList.remove('selected');
+      }
+    }
+  });
+  updatePesertaCount(prefix);
+}
+
+function filterPesertaSelector(keyword, prefix) {
+  keyword = (keyword || '').toLowerCase().trim();
+  const cards = document.querySelectorAll(`#${prefix}-peserta-list .peserta-select-card`);
+  cards.forEach(c => {
+    const s = c.getAttribute('data-search') || '';
+    c.style.display = (!keyword || s.includes(keyword)) ? 'flex' : 'none';
+  });
+}
+
+function getSelectedPesertaIds(prefix) {
+  const checkboxes = document.querySelectorAll(`input[name="${prefix}-anak-checkbox"]:checked`);
+  return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// ==============================================================================
+// MODUL PELATIHAN ANAK DISABILITAS
+// ==============================================================================
+
+function renderPelatihanPage() {
+  updatePelatihanPerjalananBadges();
+  renderPelatihanStats();
+  renderPelatihanTable();
+}
+
+function renderPelatihanStats() {
+  const list = getPelatihanList();
+  const total = list.length;
+
+  const allPeserta = new Set();
+  list.forEach(p => {
+    if (Array.isArray(p.peserta)) {
+      p.peserta.forEach(id => allPeserta.add(id));
+    }
+  });
+
+  const now = new Date();
+  const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const bulanIni = list.filter(p => (p.tanggal || '').startsWith(curYm)).length;
+
+  setText('stat-pelatihan-total', total);
+  setText('stat-pelatihan-anak-count', allPeserta.size);
+  setText('stat-pelatihan-bulan-ini', bulanIni);
+  setText('nav-badge-pelatihan', total);
+}
+
+function renderPelatihanTable(search) {
+  search = (search || '').toLowerCase().trim();
+  let list = getPelatihanList();
+
+  if (search) {
+    list = list.filter(p => {
+      const nm = (p.nama || '').toLowerCase();
+      const tj = (p.tujuan || '').toLowerCase();
+      const lk = (p.lokasi || '').toLowerCase();
+      const kt = (p.keterangan || '').toLowerCase();
+      return nm.includes(search) || tj.includes(search) || lk.includes(search) || kt.includes(search);
+    });
+  }
+
+  // Urutkan tanggal terbaru di atas
+  list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+
+  const tbody = document.getElementById('pelatihan-tbody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 38px; margin-bottom: 8px;">🎓</div>
+          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Pelatihan</p>
+          <p style="font-size: 12px;">Klik tombol "Tambah Pelatihan" di atas untuk merekam pelatihan yang diikuti oleh anak binaan.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const allAnggota = DB.get('lhg_anggota', []);
+  const anggotaMap = new Map();
+  allAnggota.forEach(a => anggotaMap.set(a.id, a));
+
+  tbody.innerHTML = list.map((p, idx) => {
+    const pesertaIds = Array.isArray(p.peserta) ? p.peserta : [];
+    const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
+
+    let pesertaBadgesHtml = '';
+    if (pesertaAnak.length === 0) {
+      pesertaBadgesHtml = `
+        <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada anak dipilih</span>
+        <button type="button" class="btn-sec" style="padding: 2px 8px; font-size: 10.5px; margin-top: 4px;" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')">+ Pilih Peserta</button>
+      `;
+    } else {
+      const top3 = pesertaAnak.slice(0, 3);
+      const remaining = pesertaAnak.length - top3.length;
+      pesertaBadgesHtml = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
+          <span style="background: #F5F3FF; color: #7C3AED; border: 1px solid #DDD6FE; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">
+            👥 ${pesertaAnak.length} Anak
+          </span>
+        </div>
+        <div style="font-size: 11px; color: #475569; margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${pesertaAnak.map(x => x.nama).join(', ')}">
+          ${top3.map(x => x.nama).join(', ')}${remaining > 0 ? ` +${remaining} lainnya` : ''}
+        </div>
+      `;
+    }
+
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+        <td>
+          <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${p.nama}</div>
+          ${p.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${p.keterangan}</div>` : ''}
+        </td>
+        <td style="white-space: nowrap;">
+          <span style="font-weight: 700; color: #1E293B; font-size: 12.5px;">📅 ${formatDateIndoFull(p.tanggal)}</span>
+        </td>
+        <td>
+          <div style="font-size: 12px; color: #334155; line-height: 1.45; max-width: 280px;">${p.tujuan || '-'}</div>
+        </td>
+        <td>
+          <span style="font-size: 12px; color: #475569;">📍 ${p.lokasi || '-'}</span>
+        </td>
+        <td style="text-align: center;">
+          ${pesertaBadgesHtml}
+        </td>
+        <td style="text-align: center;">
+          <div style="display: flex; gap: 4px; justify-content: center;">
+            <button class="btn-action-icon" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')" title="Kelola Peserta Anak">👥</button>
+            <button class="btn-action-icon edit" onclick="openEditPelatihan('${p.id}')" title="Edit Kegiatan Pelatihan">✏️</button>
+            <button class="btn-action-icon delete" onclick="deletePelatihan('${p.id}')" title="Hapus Kegiatan Pelatihan">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddPelatihan() {
+  document.getElementById('form-pelatihan').reset();
+  document.getElementById('pelatihan-edit-id').value = '';
+  document.getElementById('modal-pelatihan-title').textContent = 'Tambah Kegiatan Pelatihan Anak';
+  
+  const tglInput = document.getElementById('pelatihan-tanggal');
+  if (tglInput) tglInput.value = getTodayLocalDateStr();
+
+  const searchInput = document.getElementById('pelatihan-peserta-search');
+  if (searchInput) searchInput.value = '';
+
+  populatePesertaSelector('pelatihan-peserta-list', 'pelatihan', []);
+  openModal('modal-pelatihan');
+}
+
+function openEditPelatihan(id) {
+  const p = getPelatihanList().find(x => x.id === id);
+  if (!p) {
+    showToast('Data pelatihan tidak ditemukan!', 'error');
+    return;
+  }
+
+  document.getElementById('pelatihan-edit-id').value = p.id;
+  document.getElementById('modal-pelatihan-title').textContent = 'Edit Kegiatan Pelatihan Anak';
+  document.getElementById('pelatihan-nama').value = p.nama || '';
+  document.getElementById('pelatihan-tanggal').value = p.tanggal || '';
+  document.getElementById('pelatihan-tujuan').value = p.tujuan || '';
+  document.getElementById('pelatihan-lokasi').value = p.lokasi || '';
+  document.getElementById('pelatihan-keterangan').value = p.keterangan || '';
+
+  const searchInput = document.getElementById('pelatihan-peserta-search');
+  if (searchInput) searchInput.value = '';
+
+  populatePesertaSelector('pelatihan-peserta-list', 'pelatihan', p.peserta || []);
+  openModal('modal-pelatihan');
+}
+
+function savePelatihan() {
+  const editId = document.getElementById('pelatihan-edit-id').value;
+  const nama = (document.getElementById('pelatihan-nama').value || '').trim();
+  const tanggal = (document.getElementById('pelatihan-tanggal').value || '').trim();
+  const tujuan = (document.getElementById('pelatihan-tujuan').value || '').trim();
+  const lokasi = (document.getElementById('pelatihan-lokasi').value || '').trim();
+  const keterangan = (document.getElementById('pelatihan-keterangan').value || '').trim();
+
+  if (!nama || !tanggal || !tujuan) {
+    showToast('Nama, tanggal, dan tujuan kegiatan pelatihan wajib diisi!', 'warning');
+    return;
+  }
+
+  const peserta = getSelectedPesertaIds('pelatihan');
+  let list = getPelatihanList();
+
+  if (editId) {
+    const idx = list.findIndex(x => x.id === editId);
+    if (idx > -1) {
+      list[idx] = {
+        ...list[idx],
+        nama,
+        tanggal,
+        tujuan,
+        lokasi,
+        keterangan,
+        peserta,
+        updatedAt: new Date().toISOString()
+      };
+      showToast('Data pelatihan berhasil diperbarui dan disinkronkan ke data anak!', 'success');
+    }
+  } else {
+    const newId = 'PLT-' + Date.now();
+    list.unshift({
+      id: newId,
+      nama,
+      tanggal,
+      tujuan,
+      lokasi,
+      keterangan,
+      peserta,
+      createdAt: new Date().toISOString()
+    });
+    showToast(`Pelatihan berhasil ditambahkan! (${peserta.length} anak tersinkronkan)`, 'success');
+  }
+
+  DB.set('lhg_pelatihan', list);
+  syncKegiatanToAnggota();
+  closeModal('modal-pelatihan');
+  renderPelatihanPage();
+  if (typeof previewSuratPendaftaran === 'function') previewSuratPendaftaran();
+}
+
+async function deletePelatihan(id) {
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Kegiatan Pelatihan',
+    message: 'Apakah Anda yakin ingin menghapus data pelatihan ini?',
+    subtext: 'Riwayat pelatihan pada berkas pendaftaran anak terkait juga akan otomatis disesuaikan.',
+    confirmText: 'Ya, Hapus Pelatihan',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
+
+  let list = getPelatihanList().filter(x => x.id !== id);
+  DB.set('lhg_pelatihan', list);
+  try {
+    await SupabaseAPI.delete('lhg_pelatihan', 'id', id);
+  } catch(e) {}
+
+  syncKegiatanToAnggota();
+  renderPelatihanPage();
+  if (typeof previewSuratPendaftaran === 'function') previewSuratPendaftaran();
+  showToast('Data pelatihan berhasil dihapus!', 'warning');
+}
+
+// ==============================================================================
+// MODUL PERJALANAN & OUTING ANAK DISABILITAS
+// ==============================================================================
+
+function renderPerjalananPage() {
+  updatePelatihanPerjalananBadges();
+  renderPerjalananStats();
+  renderPerjalananTable();
+}
+
+function renderPerjalananStats() {
+  const list = getPerjalananList();
+  const total = list.length;
+
+  const allPeserta = new Set();
+  const allDestinasi = new Set();
+
+  list.forEach(pr => {
+    if (Array.isArray(pr.peserta)) {
+      pr.peserta.forEach(id => allPeserta.add(id));
+    }
+    if (pr.lokasi) allDestinasi.add(pr.lokasi.trim().toLowerCase());
+  });
+
+  setText('stat-perjalanan-total', total);
+  setText('stat-perjalanan-anak-count', allPeserta.size);
+  setText('stat-perjalanan-destinasi', allDestinasi.size || total);
+  setText('nav-badge-perjalanan', total);
+}
+
+function renderPerjalananTable(search) {
+  search = (search || '').toLowerCase().trim();
+  let list = getPerjalananList();
+
+  if (search) {
+    list = list.filter(pr => {
+      const nm = (pr.nama || '').toLowerCase();
+      const tj = (pr.tujuan || '').toLowerCase();
+      const lk = (pr.lokasi || '').toLowerCase();
+      const kt = (pr.keterangan || '').toLowerCase();
+      return nm.includes(search) || tj.includes(search) || lk.includes(search) || kt.includes(search);
+    });
+  }
+
+  // Urutkan tanggal terbaru di atas
+  list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+
+  const tbody = document.getElementById('perjalanan-tbody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 38px; margin-bottom: 8px;">🚗</div>
+          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Perjalanan & Outing</p>
+          <p style="font-size: 12px;">Klik tombol "Tambah Perjalanan" di atas untuk merekam perjalanan rekreasi dan edukasi anak binaan.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const allAnggota = DB.get('lhg_anggota', []);
+  const anggotaMap = new Map();
+  allAnggota.forEach(a => anggotaMap.set(a.id, a));
+
+  tbody.innerHTML = list.map((pr, idx) => {
+    const pesertaIds = Array.isArray(pr.peserta) ? pr.peserta : [];
+    const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
+
+    let pesertaBadgesHtml = '';
+    if (pesertaAnak.length === 0) {
+      pesertaBadgesHtml = `
+        <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada anak dipilih</span>
+        <button type="button" class="btn-sec" style="padding: 2px 8px; font-size: 10.5px; margin-top: 4px;" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')">+ Pilih Peserta</button>
+      `;
+    } else {
+      const top3 = pesertaAnak.slice(0, 3);
+      const remaining = pesertaAnak.length - top3.length;
+      pesertaBadgesHtml = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
+          <span style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">
+            👥 ${pesertaAnak.length} Anak
+          </span>
+        </div>
+        <div style="font-size: 11px; color: #475569; margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${pesertaAnak.map(x => x.nama).join(', ')}">
+          ${top3.map(x => x.nama).join(', ')}${remaining > 0 ? ` +${remaining} lainnya` : ''}
+        </div>
+      `;
+    }
+
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+        <td>
+          <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${pr.nama}</div>
+          ${pr.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${pr.keterangan}</div>` : ''}
+        </td>
+        <td style="white-space: nowrap;">
+          <span style="font-weight: 700; color: #1E293B; font-size: 12.5px;">📅 ${formatDateIndoFull(pr.tanggal)}</span>
+        </td>
+        <td>
+          <div style="font-size: 12px; color: #334155; line-height: 1.45; max-width: 280px;">${pr.tujuan || '-'}</div>
+        </td>
+        <td>
+          <span style="font-size: 12px; color: #475569;">📍 ${pr.lokasi || '-'}</span>
+        </td>
+        <td style="text-align: center;">
+          ${pesertaBadgesHtml}
+        </td>
+        <td style="text-align: center;">
+          <div style="display: flex; gap: 4px; justify-content: center;">
+            <button class="btn-action-icon" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')" title="Kelola Peserta Anak">👥</button>
+            <button class="btn-action-icon edit" onclick="openEditPerjalanan('${pr.id}')" title="Edit Kegiatan Perjalanan">✏️</button>
+            <button class="btn-action-icon delete" onclick="deletePerjalanan('${pr.id}')" title="Hapus Kegiatan Perjalanan">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddPerjalanan() {
+  document.getElementById('form-perjalanan').reset();
+  document.getElementById('perjalanan-edit-id').value = '';
+  document.getElementById('modal-perjalanan-title').textContent = 'Tambah Kegiatan Perjalanan Anak';
+
+  const tglInput = document.getElementById('perjalanan-tanggal');
+  if (tglInput) tglInput.value = getTodayLocalDateStr();
+
+  const searchInput = document.getElementById('perjalanan-peserta-search');
+  if (searchInput) searchInput.value = '';
+
+  populatePesertaSelector('perjalanan-peserta-list', 'perjalanan', []);
+  openModal('modal-perjalanan');
+}
+
+function openEditPerjalanan(id) {
+  const pr = getPerjalananList().find(x => x.id === id);
+  if (!pr) {
+    showToast('Data perjalanan tidak ditemukan!', 'error');
+    return;
+  }
+
+  document.getElementById('perjalanan-edit-id').value = pr.id;
+  document.getElementById('modal-perjalanan-title').textContent = 'Edit Kegiatan Perjalanan Anak';
+  document.getElementById('perjalanan-nama').value = pr.nama || '';
+  document.getElementById('perjalanan-tanggal').value = pr.tanggal || '';
+  document.getElementById('perjalanan-tujuan').value = pr.tujuan || '';
+  document.getElementById('perjalanan-lokasi').value = pr.lokasi || '';
+  document.getElementById('perjalanan-keterangan').value = pr.keterangan || '';
+
+  const searchInput = document.getElementById('perjalanan-peserta-search');
+  if (searchInput) searchInput.value = '';
+
+  populatePesertaSelector('perjalanan-peserta-list', 'perjalanan', pr.peserta || []);
+  openModal('modal-perjalanan');
+}
+
+function savePerjalanan() {
+  const editId = document.getElementById('perjalanan-edit-id').value;
+  const nama = (document.getElementById('perjalanan-nama').value || '').trim();
+  const tanggal = (document.getElementById('perjalanan-tanggal').value || '').trim();
+  const tujuan = (document.getElementById('perjalanan-tujuan').value || '').trim();
+  const lokasi = (document.getElementById('perjalanan-lokasi').value || '').trim();
+  const keterangan = (document.getElementById('perjalanan-keterangan').value || '').trim();
+
+  if (!nama || !tanggal || !tujuan) {
+    showToast('Nama, tanggal, dan tujuan kegiatan perjalanan wajib diisi!', 'warning');
+    return;
+  }
+
+  const peserta = getSelectedPesertaIds('perjalanan');
+  let list = getPerjalananList();
+
+  if (editId) {
+    const idx = list.findIndex(x => x.id === editId);
+    if (idx > -1) {
+      list[idx] = {
+        ...list[idx],
+        nama,
+        tanggal,
+        tujuan,
+        lokasi,
+        keterangan,
+        peserta,
+        updatedAt: new Date().toISOString()
+      };
+      showToast('Data perjalanan berhasil diperbarui dan disinkronkan ke data anak!', 'success');
+    }
+  } else {
+    const newId = 'PRJ-' + Date.now();
+    list.unshift({
+      id: newId,
+      nama,
+      tanggal,
+      tujuan,
+      lokasi,
+      keterangan,
+      peserta,
+      createdAt: new Date().toISOString()
+    });
+    showToast(`Perjalanan berhasil ditambahkan! (${peserta.length} anak tersinkronkan)`, 'success');
+  }
+
+  DB.set('lhg_perjalanan', list);
+  syncKegiatanToAnggota();
+  closeModal('modal-perjalanan');
+  renderPerjalananPage();
+  if (typeof previewSuratPendaftaran === 'function') previewSuratPendaftaran();
+}
+
+async function deletePerjalanan(id) {
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Kegiatan Perjalanan',
+    message: 'Apakah Anda yakin ingin menghapus data perjalanan ini?',
+    subtext: 'Riwayat perjalanan pada berkas pendaftaran anak terkait juga akan otomatis disesuaikan.',
+    confirmText: 'Ya, Hapus Perjalanan',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'delete'
+  });
+  if (!confirmed) return;
+
+  let list = getPerjalananList().filter(x => x.id !== id);
+  DB.set('lhg_perjalanan', list);
+  try {
+    await SupabaseAPI.delete('lhg_perjalanan', 'id', id);
+  } catch(e) {}
+
+  syncKegiatanToAnggota();
+  renderPerjalananPage();
+  if (typeof previewSuratPendaftaran === 'function') previewSuratPendaftaran();
+  showToast('Data perjalanan berhasil dihapus!', 'warning');
+}
+
+// ==============================================================================
+// MODAL KELOLA PESERTA CEPAT (PELATIHAN / PERJALANAN)
+// ==============================================================================
+
+function openKelolaPesertaModal(type, id) {
+  const item = (type === 'pelatihan') ? getPelatihanList().find(x => x.id === id) : getPerjalananList().find(x => x.id === id);
+  if (!item) {
+    showToast('Kegiatan tidak ditemukan!', 'error');
+    return;
+  }
+
+  document.getElementById('kelola-peserta-type').value = type;
+  document.getElementById('kelola-peserta-id').value = id;
+
+  const iconEl = document.getElementById('kelola-peserta-icon');
+  const titleEl = document.getElementById('kelola-peserta-title');
+  const subEl = document.getElementById('kelola-peserta-subtitle');
+
+  if (type === 'pelatihan') {
+    if (iconEl) { iconEl.textContent = '🎓'; iconEl.style.background = '#F5F3FF'; iconEl.style.color = '#7C3AED'; }
+    if (titleEl) titleEl.textContent = `Peserta: ${item.nama}`;
+    if (subEl) subEl.textContent = `Pilih anak binaan yang mengikuti pelatihan ini (${formatDateIndoFull(item.tanggal)})`;
+  } else {
+    if (iconEl) { iconEl.textContent = '🚗'; iconEl.style.background = '#FEF3C7'; iconEl.style.color = '#D97706'; }
+    if (titleEl) titleEl.textContent = `Peserta: ${item.nama}`;
+    if (subEl) subEl.textContent = `Pilih anak binaan yang mengikuti perjalanan ini (${formatDateIndoFull(item.tanggal)})`;
+  }
+
+  const searchInput = document.getElementById('kelola-peserta-search');
+  if (searchInput) searchInput.value = '';
+
+  populatePesertaSelector('kelola-peserta-list', 'kelola', item.peserta || []);
+  openModal('modal-kelola-peserta');
+}
+
+function saveKelolaPeserta() {
+  const type = document.getElementById('kelola-peserta-type').value;
+  const id = document.getElementById('kelola-peserta-id').value;
+  const newPeserta = getSelectedPesertaIds('kelola');
+
+  if (type === 'pelatihan') {
+    let list = getPelatihanList();
+    const idx = list.findIndex(x => x.id === id);
+    if (idx > -1) {
+      list[idx].peserta = newPeserta;
+      DB.set('lhg_pelatihan', list);
+      syncKegiatanToAnggota();
+      renderPelatihanPage();
+      showToast(`Peserta pelatihan berhasil diperbarui (${newPeserta.length} anak terpilih)!`, 'success');
+    }
+  } else {
+    let list = getPerjalananList();
+    const idx = list.findIndex(x => x.id === id);
+    if (idx > -1) {
+      list[idx].peserta = newPeserta;
+      DB.set('lhg_perjalanan', list);
+      syncKegiatanToAnggota();
+      renderPerjalananPage();
+      showToast(`Peserta perjalanan berhasil diperbarui (${newPeserta.length} anak terpilih)!`, 'success');
+    }
+  }
+
+  closeModal('modal-kelola-peserta');
+  if (typeof previewSuratPendaftaran === 'function') previewSuratPendaftaran();
+}
+
+// ==============================================================================
+// CETAK REKAPITULASI PELATIHAN & PERJALANAN (FORMAT RESMI)
+// ==============================================================================
+
+function printRekapPelatihan() {
+  const list = getPelatihanList().slice();
+  list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+
+  const allAnggota = DB.get('lhg_anggota', []);
+  const anggotaMap = new Map();
+  allAnggota.forEach(a => anggotaMap.set(a.id, a));
+
+  const rows = list.map((p, idx) => {
+    const pesertaNames = (p.peserta || []).map(id => {
+      const a = anggotaMap.get(id);
+      return a ? a.nama : id;
+    }).join(', ') || '-';
+
+    return `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td><strong>${p.nama}</strong></td>
+        <td style="text-align: center; white-space: nowrap;">${formatDateIndoFull(p.tanggal)}</td>
+        <td>${p.tujuan || '-'}</td>
+        <td>${p.lokasi || '-'}</td>
+        <td>${pesertaNames}</td>
+        <td style="text-align: center;">${(p.peserta || []).length} Anak</td>
+      </tr>
+    `;
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <title>Rekapitulasi Pelatihan Anak Disabilitas</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 6px; }
+        .kop { text-align: center; border-bottom: 2.5px solid #000; padding-bottom: 8px; margin-bottom: 14px; }
+        .kop h2 { font-size: 15px; text-transform: uppercase; margin-bottom: 3px; font-weight: 900; }
+        .kop p { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 6px 5px; }
+        th { background: #E2E8F0; font-weight: 800; text-align: center; }
+        .ttd { display: flex; justify-content: flex-end; margin-top: 24px; break-inside: avoid; }
+        .ttd-box { width: 220px; text-align: center; font-size: 11px; }
+      </style>
+    </head>
+    <body>
+      <div class="kop">
+        <h2>YAYASAN LENTERA HATI GURINDAM TANJUNGPINANG</h2>
+        <p>REKAPITULASI CATATAN KEGIATAN PELATIHAN ANAK DISABILITAS</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 30px;">NO</th>
+            <th>NAMA KEGIATAN PELATIHAN</th>
+            <th style="width: 100px;">TANGGAL</th>
+            <th>TUJUAN KEGIATAN</th>
+            <th>LOKASI</th>
+            <th>DAFTAR NAMA PESERTA ANAK</th>
+            <th style="width: 70px;">JUMLAH</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="7" style="text-align: center; padding: 20px;">Belum ada data pelatihan</td></tr>'}
+        </tbody>
+      </table>
+      <div class="ttd">
+        <div class="ttd-box">
+          <div>Tanjungpinang, ${formatDateIndoFull(new Date())}</div>
+          <div style="font-weight: 700; margin-top: 3px;">Ketua Yayasan LHG</div>
+          <div style="height: 55px;"></div>
+          <div style="font-weight: 800; text-decoration: underline;">KAMARIDA</div>
+        </div>
+      </div>
+      <script>
+        window.onload = function() { setTimeout(function() { window.print(); }, 400); };
+      <\/script>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+function printRekapPerjalanan() {
+  const list = getPerjalananList().slice();
+  list.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+
+  const allAnggota = DB.get('lhg_anggota', []);
+  const anggotaMap = new Map();
+  allAnggota.forEach(a => anggotaMap.set(a.id, a));
+
+  const rows = list.map((pr, idx) => {
+    const pesertaNames = (pr.peserta || []).map(id => {
+      const a = anggotaMap.get(id);
+      return a ? a.nama : id;
+    }).join(', ') || '-';
+
+    return `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td><strong>${pr.nama}</strong></td>
+        <td style="text-align: center; white-space: nowrap;">${formatDateIndoFull(pr.tanggal)}</td>
+        <td>${pr.tujuan || '-'}</td>
+        <td>${pr.lokasi || '-'}</td>
+        <td>${pesertaNames}</td>
+        <td style="text-align: center;">${(pr.peserta || []).length} Anak</td>
+      </tr>
+    `;
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <title>Rekapitulasi Perjalanan & Outing Anak Disabilitas</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 6px; }
+        .kop { text-align: center; border-bottom: 2.5px solid #000; padding-bottom: 8px; margin-bottom: 14px; }
+        .kop h2 { font-size: 15px; text-transform: uppercase; margin-bottom: 3px; font-weight: 900; }
+        .kop p { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+        th, td { border: 1px solid #333; padding: 6px 5px; }
+        th { background: #E2E8F0; font-weight: 800; text-align: center; }
+        .ttd { display: flex; justify-content: flex-end; margin-top: 24px; break-inside: avoid; }
+        .ttd-box { width: 220px; text-align: center; font-size: 11px; }
+      </style>
+    </head>
+    <body>
+      <div class="kop">
+        <h2>YAYASAN LENTERA HATI GURINDAM TANJUNGPINANG</h2>
+        <p>REKAPITULASI CATATAN KEGIATAN PERJALANAN & OUTING ANAK DISABILITAS</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 30px;">NO</th>
+            <th>NAMA KEGIATAN PERJALANAN / OUTING</th>
+            <th style="width: 100px;">TANGGAL</th>
+            <th>TUJUAN KEGIATAN</th>
+            <th>LOKASI / DESTINASI</th>
+            <th>DAFTAR NAMA PESERTA ANAK</th>
+            <th style="width: 70px;">JUMLAH</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="7" style="text-align: center; padding: 20px;">Belum ada data perjalanan</td></tr>'}
+        </tbody>
+      </table>
+      <div class="ttd">
+        <div class="ttd-box">
+          <div>Tanjungpinang, ${formatDateIndoFull(new Date())}</div>
+          <div style="font-weight: 700; margin-top: 3px;">Ketua Yayasan LHG</div>
+          <div style="height: 55px;"></div>
+          <div style="font-weight: 800; text-decoration: underline;">KAMARIDA</div>
+        </div>
+      </div>
+      <script>
+        window.onload = function() { setTimeout(function() { window.print(); }, 400); };
+      <\/script>
+    </body>
+    </html>
+  `);
+  win.document.close();
+}
+
+// ==============================================================================
 // SUPABASE SYNC LOGIC (CLOUD DATA SYNCHRONIZATION)
 // ==============================================================================
 
@@ -7277,11 +8459,57 @@ function toSupabaseRow(table, item) {
       penyusun: item.penyusun || null
     };
   }
+  if (table === 'lhg_pelatihan') {
+    return {
+      id: item.id,
+      nama: item.nama,
+      tanggal: item.tanggal,
+      tujuan: item.tujuan,
+      lokasi: item.lokasi || null,
+      keterangan: item.keterangan || null,
+      peserta: item.peserta || []
+    };
+  }
+  if (table === 'lhg_perjalanan') {
+    return {
+      id: item.id,
+      nama: item.nama,
+      tanggal: item.tanggal,
+      tujuan: item.tujuan,
+      lokasi: item.lokasi || null,
+      keterangan: item.keterangan || null,
+      peserta: item.peserta || []
+    };
+  }
   return item;
 }
 
 // Convert database snake_case row to frontend camelCase
 function fromSupabaseRow(table, row) {
+  if (table === 'lhg_pelatihan') {
+    return {
+      id: row.id,
+      nama: row.nama,
+      tanggal: row.tanggal,
+      tujuan: row.tujuan,
+      lokasi: row.lokasi || '',
+      keterangan: row.keterangan || '',
+      peserta: Array.isArray(row.peserta) ? row.peserta : [],
+      createdAt: row.created_at
+    };
+  }
+  if (table === 'lhg_perjalanan') {
+    return {
+      id: row.id,
+      nama: row.nama,
+      tanggal: row.tanggal,
+      tujuan: row.tujuan,
+      lokasi: row.lokasi || '',
+      keterangan: row.keterangan || '',
+      peserta: Array.isArray(row.peserta) ? row.peserta : [],
+      createdAt: row.created_at
+    };
+  }
   if (table === 'lhg_users') {
     return {
       username: row.username,
@@ -7419,7 +8647,7 @@ function fromSupabaseRow(table, row) {
 async function syncKeyToSupabase(key, val) {
   if (!Array.isArray(val)) return;
   const table = key; // matching table name
-  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan'];
+  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan'];
   if (!validTables.includes(table)) return;
 
   try {
@@ -7446,7 +8674,7 @@ async function syncWithSupabase(isManual) {
     return;
   }
 
-  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan'];
+  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan'];
   let syncedCount = 0;
 
   for (const t of tables) {

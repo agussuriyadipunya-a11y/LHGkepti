@@ -147,6 +147,16 @@
           <span class="nav-label">Rencana Kegiatan</span>
           <span class="nav-badge" id="nav-badge-rencana" style="background: #2563EB;">0</span>
         </button>
+        <button class="nav-item" data-page="pelatihan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('pelatihan')">
+          <span class="nav-icon">🎓</span>
+          <span class="nav-label">Pelatihan</span>
+          <span class="nav-badge" id="nav-badge-pelatihan" style="background: #8B5CF6;">0</span>
+        </button>
+        <button class="nav-item" data-page="perjalanan" data-allowed-roles="Superadmin,Admin,Petugas" onclick="navigate('perjalanan')">
+          <span class="nav-icon">🚗</span>
+          <span class="nav-label">Perjalanan</span>
+          <span class="nav-badge" id="nav-badge-perjalanan" style="background: #F59E0B;">0</span>
+        </button>
 
         <!-- SECTION 2: LAYANAN DOKUMEN -->
         <div class="nav-section-label" data-nav-section="dokumen" data-allowed-roles="Superadmin,Admin,Petugas">LAYANAN DOKUMEN</div>
@@ -857,6 +867,162 @@
                 </thead>
                 <tbody id="rencana-tbody">
                   <!-- Rendered dynamically by renderRencanaKegiatanTable() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE: DATA PELATIHAN ANAK DISABILITAS ================= -->
+        <section id="page-pelatihan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">🎓</span>
+                <div>
+                  <h3 class="panel-heading">Catatan Pelatihan Anak Disabilitas</h3>
+                  <p class="panel-subheading">Kelola pelatihan keterampilan, vokasional, dan kemandirian yang diikuti anak binaan (tersinkron ke data anak)</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-sec" onclick="printRekapPelatihan()" title="Cetak Rekapitulasi Pelatihan Anak">
+                  <span>🖨️ Cetak Rekap</span>
+                </button>
+                <button class="btn-top-add" onclick="openAddPelatihan()" title="Tambah Agenda Pelatihan Baru">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Pelatihan</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STAT KARTU RINGKASAN PELATIHAN -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F5F3FF, #EDE9FE); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎓</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Total Pelatihan</div>
+                  <div id="stat-pelatihan-total" style="font-size: 22px; font-weight: 800; color: #4C1D95;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👥</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Terlibat</div>
+                  <div id="stat-pelatihan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📅</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Pelatihan Bulan Ini</div>
+                  <div id="stat-pelatihan-bulan-ini" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="pelatihan-search-input" class="search-field" placeholder="Cari nama kegiatan pelatihan, tujuan, atau lokasi..." oninput="renderPelatihanTable(this.value)">
+              </div>
+            </div>
+
+            <!-- TABEL DATA PELATIHAN -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>NAMA KEGIATAN PELATIHAN</th>
+                    <th style="width: 140px;">TANGGAL</th>
+                    <th>TUJUAN KEGIATAN</th>
+                    <th>LOKASI / TEMPAT</th>
+                    <th style="text-align: center;">ANAK YANG MENGIKUTI</th>
+                    <th style="width: 130px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="pelatihan-tbody">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE: DATA PERJALANAN & OUTING ANAK DISABILITAS ================= -->
+        <section id="page-perjalanan" class="page">
+          <div class="card-panel">
+            <div class="table-toolbar">
+              <div class="header-title-group">
+                <span class="panel-icon">🚗</span>
+                <div>
+                  <h3 class="panel-heading">Catatan Perjalanan & Outing Anak Disabilitas</h3>
+                  <p class="panel-subheading">Kelola riwayat perjalanan edukasi, studi lingkungan, dan rekreasi ramah anak disabilitas (tersinkron ke data anak)</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-sec" onclick="printRekapPerjalanan()" title="Cetak Rekapitulasi Perjalanan Anak">
+                  <span>🖨️ Cetak Rekap</span>
+                </button>
+                <button class="btn-top-add" onclick="openAddPerjalanan()" title="Tambah Agenda Perjalanan Baru">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Perjalanan</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STAT KARTU RINGKASAN PERJALANAN -->
+            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🚗</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Total Perjalanan</div>
+                  <div id="stat-perjalanan-total" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👥</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Terlibat</div>
+                  <div id="stat-perjalanan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
+                </div>
+              </div>
+              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
+                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🗺️</div>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Destinasi Edukasi</div>
+                  <div id="stat-perjalanan-destinasi" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="perjalanan-search-input" class="search-field" placeholder="Cari nama kegiatan perjalanan, tujuan, atau lokasi..." oninput="renderPerjalananTable(this.value)">
+              </div>
+            </div>
+
+            <!-- TABEL DATA PERJALANAN -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">NO</th>
+                    <th>NAMA KEGIATAN PERJALANAN</th>
+                    <th style="width: 140px;">TANGGAL</th>
+                    <th>TUJUAN KEGIATAN</th>
+                    <th>LOKASI / DESTINASI</th>
+                    <th style="text-align: center;">ANAK YANG MENGIKUTI</th>
+                    <th style="width: 130px; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="perjalanan-tbody">
+                  <!-- Generated dynamically -->
                 </tbody>
               </table>
             </div>
@@ -1813,6 +1979,199 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PELATIHAN ANAK DISABILITAS (TAMBAH / EDIT) -->
+  <div id="modal-pelatihan" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 820px;">
+      <div class="modal-header-clean">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 12px; background: #F5F3FF; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎓</div>
+          <div>
+            <h3 class="modal-title" id="modal-pelatihan-title">Tambah Kegiatan Pelatihan Anak</h3>
+            <p class="modal-subtitle">Catat data pelatihan dan pilih anak binaan yang mengikuti kegiatan (tersinkron ke Form Pendaftaran).</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-pelatihan')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-pelatihan" onsubmit="event.preventDefault(); savePelatihan();">
+        <input type="hidden" id="pelatihan-edit-id" value="">
+        <div class="modal-body-clean" style="max-height: 75vh; overflow-y: auto; padding: 18px 24px;">
+          
+          <div class="form-field">
+            <label class="lbl">Nama Kegiatan Pelatihan <span class="req">*</span></label>
+            <input type="text" id="pelatihan-nama" class="pelangi-input" placeholder="Contoh: Pelatihan Kemandirian Diri & Keterampilan Kriya Disabilitas" required>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Tanggal Pelaksanaan <span class="req">*</span></label>
+              <input type="date" id="pelatihan-tanggal" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Lokasi / Tempat Pelatihan</label>
+              <input type="text" id="pelatihan-lokasi" class="pelangi-input" placeholder="Contoh: Aula Sentra SLB Negeri 1 Tanjungpinang">
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Tujuan Kegiatan <span class="req">*</span></label>
+            <textarea id="pelatihan-tujuan" class="pelangi-textarea" rows="2" placeholder="Contoh: Meningkatkan kemandirian aktivitas harian (ADL), motorik halus, dan rasa percaya diri anak binaan..." required></textarea>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Keterangan / Fasilitator Pelatihan (Opsional)</label>
+            <input type="text" id="pelatihan-keterangan" class="pelangi-input" placeholder="Contoh: Bersama Instruktur Terapis Okupasi & Pendamping Guru SLB">
+          </div>
+
+          <!-- SEKSI PILIH ANAK YANG MENGIKUTI (PESERTA) -->
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1.5px solid #E2E8F0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+              <div>
+                <label class="lbl" style="margin-bottom: 2px;">Pilih Anak Yang Mengikuti Kegiatan Ini:</label>
+                <div style="font-size: 11px; color: #64748B;">Centang nama anak terdaftar yang berpartisipasi pada pelatihan ini</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="pelatihan-peserta-count" style="font-size: 12px; font-weight: 800; color: #7C3AED; background: #F5F3FF; padding: 4px 10px; border-radius: 20px; border: 1px solid #DDD6FE;">0 Anak Terpilih</span>
+                <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllPeserta('pelatihan')">Pilih Semua</button>
+                <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="deselectAllPeserta('pelatihan')">Batal Semua</button>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 8px;">
+              <input type="text" id="pelatihan-peserta-search" class="pelangi-input" style="font-size: 12px; padding: 7px 12px;" placeholder="🔍 Cari anak berdasarkan nama, NIK, atau kelurahan..." oninput="filterPesertaSelector(this.value, 'pelatihan')">
+            </div>
+
+            <div id="pelatihan-peserta-list" class="peserta-select-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-pelatihan')">Batal</button>
+          <button type="submit" class="btn-prim">
+            <span>💾</span> Simpan &amp; Sinkronkan ke Data Anak
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PERJALANAN & OUTING ANAK DISABILITAS (TAMBAH / EDIT) -->
+  <div id="modal-perjalanan" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 820px;">
+      <div class="modal-header-clean">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 22px;">🚗</div>
+          <div>
+            <h3 class="modal-title" id="modal-perjalanan-title">Tambah Kegiatan Perjalanan Anak</h3>
+            <p class="modal-subtitle">Catat data riwayat perjalanan/outing dan pilih anak binaan yang mengikuti kegiatan (tersinkron ke Form Pendaftaran).</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-perjalanan')" title="Tutup">&times;</button>
+      </div>
+      <form id="form-perjalanan" onsubmit="event.preventDefault(); savePerjalanan();">
+        <input type="hidden" id="perjalanan-edit-id" value="">
+        <div class="modal-body-clean" style="max-height: 75vh; overflow-y: auto; padding: 18px 24px;">
+          
+          <div class="form-field">
+            <label class="lbl">Nama Kegiatan Perjalanan / Outing <span class="req">*</span></label>
+            <input type="text" id="perjalanan-nama" class="pelangi-input" placeholder="Contoh: Outing Rekreasi Edukatif &amp; Pengenalan Alam Ramah Disabilitas" required>
+          </div>
+
+          <div class="form-grid-2" style="margin-top: 14px;">
+            <div class="form-field">
+              <label class="lbl">Tanggal Pelaksanaan <span class="req">*</span></label>
+              <input type="date" id="perjalanan-tanggal" class="pelangi-input" required>
+            </div>
+            <div class="form-field">
+              <label class="lbl">Lokasi / Destinasi Kegiatan</label>
+              <input type="text" id="perjalanan-lokasi" class="pelangi-input" placeholder="Contoh: Pantai Trikora / Taman Batu 10 / Bintan Resort">
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Tujuan Kegiatan <span class="req">*</span></label>
+            <textarea id="perjalanan-tujuan" class="pelangi-textarea" rows="2" placeholder="Contoh: Stimulasi sensorik luar ruang, sosialisasi lingkungan sosial, dan penyegaran psikologis anak binaan..." required></textarea>
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label class="lbl">Keterangan / Pendamping Perjalanan (Opsional)</label>
+            <input type="text" id="perjalanan-keterangan" class="pelangi-input" placeholder="Contoh: Didampingi Pengurus Yayasan LHG &amp; Orang Tua / Wali Anak">
+          </div>
+
+          <!-- SEKSI PILIH ANAK YANG MENGIKUTI (PESERTA) -->
+          <div style="margin-top: 20px; padding-top: 16px; border-top: 1.5px solid #E2E8F0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+              <div>
+                <label class="lbl" style="margin-bottom: 2px;">Pilih Anak Yang Mengikuti Kegiatan Ini:</label>
+                <div style="font-size: 11px; color: #64748B;">Centang nama anak terdaftar yang berpartisipasi pada perjalanan ini</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="perjalanan-peserta-count" style="font-size: 12px; font-weight: 800; color: #D97706; background: #FEF3C7; padding: 4px 10px; border-radius: 20px; border: 1px solid #FCD34D;">0 Anak Terpilih</span>
+                <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllPeserta('perjalanan')">Pilih Semua</button>
+                <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="deselectAllPeserta('perjalanan')">Batal Semua</button>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 8px;">
+              <input type="text" id="perjalanan-peserta-search" class="pelangi-input" style="font-size: 12px; padding: 7px 12px;" placeholder="🔍 Cari anak berdasarkan nama, NIK, atau kelurahan..." oninput="filterPesertaSelector(this.value, 'perjalanan')">
+            </div>
+
+            <div id="perjalanan-peserta-list" class="peserta-select-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer-clean">
+          <button type="button" class="btn-sec" onclick="closeModal('modal-perjalanan')">Batal</button>
+          <button type="submit" class="btn-prim">
+            <span>💾</span> Simpan &amp; Sinkronkan ke Data Anak
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KELOLA PESERTA CEPAT (QUICK MANAGE PARTICIPANTS) -->
+  <div id="modal-kelola-peserta" class="modal-overlay">
+    <div class="modal-dialog modal-dialog-lg" style="max-width: 760px;">
+      <div class="modal-header-clean">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div id="kelola-peserta-icon" style="width: 42px; height: 42px; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 22px;">👥</div>
+          <div>
+            <h3 class="modal-title" id="kelola-peserta-title">Kelola Peserta Kegiatan</h3>
+            <p class="modal-subtitle" id="kelola-peserta-subtitle">Tentukan daftar anak binaan yang mengikuti kegiatan ini</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('modal-kelola-peserta')" title="Tutup">&times;</button>
+      </div>
+      <div class="modal-body-clean" style="max-height: 75vh; overflow-y: auto; padding: 18px 24px;">
+        <input type="hidden" id="kelola-peserta-type" value="">
+        <input type="hidden" id="kelola-peserta-id" value="">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="kelola-peserta-search" class="pelangi-input" style="flex: 1; min-width: 200px; font-size: 12px; padding: 7px 12px;" placeholder="🔍 Cari anak binaan..." oninput="filterPesertaSelector(this.value, 'kelola')">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="kelola-peserta-count" style="font-size: 12px; font-weight: 800; color: #2563EB; background: #EFF6FF; padding: 4px 10px; border-radius: 20px; border: 1px solid #BFDBFE;">0 Terpilih</span>
+            <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllPeserta('kelola')">Pilih Semua</button>
+            <button type="button" class="btn-sec" style="padding: 4px 10px; font-size: 11px;" onclick="deselectAllPeserta('kelola')">Batal Semua</button>
+          </div>
+        </div>
+
+        <div id="kelola-peserta-list" class="peserta-select-container">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer-clean">
+        <button type="button" class="btn-sec" onclick="closeModal('modal-kelola-peserta')">Batal</button>
+        <button type="button" class="btn-prim" onclick="saveKelolaPeserta()">
+          <span>💾</span> Simpan Perubahan Peserta
+        </button>
+      </div>
     </div>
   </div>
 
