@@ -992,23 +992,23 @@ function renderChart() {
         {
           label: 'Total Terdaftar',
           data: totalCount === 0 ? [0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, totalCount, totalCount],
-          borderColor: '#059669',
-          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          borderColor: '#0D7A84',
+          backgroundColor: 'rgba(13, 122, 132, 0.08)',
           fill: true,
           tension: 0.35,
-          borderWidth: 3,
+          borderWidth: 2.8,
           pointRadius: 4,
-          pointBackgroundColor: '#059669'
+          pointBackgroundColor: '#0D7A84'
         },
         {
           label: 'Anak Aktif',
           data: totalCount === 0 ? [0, 0, 0, 0, 0, 0] : [0, 0, 0, 0, aktifCount, aktifCount],
-          borderColor: '#3B82F6',
+          borderColor: '#D97706',
           backgroundColor: 'transparent',
           tension: 0.35,
-          borderWidth: 2,
+          borderWidth: 2.2,
           pointRadius: 4,
-          pointBackgroundColor: '#3B82F6'
+          pointBackgroundColor: '#D97706'
         }
       ]
     },
