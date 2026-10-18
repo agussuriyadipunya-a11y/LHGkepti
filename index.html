@@ -1019,76 +1019,70 @@
         <section id="page-input-data" class="page">
           <div class="card-panel table-panel">
             
-            <!-- PAGE TOP HEADER -->
-            <div class="page-top-header">
-              <div class="header-title-group">
-                <div class="panel-icon-box icon-box-blue">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <!-- PAGE TOP HEADER (SESUAI GAMBAR ACUAN) -->
+            <div class="data-anak-top-header">
+              <div class="data-anak-title-group">
+                <div class="data-anak-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="3"/>
+                    <circle cx="9" cy="10" r="2.5"/>
+                    <line x1="15" y1="9" x2="18" y2="9"/>
+                    <line x1="15" y1="13" x2="18" y2="13"/>
+                    <path d="M5 18c0-2 2-3 4-3s4 1 4 3"/>
+                  </svg>
                 </div>
-                <div>
-                  <h3 class="panel-heading">Data Anak Disabilitas</h3>
-                  <p class="panel-subheading">Kelola dan pantau data anak penyandang disabilitas Kota Tanjungpinang terdaftar di database</p>
-                </div>
+                <h3 class="data-anak-title">Data Anak Disabilitas</h3>
               </div>
-              <div class="header-action-group">
-                <button class="btn-top-add btn-primary-blue" onclick="openAddAnggota()">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Tambah Data Anak</span>
-                </button>
+              <button type="button" class="btn-tambah-anak-clean" onclick="openAddAnggota()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Tambah Data</span>
+              </button>
+            </div>
+
+            <!-- SEARCH & FILTER TOOLBAR (SESUAI GAMBAR ACUAN) -->
+            <div class="data-anak-toolbar">
+              <div class="data-anak-search-box">
+                <svg class="data-anak-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="anggota-search" class="data-anak-search-input" placeholder="Cari nama anak, NIK, atau jenis disabilitas..." oninput="renderAnggotaTable(this.value)">
+              </div>
+              <div class="data-anak-filters">
+                <div class="custom-select-wrap">
+                  <select id="filter-disabilitas" class="data-anak-select" onchange="filterByDisabilitas(this.value)">
+                    <option value="">Semua Jenis Disabilitas</option>
+                    <option value="Tuna Rungu">Tuna Rungu</option>
+                    <option value="Tuna Wicara">Tuna Wicara</option>
+                    <option value="Tuna Grahita">Tuna Grahita</option>
+                    <option value="Tuna Daksa">Tuna Daksa</option>
+                    <option value="Tuna Netra">Tuna Netra</option>
+                    <option value="Tuna Ganda">Tuna Ganda</option>
+                    <option value="Autis">Autis</option>
+                    <option value="Down Syndrome">Down Syndrome</option>
+                  </select>
+                </div>
+                <div class="custom-select-wrap">
+                  <select id="filter-status" class="data-anak-select" onchange="filterAnggotaByStatus(this.value)">
+                    <option value="">Semua Status</option>
+                    <option value="Aktif">Aktif</option>
+                    <option value="Verifikasi">Verifikasi</option>
+                    <option value="Menunggu Dokumen">Menunggu Dokumen</option>
+                    <option value="Nonaktif">Nonaktif</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <!-- SEARCH & FILTER TOOLBAR -->
-            <div class="table-toolbar filter-toolbar-box">
-              <div class="toolbar-left">
-                <div class="search-input-box">
-                  <span class="search-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  </span>
-                  <input type="text" id="anggota-search" class="search-field" placeholder="Cari nama anak, NIK, No KK, kelurahan, disabilitas..." oninput="renderAnggotaTable(this.value)">
-                </div>
-                <select id="filter-status" class="filter-select" onchange="filterAnggotaByStatus(this.value)">
-                  <option value="">Semua Status</option>
-                  <option value="Aktif">Aktif / Terdaftar</option>
-                  <option value="Verifikasi">Proses Verifikasi</option>
-                  <option value="Menunggu Dokumen">Menunggu Dokumen</option>
-                  <option value="Nonaktif">Nonaktif / Ditolak</option>
-                </select>
-                <select id="filter-disabilitas" class="filter-select" onchange="filterByDisabilitas(this.value)">
-                  <option value="">Semua Ragam Disabilitas</option>
-                  <option value="Fisik">Fisik</option>
-                  <option value="Tuna Rungu">Tuna Rungu</option>
-                  <option value="Tuna Wicara">Tuna Wicara</option>
-                  <option value="Tuna Netra">Tuna Netra</option>
-                  <option value="Tuna Grahita">Tuna Grahita</option>
-                  <option value="Autis">Autis</option>
-                  <option value="Down Syndrome">Down Syndrome</option>
-                  <option value="Disabilitas Berat">Disabilitas Berat</option>
-                  <option value="Tuna Daksa Kursi Roda">Tuna Daksa Kursi Roda</option>
-                  <option value="Tuna Daksa Tongkat">Tuna Daksa Tongkat</option>
-                  <option value="Tuna Daksa Kaku">Tuna Daksa Kaku</option>
-                  <option value="Tuna Daksa Tanpa Tangan">Tuna Daksa Tanpa Tangan</option>
-                </select>
-              </div>
-
-              <div class="toolbar-right">
-                <span id="table-total-count-text" class="table-count-text">Total: 0 Anak</span>
-              </div>
-            </div>
-
-            <div class="table-responsive-wrapper">
-              <table class="modern-table">
+            <!-- TABLE SESUAI GAMBAR ACUAN -->
+            <div class="table-responsive-wrapper" style="margin-top: 15px;">
+              <table class="data-anak-table">
                 <thead>
                   <tr>
-                    <th style="width: 48px; text-align: center;">NO</th>
-                    <th>NAMA ANAK & KELURAHAN <span class="table-sort-badge" title="Data terurut otomatis secara abjad A - Z"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M6 12h12M10 18h4"/></svg> A - Z</span></th>
-                    <th>NOMOR NIK & KK</th>
-                    <th style="text-align: center; width: 85px;">USIA</th>
-                    <th style="text-align: center;">RAGAM DISABILITAS</th>
-                    <th>ORANG TUA & KONTAK WA</th>
-                    <th style="text-align: center; width: 70px;">KELAS</th>
-                    <th style="text-align: center; width: 95px;">STATUS</th>
-                    <th style="width: 175px; text-align: center;">AKSI</th>
+                    <th style="width: 50px; text-align: left; padding-left: 18px;">No</th>
+                    <th style="width: 70px; text-align: left;">Foto</th>
+                    <th style="text-align: left;">Nama Anak</th>
+                    <th style="text-align: left;">NIK</th>
+                    <th style="text-align: left;">Jenis Disabilitas</th>
+                    <th style="width: 100px; text-align: center;">Status</th>
+                    <th style="width: 140px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="anggota-tbody"></tbody>
