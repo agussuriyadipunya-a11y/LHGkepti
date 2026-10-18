@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -810,17 +810,23 @@
         <!-- ================= PAGE 2: FORMULIR INPUT DATA ANAK (MANDIRI) ================= -->
         <section id="page-input-data-form" class="page">
           <div class="card-panel" style="max-width: 1040px; margin: 0 auto;">
-            <div class="card-panel-header">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">📝</span>
+                <div class="panel-icon-box icon-box-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </div>
                 <div>
-                  <h3 class="panel-heading">Formulir Pendaftaran & Input Data Anak</h3>
+                  <h3 class="panel-heading">Formulir Input Data Anak</h3>
                   <p class="panel-subheading">Petugas dan Admin dapat langsung menginput data anak penyandang disabilitas ke database</p>
                 </div>
               </div>
-              <button type="button" class="btn-sec" onclick="navigate('input-data')">
-                <span>👥 Buka Tabel Data Anak</span>
-              </button>
+              <div class="header-action-group">
+                <button type="button" class="btn-sec" onclick="navigate('input-data')">
+                  <span>👥 Buka Tabel Data Anak</span>
+                </button>
+              </div>
             </div>
 
             <form id="form-direct-input-anak" onsubmit="saveDirectInputAnak(event)" style="padding: 24px;">
@@ -1004,7 +1010,27 @@
         <section id="page-input-data" class="page">
           <div class="card-panel table-panel">
             
-            <div class="table-toolbar">
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
+              <div class="header-title-group">
+                <div class="panel-icon-box icon-box-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div>
+                  <h3 class="panel-heading">Data Anak Disabilitas</h3>
+                  <p class="panel-subheading">Kelola dan pantau data anak penyandang disabilitas Kota Tanjungpinang terdaftar di database</p>
+                </div>
+              </div>
+              <div class="header-action-group">
+                <button class="btn-top-add btn-primary-blue" onclick="openAddAnggota()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Data Anak</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER TOOLBAR -->
+            <div class="table-toolbar filter-toolbar-box">
               <div class="toolbar-left">
                 <div class="search-input-box">
                   <span class="search-icon">
@@ -1012,10 +1038,18 @@
                   </span>
                   <input type="text" id="anggota-search" class="search-field" placeholder="Cari nama anak, NIK, No KK, kelurahan, disabilitas..." oninput="renderAnggotaTable(this.value)">
                 </div>
+                <select id="filter-status" class="filter-select" onchange="filterAnggotaByStatus(this.value)">
+                  <option value="">Semua Status</option>
+                  <option value="Aktif">Aktif / Terdaftar</option>
+                  <option value="Verifikasi">Proses Verifikasi</option>
+                  <option value="Menunggu Dokumen">Menunggu Dokumen</option>
+                  <option value="Nonaktif">Nonaktif / Ditolak</option>
+                </select>
                 <select id="filter-disabilitas" class="filter-select" onchange="filterByDisabilitas(this.value)">
                   <option value="">Semua Ragam Disabilitas</option>
                   <option value="Fisik">Fisik</option>
                   <option value="Tuna Rungu">Tuna Rungu</option>
+                  <option value="Tuna Wicara">Tuna Wicara</option>
                   <option value="Tuna Netra">Tuna Netra</option>
                   <option value="Tuna Grahita">Tuna Grahita</option>
                   <option value="Autis">Autis</option>
@@ -1029,11 +1063,7 @@
               </div>
 
               <div class="toolbar-right">
-                <span id="table-total-count-text" class="table-count-text">Total: 13 Anak</span>
-                <button class="btn-top-add" onclick="openAddAnggota()">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Tambah Data Anak</span>
-                </button>
+                <span id="table-total-count-text" class="table-count-text">Total: 0 Anak</span>
               </div>
             </div>
 
@@ -1055,6 +1085,9 @@
                 <tbody id="anggota-tbody"></tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="anggota-pagination-container"></div>
           </div>
         </section>
 
@@ -1062,12 +1095,16 @@
         <!-- ================= PAGE 3: CETAK KTA ================= -->
         <section id="page-cetak-kta" class="page">
           <div class="card-panel" style="max-width: 880px; margin: 0 auto;">
-            <div class="card-panel-header">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">💳</span>
+                <div class="panel-icon-box icon-box-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="7" cy="15" r="1.5"/></svg>
+                </div>
                 <div>
-                  <h3 class="panel-heading">Cetak ID Card / Kartu Tanda Anggota (KTA)</h3>
-                  <p class="panel-subheading">ID Card resmi Yayasan Lentera Hati Gurindam dengan data lengkap anak</p>
+                  <h3 class="panel-heading">Cetak Kartu Tanda Anggota (KTA)</h3>
+                  <p class="panel-subheading">ID Card resmi Yayasan Lentera Hati Gurindam dengan data lengkap dan barcode anak</p>
                 </div>
               </div>
             </div>
@@ -1076,7 +1113,7 @@
               <label class="lbl-clean">Pilih Anggota yang Ingin Dicetak KTA:</label>
               <div style="display: flex; gap: 10px; margin-top: 6px;">
                 <select id="kta-select" class="clean-select" style="flex: 1;" onchange="previewKTA()"></select>
-                <button class="btn-top-add" onclick="previewKTA()">Pratinjau KTA</button>
+                <button class="btn-top-add btn-primary-blue" onclick="previewKTA()">Pratinjau KTA</button>
               </div>
             </div>
 
@@ -1090,12 +1127,16 @@
         <!-- ================= PAGE 4: SURAT KETERANGAN PENDATAAN ANGGOTA DISABILITAS (PDF A4) ================= -->
         <section id="page-form-pendaftaran" class="page">
           <div class="card-panel" style="max-width: 960px; margin: 0 auto;">
-            <div class="card-panel-header">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">📄</span>
+                <div class="panel-icon-box icon-box-emerald">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
                 <div>
-                  <h3 class="panel-heading">Surat Keterangan Pendataan Anggota Disabilitas (PDF A4)</h3>
-                  <p class="panel-subheading">Generate dokumen PDF resmi Surat Keterangan Pendataan Anggota Disabilitas Yayasan Lentera Hati Gurindam</p>
+                  <h3 class="panel-heading">Surat Keterangan Pendataan Anggota Disabilitas</h3>
+                  <p class="panel-subheading">Generate dokumen PDF resmi Surat Keterangan Pendataan format standar cetak A4</p>
                 </div>
               </div>
             </div>
@@ -1133,18 +1174,24 @@
         <!-- ================= PAGE: BANTUAN PENERIMAAN ANAK ================= -->
         <section id="page-bantuan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">🎁</span>
+                <div class="panel-icon-box icon-box-emerald">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                </div>
                 <div>
-                  <h3 class="panel-heading">Catatan Penerimaan Bantuan Anak Disabilitas</h3>
-                  <p class="panel-subheading">Semua rekap bantuan yang telah diserahkan kepada anak binaan lengkap dengan tanggal dan jenis bantuan</p>
+                  <h3 class="panel-heading">Catatan Penyerahan Bantuan</h3>
+                  <p class="panel-subheading">Rekapitulasi dan monitoring penyaluran bantuan sosial anak disabilitas</p>
                 </div>
               </div>
-              <button class="btn-top-add" onclick="openAddBantuan()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Catat Bantuan Baru</span>
-              </button>
+              <div class="header-action-group">
+                <button class="btn-top-add btn-primary-blue" onclick="openAddBantuan()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Catat Bantuan Baru</span>
+                </button>
+              </div>
             </div>
 
             <!-- STAT KARTU RINGKASAN BANTUAN -->
@@ -1180,20 +1227,22 @@
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="bantuan-search-input" class="search-field" placeholder="Cari nama anak, jenis bantuan, atau sumber bantuan..." oninput="renderBantuanTable(this.value)">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="bantuan-search-input" class="search-field" placeholder="Cari nama anak, jenis bantuan, atau sumber bantuan..." oninput="renderBantuanTable(this.value)">
+                </div>
+                <select id="bantuan-filter-kategori" class="filter-select" onchange="filterBantuanByKategori(this.value)">
+                  <option value="">Semua Kategori Bantuan</option>
+                  <option value="Alat Bantu">Alat Bantu (Kursi Roda/Tongkat/Hearing Aid)</option>
+                  <option value="Sembako & Nutrisi">Sembako & Nutrisi</option>
+                  <option value="Santunan / Uang Tunai">Santunan / Uang Tunai</option>
+                  <option value="Pendidikan & Sekolah">Pendidikan & Sekolah</option>
+                  <option value="Kesehatan & Obat">Kesehatan & Obat / Vitamin</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
               </div>
-              <select id="bantuan-filter-kategori" class="filter-select" onchange="filterBantuanByKategori(this.value)">
-                <option value="">Semua Kategori Bantuan</option>
-                <option value="Alat Bantu">Alat Bantu (Kursi Roda/Tongkat/Hearing Aid)</option>
-                <option value="Sembako & Nutrisi">Sembako & Nutrisi</option>
-                <option value="Santunan / Uang Tunai">Santunan / Uang Tunai</option>
-                <option value="Pendidikan & Sekolah">Pendidikan & Sekolah</option>
-                <option value="Kesehatan & Obat">Kesehatan & Obat / Vitamin</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
             </div>
 
             <!-- TABEL DATA BANTUAN -->
@@ -1216,6 +1265,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="bantuan-pagination-container"></div>
           </div>
         </section>
 
@@ -1223,20 +1275,24 @@
         <!-- ================= PAGE: RENCANA KEGIATAN & PROGRAM KERJA ================= -->
         <section id="page-rencana-kegiatan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">📋</span>
+                <div class="panel-icon-box icon-box-indigo">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
                 <div>
-                  <h3 class="panel-heading">Rencana Kegiatan & Program Kerja Yayasan</h3>
+                  <h3 class="panel-heading">Rencana Kegiatan & Program Kerja</h3>
                   <p class="panel-subheading">Penyusunan agenda kerja, target sasaran disabilitas, jadwal, dan estimasi anggaran yayasan</p>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <div class="header-action-group">
                 <button class="btn-sec" onclick="printRekapRencanaKegiatan()" title="Cetak Ringkasan Rekapitulasi Rencana Kerja">
                   <span>🖨️ Cetak Rekap</span>
                 </button>
-                <button class="btn-top-add" onclick="openAddRencanaKegiatan()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <button class="btn-top-add btn-primary-blue" onclick="openAddRencanaKegiatan()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                   <span>Susun Rencana Baru</span>
                 </button>
               </div>
@@ -1275,30 +1331,32 @@
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="rencana-search-input" class="search-field" placeholder="Cari program, PIC penanggung jawab, sasaran, atau lokasi..." oninput="filterRencanaKegiatan()">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="rencana-search-input" class="search-field" placeholder="Cari program, PIC penanggung jawab, sasaran, atau lokasi..." oninput="filterRencanaKegiatan()">
+                </div>
+                <select id="rencana-filter-status" class="filter-select" onchange="filterRencanaKegiatan()">
+                  <option value="">Semua Status</option>
+                  <option value="Draf / Pengajuan">Draf / Pengajuan</option>
+                  <option value="Disetujui">Disetujui</option>
+                  <option value="Dalam Persiapan">Dalam Persiapan</option>
+                  <option value="Sedang Berjalan">Sedang Berjalan</option>
+                  <option value="Terlaksana">Terlaksana</option>
+                  <option value="Ditunda / Dibatalkan">Ditunda / Dibatalkan</option>
+                </select>
+                <select id="rencana-filter-kategori" class="filter-select" onchange="filterRencanaKegiatan()">
+                  <option value="">Semua Kategori</option>
+                  <option value="Pendidikan & Pelatihan">Pendidikan & Pelatihan Inklusi</option>
+                  <option value="Terapi & Layanan Kesehatan">Terapi & Layanan Kesehatan</option>
+                  <option value="Bantuan Sosial & Nutrisi">Bantuan Sosial & Nutrisi</option>
+                  <option value="Kemandirian & Kewirausahaan">Kemandirian & Kewirausahaan</option>
+                  <option value="Advokasi & Sosialisasi">Advokasi & Sosialisasi Disabilitas</option>
+                  <option value="Sarana & Alat Bantu">Sarana & Alat Bantu</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
               </div>
-              <select id="rencana-filter-status" class="filter-select" onchange="filterRencanaKegiatan()">
-                <option value="">Semua Status</option>
-                <option value="Draf / Pengajuan">Draf / Pengajuan</option>
-                <option value="Disetujui">Disetujui</option>
-                <option value="Dalam Persiapan">Dalam Persiapan</option>
-                <option value="Sedang Berjalan">Sedang Berjalan</option>
-                <option value="Terlaksana">Terlaksana</option>
-                <option value="Ditunda / Dibatalkan">Ditunda / Dibatalkan</option>
-              </select>
-              <select id="rencana-filter-kategori" class="filter-select" onchange="filterRencanaKegiatan()">
-                <option value="">Semua Kategori</option>
-                <option value="Pendidikan & Pelatihan">Pendidikan & Pelatihan Inklusi</option>
-                <option value="Terapi & Layanan Kesehatan">Terapi & Layanan Kesehatan</option>
-                <option value="Bantuan Sosial & Nutrisi">Bantuan Sosial & Nutrisi</option>
-                <option value="Kemandirian & Kewirausahaan">Kemandirian & Kewirausahaan</option>
-                <option value="Advokasi & Sosialisasi">Advokasi & Sosialisasi Disabilitas</option>
-                <option value="Sarana & Alat Bantu">Sarana & Alat Bantu</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
             </div>
 
             <!-- TABEL DATA RENCANA KEGIATAN -->
@@ -1322,6 +1380,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="rencana-pagination-container"></div>
           </div>
         </section>
 
@@ -1329,20 +1390,24 @@
         <!-- ================= PAGE: DATA PELATIHAN ANAK DISABILITAS ================= -->
         <section id="page-pelatihan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">🎓</span>
+                <div class="panel-icon-box icon-box-purple">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
                 <div>
                   <h3 class="panel-heading">Catatan Pelatihan Anak Disabilitas</h3>
-                  <p class="panel-subheading">Kelola pelatihan keterampilan, vokasional, dan kemandirian yang diikuti anak binaan (tersinkron ke data anak)</p>
+                  <p class="panel-subheading">Kelola pelatihan keterampilan, vokasional, dan kemandirian anak binaan (tersinkron ke data anak)</p>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <div class="header-action-group">
                 <button class="btn-sec" onclick="printRekapPelatihan()" title="Cetak Rekapitulasi Pelatihan Anak">
                   <span>🖨️ Cetak Rekap</span>
                 </button>
-                <button class="btn-top-add" onclick="openAddPelatihan()" title="Tambah Agenda Pelatihan Baru">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <button class="btn-top-add btn-primary-blue" onclick="openAddPelatihan()" title="Tambah Agenda Pelatihan Baru">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                   <span>Tambah Pelatihan</span>
                 </button>
               </div>
@@ -1374,10 +1439,12 @@
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="pelatihan-search-input" class="search-field" placeholder="Cari nama kegiatan pelatihan, tujuan, atau lokasi..." oninput="renderPelatihanTable(this.value)">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="pelatihan-search-input" class="search-field" placeholder="Cari nama kegiatan pelatihan, tujuan, atau lokasi..." oninput="renderPelatihanTable(this.value)">
+                </div>
               </div>
             </div>
 
@@ -1400,6 +1467,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="pelatihan-pagination-container"></div>
           </div>
         </section>
 
@@ -1407,20 +1477,24 @@
         <!-- ================= PAGE: DATA PERJALANAN & OUTING ANAK DISABILITAS ================= -->
         <section id="page-perjalanan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">🚗</span>
+                <div class="panel-icon-box icon-box-amber">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
                 <div>
                   <h3 class="panel-heading">Catatan Perjalanan & Outing Anak Disabilitas</h3>
                   <p class="panel-subheading">Kelola riwayat perjalanan edukasi, studi lingkungan, dan rekreasi ramah anak disabilitas (tersinkron ke data anak)</p>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <div class="header-action-group">
                 <button class="btn-sec" onclick="printRekapPerjalanan()" title="Cetak Rekapitulasi Perjalanan Anak">
                   <span>🖨️ Cetak Rekap</span>
                 </button>
-                <button class="btn-top-add" onclick="openAddPerjalanan()" title="Tambah Agenda Perjalanan Baru">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                <button class="btn-top-add btn-primary-blue" onclick="openAddPerjalanan()" title="Tambah Agenda Perjalanan Baru">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                   <span>Tambah Perjalanan</span>
                 </button>
               </div>
@@ -1452,10 +1526,12 @@
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="perjalanan-search-input" class="search-field" placeholder="Cari nama kegiatan perjalanan, tujuan, atau lokasi..." oninput="renderPerjalananTable(this.value)">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="perjalanan-search-input" class="search-field" placeholder="Cari nama kegiatan perjalanan, tujuan, atau lokasi..." oninput="renderPerjalananTable(this.value)">
+                </div>
               </div>
             </div>
 
@@ -1478,6 +1554,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="perjalanan-pagination-container"></div>
           </div>
         </section>
 
@@ -1485,17 +1564,34 @@
         <!-- ================= PAGE 5: LAPORAN KEGIATAN ================= -->
         <section id="page-laporan-kegiatan" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">📅</span>
+                <div class="panel-icon-box icon-box-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
                 <div>
                   <h3 class="panel-heading">Laporan & Dokumentasi Agenda Kegiatan</h3>
-                  <p class="panel-subheading">Daftar agenda kegiatan kemandirian dan terapi anak</p>
+                  <p class="panel-subheading">Daftar agenda kegiatan kemandirian, sosialisasi, dan dokumentasi anak binaan</p>
                 </div>
               </div>
-              <button class="btn-top-add" onclick="openAddLaporan()">
-                <span>➕</span> Tambah Laporan Agenda
-              </button>
+              <div class="header-action-group">
+                <button class="btn-top-add btn-primary-blue" onclick="openAddLaporan()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Laporan Agenda</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- SEARCH & FILTER BAR -->
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="laporan-search-input" class="search-field" placeholder="Cari nama agenda, lokasi, atau peserta kegiatan..." oninput="filterLaporanKegiatan(this.value)">
+                </div>
+              </div>
             </div>
 
             <div class="table-responsive-wrapper">
@@ -1514,6 +1610,9 @@
                 <tbody id="laporan-tbody"></tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="laporan-pagination-container"></div>
           </div>
         </section>
 
@@ -1522,7 +1621,29 @@
         <section id="page-surat-menyurat" class="page">
           <div class="card-panel">
             
-            <div class="table-toolbar" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px; justify-content: space-between;">
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
+              <div class="header-title-group">
+                <div class="panel-icon-box icon-box-indigo">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <h3 class="panel-heading">Administrasi Surat Menyurat</h3>
+                  <p class="panel-subheading">Pencatatan dan pengarsipan resmi surat masuk serta surat keluar yayasan</p>
+                </div>
+              </div>
+              <div class="header-action-group">
+                <button class="btn-sec" onclick="openAddSurat('masuk')">
+                  <span>📥 Catat Surat Masuk</span>
+                </button>
+                <button class="btn-top-add btn-primary-blue" onclick="openAddSurat('keluar')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Buat Surat Keluar</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px; flex-wrap: wrap; gap: 10px; justify-content: space-between;">
               <div class="surat-tabs-group">
                 <button class="tab-pill active" onclick="switchSuratTab('masuk', this)">
                   📥 Surat Masuk <span class="badge-tab-count" id="badge-sm-count">0</span>
@@ -1532,10 +1653,9 @@
                 </button>
               </div>
 
-              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="surat-search-input" class="pelangi-input" placeholder="🔍 Cari nomor / perihal..." oninput="renderSurat()" style="width: 220px; padding: 7px 12px; font-size: 12px;">
-                <button class="btn-outline-action" onclick="openAddSurat('masuk')">➕ Catat Surat Masuk</button>
-                <button class="btn-top-add" onclick="openAddSurat('keluar')">➕ Buat Surat Keluar</button>
+              <div class="search-input-box" style="width: 260px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="surat-search-input" class="search-field" placeholder="Cari nomor / perihal surat..." oninput="renderSurat()">
               </div>
             </div>
 
@@ -1638,18 +1758,24 @@
         <!-- ================= PAGE: ARSIP BERKAS YAYASAN ================= -->
         <section id="page-arsip-berkas" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">📁</span>
+                <div class="panel-icon-box icon-box-emerald">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
                 <div>
                   <h3 class="panel-heading">Pusat Dokumen & Arsip Berkas Yayasan</h3>
                   <p class="panel-subheading">Penyimpanan dan pengelolaan berkas legalitas, SK, laporan, MoU, serta arsip penting organisasi</p>
                 </div>
               </div>
-              <button class="btn-top-add" onclick="openAddArsip()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Simpan Arsip Berkas</span>
-              </button>
+              <div class="header-action-group">
+                <button class="btn-top-add btn-primary-blue" onclick="openAddArsip()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Simpan Arsip Berkas</span>
+                </button>
+              </div>
             </div>
 
             <!-- NOTIFIKASI AKTIVASI CLOUD FIREBASE -->
@@ -1698,20 +1824,22 @@
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 4px 16px 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="arsip-search-input" class="search-field" placeholder="Cari nama berkas, nomor dokumen, penerbit, atau lokasi fisik..." oninput="renderArsipTable(this.value)">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="arsip-search-input" class="search-field" placeholder="Cari nama berkas, nomor dokumen, penerbit, atau lokasi fisik..." oninput="renderArsipTable(this.value)">
+                </div>
+                <select id="arsip-filter-kategori" class="filter-select" onchange="filterArsipByKategori(this.value)">
+                  <option value="">Semua Kategori Berkas</option>
+                  <option value="Legalitas & Perizinan">Legalitas & Perizinan (Akta, Kemenkumham, NPWP, NIB)</option>
+                  <option value="Surat Keputusan (SK)">Surat Keputusan (SK Pengurus & Kebijakan)</option>
+                  <option value="Laporan & LPJ">Laporan Pertanggungjawaban (LPJ & Audit)</option>
+                  <option value="Kerjasama & MoU">Kerjasama & MoU (Kemitraan & Donatur)</option>
+                  <option value="Aset & Inventaris">Aset & Inventaris Yayasan</option>
+                  <option value="Administrasi & Lainnya">Administrasi & Dokumen Lainnya</option>
+                </select>
               </div>
-              <select id="arsip-filter-kategori" class="filter-select" onchange="filterArsipByKategori(this.value)">
-                <option value="">Semua Kategori Berkas</option>
-                <option value="Legalitas & Perizinan">Legalitas & Perizinan (Akta, Kemenkumham, NPWP, NIB)</option>
-                <option value="Surat Keputusan (SK)">Surat Keputusan (SK Pengurus & Kebijakan)</option>
-                <option value="Laporan & LPJ">Laporan Pertanggungjawaban (LPJ & Audit)</option>
-                <option value="Kerjasama & MoU">Kerjasama & MoU (Kemitraan & Donatur)</option>
-                <option value="Aset & Inventaris">Aset & Inventaris Yayasan</option>
-                <option value="Administrasi & Lainnya">Administrasi & Dokumen Lainnya</option>
-              </select>
             </div>
 
             <!-- TABEL DATA ARSIP BERKAS -->
@@ -1733,6 +1861,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="arsip-pagination-container"></div>
           </div>
         </section>
 
@@ -1740,32 +1871,40 @@
         <!-- ================= PAGE 8: MANAJEMEN USER (KHUSUS SUPERADMIN) ================= -->
         <section id="page-manajemen-user" class="page">
           <div class="card-panel">
-            <div class="table-toolbar">
+            
+            <!-- PAGE TOP HEADER -->
+            <div class="page-top-header">
               <div class="header-title-group">
-                <span class="panel-icon">⚙️</span>
+                <div class="panel-icon-box icon-box-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1376F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/></svg>
+                </div>
                 <div>
                   <h3 class="panel-heading">Manajemen Akun Pengguna & Hak Akses</h3>
                   <p class="panel-subheading">Kelola akun login aplikasi dengan hak peran Superadmin, Admin, dan Petugas</p>
                 </div>
               </div>
-              <button class="btn-top-add" onclick="openAddUser()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Tambah Pengguna Baru</span>
-              </button>
+              <div class="header-action-group">
+                <button class="btn-top-add btn-primary-blue" onclick="openAddUser()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Tambah Pengguna Baru</span>
+                </button>
+              </div>
             </div>
 
             <!-- SEARCH & FILTER BAR -->
-            <div style="padding: 0 24px 16px 24px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <div class="search-input-box" style="flex: 1; min-width: 240px;">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="user-search-input" class="search-field" placeholder="Cari username, NIK, atau nama pengguna..." oninput="renderManajemenUserTable(this.value)">
+            <div class="table-toolbar filter-toolbar-box" style="margin-bottom: 16px;">
+              <div class="toolbar-left" style="display: flex; gap: 12px; flex-wrap: wrap; flex: 1;">
+                <div class="search-input-box" style="flex: 1; min-width: 240px;">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="user-search-input" class="search-field" placeholder="Cari username, NIK, atau nama pengguna..." oninput="renderManajemenUserTable(this.value)">
+                </div>
+                <select id="user-filter-role" class="filter-select" onchange="filterUsersByRole(this.value)">
+                  <option value="">Semua Peran (Role)</option>
+                  <option value="Superadmin">Superadmin</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Petugas">Petugas</option>
+                </select>
               </div>
-              <select id="user-filter-role" class="filter-select" onchange="filterUsersByRole(this.value)">
-                <option value="">Semua Peran (Role)</option>
-                <option value="Superadmin">Superadmin</option>
-                <option value="Admin">Admin</option>
-                <option value="Petugas">Petugas</option>
-              </select>
             </div>
 
             <div class="table-responsive-wrapper">
@@ -1786,6 +1925,9 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div id="user-pagination-container"></div>
           </div>
         </section>
 

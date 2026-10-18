@@ -6583,3 +6583,289 @@ body.drawer-open {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==============================================================================
+   UNIFIED MODERN SUBPAGE DESIGN (SESUAI GAMBAR ACUAN SCREEN 2 - 14)
+   ============================================================================== */
+
+/* 1. Page Top Header Bar */
+.page-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #E2E8F0;
+  flex-wrap: wrap;
+}
+
+.panel-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.icon-box-blue {
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
+  color: #1376F8;
+}
+
+.icon-box-emerald {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #10B981;
+}
+
+.icon-box-purple {
+  background: #F5F3FF;
+  border: 1px solid #DDD6FE;
+  color: #8B5CF6;
+}
+
+.icon-box-amber {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #F59E0B;
+}
+
+.icon-box-indigo {
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  color: #6366F1;
+}
+
+.page-top-header .panel-heading {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.page-top-header .panel-subheading {
+  font-size: 12.5px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Primary Action Button (Bright Blue Gradient matching screenshots) */
+.btn-primary-blue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1376F8 0%, #0D62D1 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 18px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(19, 118, 248, 0.28) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-primary-blue:hover {
+  background: linear-gradient(135deg, #0D62D1 0%, #0849A1 100%) !important;
+  box-shadow: 0 6px 16px rgba(19, 118, 248, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+.btn-primary-blue:active {
+  transform: translateY(0);
+}
+
+/* 2. Filter Toolbar Box */
+.filter-toolbar-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-toolbar-box .search-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 9px;
+  padding: 2px 12px;
+  transition: all 0.15s ease;
+}
+
+.filter-toolbar-box .search-input-box:focus-within {
+  background: #FFFFFF;
+  border-color: #1376F8;
+  box-shadow: 0 0 0 3px rgba(19, 118, 248, 0.12);
+}
+
+.filter-toolbar-box .search-field {
+  border: none;
+  background: transparent;
+  padding: 8px 6px 8px 8px;
+  font-size: 12.5px;
+  color: #1E293B;
+  outline: none;
+  width: 100%;
+}
+
+.filter-toolbar-box .filter-select {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-toolbar-box .filter-select:focus {
+  border-color: #1376F8;
+  box-shadow: 0 0 0 3px rgba(19, 118, 248, 0.12);
+}
+
+/* 3. Modern Table Refinements */
+.table-panel {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.modern-table thead th {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 13px 14px !important;
+  border-bottom: 1.5px solid #E2E8F0 !important;
+}
+
+.modern-table tbody tr {
+  border-bottom: 1px solid #F1F5F9;
+  transition: background-color 0.12s ease;
+}
+
+.modern-table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+/* 4. Table Pagination Bar */
+.table-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 6px 6px 6px;
+  margin-top: 12px;
+  border-top: 1px solid #F1F5F9;
+  font-size: 12.5px;
+  color: #64748B;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-info {
+  font-size: 12.5px;
+  color: #64748B;
+}
+
+.pagination-info strong {
+  color: #1E293B;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pagination-btn {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0 8px;
+}
+
+.pagination-btn:hover {
+  border-color: #CBD5E1;
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+.pagination-btn.active {
+  background: #1376F8 !important;
+  border-color: #1376F8 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 6px rgba(19, 118, 248, 0.3) !important;
+}
+
+.pagination-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pagination-nav-btn:hover:not(:disabled) {
+  border-color: #CBD5E1;
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+.pagination-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination-per-page {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+}

@@ -1,4 +1,4 @@
-﻿// ==============================================================================
+// ==============================================================================
 // LENTERA HATI GURINDAM - MODERN DASHBOARD APPLICATION LOGIC
 // ==============================================================================
 'use strict';
@@ -910,83 +910,72 @@ function renderDashboard() {
   const totalAnak = anggota.length;
   const aktifCount = anggota.filter(a => a.status === 'Aktif' || a.status === 'Terdaftar').length;
 
-  // Stat Cards (Dinamis sinkron database; default ke visual gambar jika database masih awal)
-  const displayTotal = totalAnak > 0 ? formatNumberId(totalAnak) : '1.248';
-  const displayAktif = totalAnak > 0 ? formatNumberId(aktifCount) : '1.156';
-  const displayBantuan = bantuan.length > 0 ? formatNumberId(bantuan.length) : '342';
-  const displayKegiatan = (rencana.length + kegiatan.length) > 0 ? formatNumberId(rencana.length + kegiatan.length) : '24';
+  // Stat Cards (Murni 100% Data Real dari Database Aplikasi)
+  setText('stat-total', formatNumberId(totalAnak));
+  setText('stat-aktif', formatNumberId(aktifCount));
+  setText('stat-bantuan', formatNumberId(bantuan.length));
+  setText('stat-kegiatan', formatNumberId(rencana.length + kegiatan.length));
 
-  setText('stat-total', displayTotal);
-  setText('stat-aktif', displayAktif);
-  setText('stat-bantuan', displayBantuan);
-  setText('stat-kegiatan', displayKegiatan);
+  // Sidebar Badges (Sinkron Data Real)
+  setText('nav-badge-anak', totalAnak);
+  setText('nav-badge-bantuan', bantuan.length);
+  setText('nav-badge-rencana', rencana.length);
+  setText('nav-badge-pelatihan', pelatihan.length);
+  setText('nav-badge-perjalanan', perjalanan.length);
 
-  // Sidebar Badges
-  setText('nav-badge-anak', totalAnak > 0 ? totalAnak : 18);
-  setText('nav-badge-bantuan', bantuan.length > 0 ? bantuan.length : 0);
-  setText('nav-badge-rencana', rencana.length > 0 ? rencana.length : 0);
-  setText('nav-badge-pelatihan', pelatihan.length > 0 ? pelatihan.length : 2);
-  setText('nav-badge-perjalanan', perjalanan.length > 0 ? perjalanan.length : 1);
-
-  // 1. Ringkasan Data Anak Disabilitas
+  // 1. Ringkasan Data Anak Disabilitas (100% Data Real)
   renderDisabilitySummary(anggota);
 
-  // 2. Status Pendaftaran (Donut Chart & Legend)
+  // 2. Status Pendaftaran (Donut Chart & Legend 100% Data Real)
   renderStatusPendaftaran(anggota);
 
-  // 3. Agenda Kegiatan Terbaru
+  // 3. Agenda Kegiatan Terbaru (100% Data Real)
   renderAgendaKegiatan(rencana, kegiatan);
 
-  // 4. Grafik Tren Pendaftaran Bulanan
+  // 4. Grafik Tren Pendaftaran Bulanan (100% Data Real)
   renderChart();
 }
 
-// 1. RINGKASAN DISABILITAS
+// 1. RINGKASAN DISABILITAS (REAL DATA DARI ANGGOTA)
 function renderDisabilitySummary(anggota) {
   const rowsEl = document.getElementById('disability-table-rows');
   const totalEl = document.getElementById('disability-total-count');
   if (!rowsEl) return;
 
   const refCategories = [
-    { code: 'KR', name: 'Tuna Rungu', badgeClass: 'badge-cyan', count: 48, pct: '26,1%' },
-    { code: 'KW', name: 'Tuna Wicara', badgeClass: 'badge-orange', count: 36, pct: '19,6%' },
-    { code: 'TG', name: 'Tuna Grahita', badgeClass: 'badge-amber', count: 42, pct: '22,8%' },
-    { code: 'TD', name: 'Tuna Daksa', badgeClass: 'badge-teal', count: 28, pct: '15,2%' },
-    { code: 'TN', name: 'Tuna Netra', badgeClass: 'badge-rose', count: 18, pct: '9,8%' },
-    { code: 'KG', name: 'Tuna Ganda', badgeClass: 'badge-purple', count: 9, pct: '4,9%' }
+    { code: 'KR', name: 'Tuna Rungu', badgeClass: 'badge-cyan', keys: ['rungu', 'kr'] },
+    { code: 'KW', name: 'Tuna Wicara', badgeClass: 'badge-orange', keys: ['wicara', 'kw'] },
+    { code: 'TG', name: 'Tuna Grahita', badgeClass: 'badge-amber', keys: ['grahita', 'tg', 'down', 'autis'] },
+    { code: 'TD', name: 'Tuna Daksa', badgeClass: 'badge-teal', keys: ['daksa', 'td', 'fisik', 'kursi roda', 'tongkat', 'kaku', 'tangan'] },
+    { code: 'TN', name: 'Tuna Netra', badgeClass: 'badge-rose', keys: ['netra', 'tn'] },
+    { code: 'KG', name: 'Tuna Ganda', badgeClass: 'badge-purple', keys: ['ganda', 'kg', 'berat', 'multiple'] }
   ];
 
-  if (!anggota || anggota.length === 0) {
+  const total = Array.isArray(anggota) ? anggota.length : 0;
+
+  if (total === 0) {
     rowsEl.innerHTML = refCategories.map(cat => `
       <div class="disability-row">
         <div class="disability-type-info">
           <span class="badge-code ${cat.badgeClass}">${cat.code}</span>
           <span class="disability-name">${cat.name}</span>
         </div>
-        <div class="disability-count-val">${cat.count} <span class="disability-pct">(${cat.pct})</span></div>
+        <div class="disability-count-val">0 <span class="disability-pct">(0,0%)</span></div>
       </div>
     `).join('');
-    if (totalEl) totalEl.textContent = '181';
+    if (totalEl) totalEl.textContent = '0';
     return;
   }
 
-  const counts = {};
-  anggota.forEach(a => {
-    const d = (a.disabilitas || 'Lainnya').trim();
-    counts[d] = (counts[d] || 0) + 1;
-  });
-
-  const total = anggota.length;
   const mapped = refCategories.map(cat => {
     let c = 0;
-    Object.keys(counts).forEach(k => {
-      const lower = k.toLowerCase();
-      if (lower.includes(cat.name.toLowerCase().replace('tuna ', '')) || lower.includes(cat.code.toLowerCase())) {
-        c += counts[k];
+    anggota.forEach(a => {
+      const dis = ((a.disabilitas || '') + ' ' + (a.subDisabilitas || '')).toLowerCase();
+      if (cat.keys.some(k => dis.includes(k))) {
+        c++;
       }
     });
-    if (c === 0 && counts[cat.name]) c = counts[cat.name];
-    const pctVal = total > 0 ? (c / total * 100).toFixed(1).replace('.', ',') : '0,0';
+    const pctVal = (c / total * 100).toFixed(1).replace('.', ',');
     return { ...cat, count: c, pct: pctVal + '%' };
   });
 
@@ -996,27 +985,41 @@ function renderDisabilitySummary(anggota) {
         <span class="badge-code ${cat.badgeClass}">${cat.code}</span>
         <span class="disability-name">${cat.name}</span>
       </div>
-      <div class="disability-count-val">${cat.count} <span class="disability-pct">(${cat.pct})</span></div>
+      <div class="disability-count-val">${formatNumberId(cat.count)} <span class="disability-pct">(${cat.pct})</span></div>
     </div>
   `).join('');
 
   if (totalEl) totalEl.textContent = formatNumberId(total);
 }
 
-// 2. STATUS PENDAFTARAN (DONUT CHART & LEGENDA)
+// 2. STATUS PENDAFTARAN (DONUT CHART & LEGENDA 100% REAL DATA)
 function renderStatusPendaftaran(anggota) {
-  let lengkap = 842;
-  let verifikasi = 213;
-  let dokumen = 124;
-  let ditolak = 69;
-  let total = 1248;
+  const total = Array.isArray(anggota) ? anggota.length : 0;
+  let lengkap = 0;
+  let verifikasi = 0;
+  let dokumen = 0;
+  let ditolak = 0;
 
-  if (anggota && anggota.length > 0) {
-    total = anggota.length;
-    lengkap = anggota.filter(a => a.status === 'Aktif' || a.status === 'Terdaftar' || !a.status).length;
-    verifikasi = anggota.filter(a => a.status === 'Verifikasi' || a.status === 'Proses').length;
-    dokumen = anggota.filter(a => a.status === 'Menunggu Dokumen' || a.status === 'Pending').length;
-    ditolak = anggota.filter(a => a.status === 'Ditolak' || a.status === 'Nonaktif').length;
+  if (total > 0) {
+    lengkap = anggota.filter(a => {
+      const st = (a.status || 'Aktif').toLowerCase();
+      return st === 'aktif' || st === 'terdaftar' || st === 'lengkap';
+    }).length;
+
+    verifikasi = anggota.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st === 'verifikasi' || st === 'proses' || st === 'review';
+    }).length;
+
+    dokumen = anggota.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st.includes('dokumen') || st === 'pending' || st === 'menunggu';
+    }).length;
+
+    ditolak = anggota.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st === 'ditolak' || st === 'nonaktif' || st === 'batal';
+    }).length;
   }
 
   const pLengkap = total > 0 ? (lengkap / total * 100).toFixed(1).replace('.', ',') : '0,0';
@@ -1024,7 +1027,7 @@ function renderStatusPendaftaran(anggota) {
   const pDokumen = total > 0 ? (dokumen / total * 100).toFixed(1).replace('.', ',') : '0,0';
   const pDitolak = total > 0 ? (ditolak / total * 100).toFixed(1).replace('.', ',') : '0,0';
 
-  setText('donut-center-total', formatNumberId(total));
+  setText('donut-center-total', `${formatNumberId(total)} Anak`);
   const elLengkap = document.getElementById('stat-status-lengkap');
   if (elLengkap) elLengkap.innerHTML = `${formatNumberId(lengkap)} <span class="legend-pct">(${pLengkap}%)</span>`;
   const elVerif = document.getElementById('stat-status-verifikasi');
@@ -1039,15 +1042,18 @@ function renderStatusPendaftaran(anggota) {
   if (!ctx) return;
   if (donutChartInst) { donutChartInst.destroy(); donutChartInst = null; }
 
+  const chartData = total > 0 ? [lengkap, verifikasi, dokumen, ditolak] : [1];
+  const chartColors = total > 0 ? ['#10B981', '#0EA5E9', '#F59E0B', '#EF4444'] : ['#E2E8F0'];
+
   donutChartInst = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Terdaftar Lengkap', 'Proses Verifikasi', 'Menunggu Dokumen', 'Ditolak'],
+      labels: total > 0 ? ['Terdaftar Lengkap', 'Proses Verifikasi', 'Menunggu Dokumen', 'Ditolak'] : ['Belum Ada Data'],
       datasets: [{
-        data: [lengkap, verifikasi, dokumen, ditolak],
-        backgroundColor: ['#10B981', '#0EA5E9', '#F59E0B', '#EF4444'],
+        data: chartData,
+        backgroundColor: chartColors,
         borderWidth: 0,
-        hoverOffset: 3
+        hoverOffset: total > 0 ? 3 : 0
       }]
     },
     options: {
@@ -1057,6 +1063,7 @@ function renderStatusPendaftaran(anggota) {
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: total > 0,
           callbacks: {
             label: function(c) {
               const val = c.raw || 0;
@@ -1070,7 +1077,7 @@ function renderStatusPendaftaran(anggota) {
   });
 }
 
-// 3. AGENDA KEGIATAN TERBARU
+// 3. AGENDA KEGIATAN TERBARU (100% REAL DATA DARI DATABASE)
 function renderAgendaKegiatan(rencana, kegiatan) {
   const container = document.getElementById('agenda-items-container');
   if (!container) return;
@@ -1079,19 +1086,19 @@ function renderAgendaKegiatan(rencana, kegiatan) {
   if (Array.isArray(rencana)) {
     rencana.forEach(r => {
       combined.push({
-        tanggal: r.tanggal || r.tglMulai || '2025-10-24',
-        judul: r.namaKegiatan || r.judul || 'Agenda Kegiatan Yayasan',
+        tanggal: r.tanggal || r.tglMulai || '',
+        judul: r.namaKegiatan || r.judul || 'Program Rencana Kerja',
         lokasi: r.tempat || r.lokasi || 'Kota Tanjungpinang',
         jam: r.waktu || '08:00 - 12:00',
-        status: r.status === 'Selesai' ? 'Terlaksana' : 'Akan Datang'
+        status: (r.status === 'Terlaksana' || r.status === 'Selesai') ? 'Terlaksana' : 'Akan Datang'
       });
     });
   }
   if (Array.isArray(kegiatan)) {
     kegiatan.forEach(k => {
       combined.push({
-        tanggal: k.tanggal || '2025-10-24',
-        judul: k.namaKegiatan || k.judul || 'Kegiatan Anak Disabilitas',
+        tanggal: k.tanggal || '',
+        judul: k.namaKegiatan || k.judul || 'Kegiatan Yayasan',
         lokasi: k.tempat || k.lokasi || 'Kota Tanjungpinang',
         jam: k.waktu || '09:00 - 12:00',
         status: 'Terlaksana'
@@ -1099,41 +1106,24 @@ function renderAgendaKegiatan(rencana, kegiatan) {
     });
   }
 
-  // Jika belum ada data kegiatan diinput user, gunakan 4 agenda referensi resmi persis gambar
   if (combined.length === 0) {
-    const defaultAgenda = [
-      { tgl: '24', bln: 'Okt', judul: 'Sosialisasi Program Bantuan Anak', lokasi: 'Aula Dinas Sosial Kota Tanjungpinang', jam: '08:00 - 12:00', status: 'Terlaksana' },
-      { tgl: '26', bln: 'Okt', judul: 'Pelatihan Pendampingan Anak Disabilitas', lokasi: 'Ruang Pertemuan PKK', jam: '09:00 - 15:00', status: 'Akan Datang' },
-      { tgl: '28', bln: 'Okt', judul: 'Verifikasi Data Anak Terpadu', lokasi: 'Kecamatan Tanjungpinang Timur', jam: '08:00 - 11:00', status: 'Akan Datang' },
-      { tgl: '31', bln: 'Okt', judul: 'Pameran Kegiatan Anak', lokasi: 'Taman Batu 10 Tanjungpinang', jam: '07:00 - 13:00', status: 'Akan Datang' }
-    ];
-
-    container.innerHTML = defaultAgenda.map(item => `
-      <div class="agenda-item-row">
-        <div class="agenda-date-block">
-          <span class="agenda-day-num">${item.tgl}</span>
-          <span class="agenda-month-txt">${item.bln}</span>
-        </div>
-        <div class="agenda-info-block">
-          <h4 class="agenda-title-txt">${escapeHtml(item.judul)}</h4>
-          <p class="agenda-location-txt">${escapeHtml(item.lokasi)}</p>
-        </div>
-        <div class="agenda-time-block">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>${item.jam}</span>
-        </div>
-        <div class="agenda-status-pill ${item.status === 'Terlaksana' ? 'status-terlaksana' : 'status-akan-datang'}">
-          <span>✓ ${item.status}</span>
-        </div>
+    container.innerHTML = `
+      <div style="text-align: center; padding: 34px 16px; color: #94A3B8;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.8" style="margin-bottom: 8px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div style="font-size: 13px; font-weight: 700; color: #64748B;">Belum Ada Agenda Kegiatan</div>
+        <div style="font-size: 11.5px; color: #94A3B8; margin-top: 4px;">Agenda kegiatan otomatis terisi saat rencana kerja atau laporan ditambahkan.</div>
       </div>
-    `).join('');
+    `;
     return;
   }
 
+  // Sort by date descending
+  combined.sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   container.innerHTML = combined.slice(0, 4).map(item => {
-    let day = '24';
-    let month = 'Okt';
+    let day = '1';
+    let month = 'Bln';
     if (item.tanggal) {
       const parts = item.tanggal.split('-');
       if (parts.length >= 3) {
@@ -1165,41 +1155,39 @@ function renderAgendaKegiatan(rencana, kegiatan) {
   }).join('');
 }
 
-// 4. GRAFIK TREN PENDAFTARAN BULANAN (12 BULAN DENGAN CALLOUT TOOLTIP PERSIS GAMBAR)
+// 4. GRAFIK TREN PENDAFTARAN BULANAN (100% REAL DATA DARI DATABASE)
 function renderChart() {
   const ctx = document.getElementById('dashboardChart');
   if (!ctx) return;
   if (chartInst) { chartInst.destroy(); chartInst = null; }
 
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  
-  // Data kurva tren pendaftaran bulanan persis grafik di gambar
-  let dataPoints = [35, 48, 38, 40, 36, 39, 45, 82, 130, 165, 200, 218];
-
+  const monthlyCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   const anggota = DB.get('lhg_anggota', []);
-  if (anggota.length > 0) {
-    const monthlyCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let hasDated = false;
-    anggota.forEach(a => {
-      const d = a.createdAt || a.tglDaftar || a.tanggalInput;
-      if (d) {
-        const p = d.split('-');
-        if (p.length >= 2) {
-          const y = p[0];
-          const m = parseInt(p[1], 10) - 1;
-          if (m >= 0 && m < 12 && (!currentTrendYear || y === currentTrendYear)) {
-            monthlyCount[m]++;
-            hasDated = true;
-          }
+
+  anggota.forEach(a => {
+    const d = a.createdAt || a.tglDaftar || a.tanggalInput || a.tglInput;
+    if (d && typeof d === 'string') {
+      const p = d.split('-');
+      if (p.length >= 2) {
+        const y = p[0];
+        const m = parseInt(p[1], 10) - 1;
+        if (m >= 0 && m < 12 && (!currentTrendYear || y === currentTrendYear)) {
+          monthlyCount[m]++;
         }
       }
-    });
-    if (hasDated) {
-      dataPoints = monthlyCount;
+    } else if (anggota.length > 0) {
+      const curM = new Date().getMonth();
+      monthlyCount[curM]++;
     }
-  }
+  });
 
-  // Custom Callout Badge Plugin persis di gambar acuan pada titik Oktober: "Oktober 2025: 218 pendaftar"
+  const dataPoints = monthlyCount;
+  const curMonthIdx = new Date().getMonth();
+  const currentMonthCount = monthlyCount[curMonthIdx];
+  const maxVal = Math.max(...dataPoints, 5);
+
+  // Custom Callout Badge Plugin persis gambar pada bulan aktif
   const calloutBadgePlugin = {
     id: 'calloutBadge',
     afterDatasetsDraw(chart) {
@@ -1207,14 +1195,13 @@ function renderChart() {
       const meta = chart.getDatasetMeta(0);
       if (!meta || !meta.data) return;
 
-      const targetIdx = 9; // Oktober
-      const point = meta.data[targetIdx];
+      const point = meta.data[curMonthIdx];
       if (!point) return;
 
       const x = point.x;
       const y = point.y;
-      const textLine1 = `Oktober ${currentTrendYear}`;
-      const textLine2 = `218 pendaftar`;
+      const textLine1 = `${labels[curMonthIdx]} ${currentTrendYear}`;
+      const textLine2 = `${formatNumberId(currentMonthCount)} pendaftar`;
 
       ctx2.save();
       ctx2.font = 'bold 11px Plus Jakarta Sans, sans-serif';
@@ -1224,7 +1211,7 @@ function renderChart() {
       const boxX = x - boxWidth / 2;
       const boxY = y - boxHeight - 12;
 
-      // Gambar kotak tooltip badge warna teal gelap
+      // Kotak badge teal
       ctx2.fillStyle = '#0D9488';
       ctx2.beginPath();
       const r = 6;
@@ -1285,6 +1272,7 @@ function renderChart() {
         pointHoverBackgroundColor: '#1376F8'
       }]
     },
+    plugins: [calloutBadgePlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1298,7 +1286,7 @@ function renderChart() {
           cornerRadius: 8,
           callbacks: {
             label: function(c) {
-              return ` ${c.parsed.y} pendaftar`;
+              return ` ${formatNumberId(c.parsed.y)} pendaftar`;
             }
           }
         }
@@ -1310,9 +1298,8 @@ function renderChart() {
         },
         y: {
           min: 0,
-          max: 250,
+          suggestedMax: Math.ceil(maxVal * 1.3),
           ticks: {
-            stepSize: 50,
             font: { size: 11, family: 'Plus Jakarta Sans' },
             color: '#64748B'
           },
@@ -1322,8 +1309,7 @@ function renderChart() {
           }
         }
       }
-    },
-    plugins: [calloutBadgePlugin]
+    }
   });
 }
 
@@ -1466,13 +1452,126 @@ function syncSemuaUmurAnggota() {
 }
 
 // ================= DATA ANAK TABLE & FILTER =================
+// ================= DATA ANAK TABLE & FILTER =================
 let editId = null;
 let currentSearch = '';
 let currentDisabilityFilter = '';
+let currentStatusFilter = '';
+let currentAnggotaPage = 1;
+const ANGGOTA_PAGE_SIZE = 10;
+
+let currentBantuanPage = 1;
+const BANTUAN_PAGE_SIZE = 10;
+
+let currentRencanaPage = 1;
+const RENCANA_PAGE_SIZE = 10;
+
+let currentPelatihanPage = 1;
+const PELATIHAN_PAGE_SIZE = 10;
+
+let currentPerjalananPage = 1;
+const PERJALANAN_PAGE_SIZE = 10;
+
+let currentLaporanPage = 1;
+const LAPORAN_PAGE_SIZE = 10;
+
+let currentArsipPage = 1;
+const ARSIP_PAGE_SIZE = 10;
+
+let currentUserPage = 1;
+const USER_PAGE_SIZE = 10;
 
 function filterByDisabilitas(val) {
   currentDisabilityFilter = val;
+  currentAnggotaPage = 1;
   renderAnggotaTable(currentSearch);
+}
+
+function filterAnggotaByStatus(val) {
+  currentStatusFilter = val;
+  currentAnggotaPage = 1;
+  renderAnggotaTable(currentSearch);
+}
+
+function changeAnggotaPage(p) {
+  currentAnggotaPage = p;
+  renderAnggotaTable();
+}
+
+function changeBantuanPage(p) {
+  currentBantuanPage = p;
+  renderBantuanTable();
+}
+
+function changeRencanaPage(p) {
+  currentRencanaPage = p;
+  renderRencanaKegiatanTable();
+}
+
+function changePelatihanPage(p) {
+  currentPelatihanPage = p;
+  renderPelatihanTable();
+}
+
+function changePerjalananPage(p) {
+  currentPerjalananPage = p;
+  renderPerjalananTable();
+}
+
+function changeLaporanPage(p) {
+  currentLaporanPage = p;
+  renderLaporan();
+}
+
+function changeArsipPage(p) {
+  currentArsipPage = p;
+  renderArsipTable();
+}
+
+function changeUserPage(p) {
+  currentUserPage = p;
+  renderManajemenUserTable();
+}
+
+// GENERIC REUSABLE TABLE PAGINATION RENDERER (SESUAI GAMBAR ACUAN)
+function renderTablePagination(containerId, currentPage, totalItems, pageSize, onPageChangeFnName) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (totalItems <= 0) {
+    container.innerHTML = `
+      <div class="table-pagination-bar">
+        <div class="pagination-info">Menampilkan 0 data</div>
+        <div class="pagination-per-page"><span>${pageSize} / halaman</span></div>
+      </div>
+    `;
+    return;
+  }
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalItems);
+
+  let pageBtns = '';
+  for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+    pageBtns += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="${onPageChangeFnName}(${i})">${i}</button>`;
+  }
+
+  container.innerHTML = `
+    <div class="table-pagination-bar">
+      <div class="pagination-info">Menampilkan <strong>${start}-${end}</strong> dari <strong>${totalItems}</strong> data</div>
+      <div class="pagination-controls">
+        <button class="pagination-nav-btn" onclick="${onPageChangeFnName}(${Math.max(1, currentPage - 1)})" ${currentPage === 1 ? 'disabled' : ''} title="Halaman Sebelumnya">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        ${pageBtns}
+        <button class="pagination-nav-btn" onclick="${onPageChangeFnName}(${Math.min(totalPages, currentPage + 1)})" ${currentPage === totalPages ? 'disabled' : ''} title="Halaman Berikutnya">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="pagination-per-page">
+        <span>${pageSize} / halaman</span>
+      </div>
+    </div>
+  `;
 }
 
 function renderAnggotaTable(search) {
@@ -1488,7 +1587,13 @@ function renderAnggotaTable(search) {
       a.disabilitas.toLowerCase().includes(s) ||
       (a.wali && a.wali.toLowerCase().includes(s));
     const matchDis = !currentDisabilityFilter || a.disabilitas === currentDisabilityFilter;
-    return matchSearch && matchDis;
+    const matchStatus = !currentStatusFilter || (
+      currentStatusFilter === 'Aktif' ? (a.status === 'Aktif' || a.status === 'Terdaftar' || !a.status) :
+      currentStatusFilter === 'Verifikasi' ? (a.status === 'Verifikasi' || a.status === 'Proses') :
+      currentStatusFilter === 'Menunggu Dokumen' ? (a.status === 'Menunggu Dokumen' || a.status === 'Pending') :
+      (a.status === currentStatusFilter)
+    );
+    return matchSearch && matchDis && matchStatus;
   });
 
   // Urutkan data anak secara abjad (A - Z) berdasarkan nama anak
@@ -1501,12 +1606,21 @@ function renderAnggotaTable(search) {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94A3B8;">Tidak ada data ditemukan</td></tr>';
     }
+    renderTablePagination('anggota-pagination-container', 1, 0, ANGGOTA_PAGE_SIZE, 'changeAnggotaPage');
     return;
   }
 
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / ANGGOTA_PAGE_SIZE) || 1;
+  if (currentAnggotaPage > totalPages) currentAnggotaPage = totalPages;
+  const startIdx = (currentAnggotaPage - 1) * ANGGOTA_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + ANGGOTA_PAGE_SIZE);
+
+  renderTablePagination('anggota-pagination-container', currentAnggotaPage, totalItems, ANGGOTA_PAGE_SIZE, 'changeAnggotaPage');
+
   // Render tabel untuk layar desktop
   if (tbody) {
-    tbody.innerHTML = list.map((a, i) => {
+    tbody.innerHTML = paginatedList.map((a, i) => {
       const usiaStr = hitungUsia(a);
       const subDis = (a.subDisabilitas && a.subDisabilitas.trim() !== '-' && a.subDisabilitas.trim() !== '') ? a.subDisabilitas.trim() : null;
       const initials = getInitials(a.nama);
@@ -1515,7 +1629,7 @@ function renderAnggotaTable(search) {
       return `
       <tr>
         <td style="text-align: center;">
-          <span class="table-row-num">${i + 1}</span>
+          <span class="table-row-num">${startIdx + i + 1}</span>
         </td>
         <td>
           <div class="table-user-cell">
@@ -3894,18 +4008,33 @@ function printFormPendaftaran() {
 
 // ================= LAPORAN KEGIATAN =================
 function renderLaporan() {
-  const list = DB.get('lhg_kegiatan');
+  let list = DB.get('lhg_kegiatan');
   const tbody = document.getElementById('laporan-tbody');
+
+  const q = (document.getElementById('laporan-search-input')?.value || '').toLowerCase().trim();
+  if (q) {
+    list = list.filter(k => (k.judul && k.judul.toLowerCase().includes(q)) || (k.lokasi && k.lokasi.toLowerCase().includes(q)));
+  }
 
   if (!list.length) {
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #94A3B8;">Belum ada laporan kegiatan</td></tr>';
+    renderTablePagination('laporan-pagination-container', 1, 0, LAPORAN_PAGE_SIZE, 'changeLaporanPage');
     return;
   }
 
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / LAPORAN_PAGE_SIZE) || 1;
+  if (currentLaporanPage > totalPages) currentLaporanPage = totalPages;
+  if (currentLaporanPage < 1) currentLaporanPage = 1;
+  const startIdx = (currentLaporanPage - 1) * LAPORAN_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + LAPORAN_PAGE_SIZE);
+
+  renderTablePagination('laporan-pagination-container', currentLaporanPage, totalItems, LAPORAN_PAGE_SIZE, 'changeLaporanPage');
+
   if (tbody) {
-    tbody.innerHTML = list.map((k, i) => `
+    tbody.innerHTML = paginatedList.map((k, i) => `
       <tr>
-        <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
+        <td style="text-align: center; font-weight: 700; color: #64748B;">${startIdx + i + 1}</td>
         <td style="font-weight: 700; color: #0F172A;">${k.judul}</td>
         <td>${formatDate(k.tanggal)}</td>
         <td>${k.lokasi || '-'}</td>
@@ -5682,8 +5811,18 @@ function renderArsipTable(search) {
         </tr>
       `;
     }
+    renderTablePagination('arsip-pagination-container', 1, 0, ARSIP_PAGE_SIZE, 'changeArsipPage');
     return;
   }
+
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / ARSIP_PAGE_SIZE) || 1;
+  if (currentArsipPage > totalPages) currentArsipPage = totalPages;
+  if (currentArsipPage < 1) currentArsipPage = 1;
+  const startIdx = (currentArsipPage - 1) * ARSIP_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + ARSIP_PAGE_SIZE);
+
+  renderTablePagination('arsip-pagination-container', currentArsipPage, totalItems, ARSIP_PAGE_SIZE, 'changeArsipPage');
 
   const badgeKategoriMap = {
     'Legalitas & Perizinan': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '📜' },
@@ -5695,12 +5834,12 @@ function renderArsipTable(search) {
   };
 
   if (tbody) {
-    tbody.innerHTML = list.map((a, idx) => {
+    tbody.innerHTML = paginatedList.map((a, idx) => {
       const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
       const hasDigital = a.fileUrl || a.fileBase64;
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
           <td style="white-space: nowrap;">
             <div style="font-weight: 700; color: #1E293B; font-size: 12.5px;">${a.nomor || '<span style="color:#94A3B8; font-style:italic;">Tanpa Nomor</span>'}</div>
             <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📅 ${a.tanggal ? formatDate(a.tanggal) : '-'}</div>
@@ -6587,8 +6726,18 @@ function renderManajemenUserTable(search, filterRole) {
           </td>
         </tr>
       `;
+      renderTablePagination('user-pagination-container', 1, 0, USER_PAGE_SIZE, 'changeUserPage');
       return;
     }
+
+    const totalItems = users.length;
+    const totalPages = Math.ceil(totalItems / USER_PAGE_SIZE) || 1;
+    if (currentUserPage > totalPages) currentUserPage = totalPages;
+    if (currentUserPage < 1) currentUserPage = 1;
+    const startIdx = (currentUserPage - 1) * USER_PAGE_SIZE;
+    const paginatedUsers = users.slice(startIdx, startIdx + USER_PAGE_SIZE);
+
+    renderTablePagination('user-pagination-container', currentUserPage, totalItems, USER_PAGE_SIZE, 'changeUserPage');
 
     const currentUser = getAuthUser();
     let userPhotos = {};
@@ -6596,7 +6745,7 @@ function renderManajemenUserTable(search, filterRole) {
       userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
     } catch(e) {}
 
-    tbody.innerHTML = users.map((u, i) => {
+    tbody.innerHTML = paginatedUsers.map((u, i) => {
       const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
       const isSelf = currentUser && currentUser.username === u.username;
       const fotoUrl = u.foto || userPhotos[u.username];
@@ -6604,7 +6753,7 @@ function renderManajemenUserTable(search, filterRole) {
 
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: #64748B;">${i + 1}</td>
+          <td style="text-align: center; font-weight: 700; color: #64748B;">${startIdx + i + 1}</td>
           <td>
             <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${escapeHtml(u.username)}</span>
             ${isSelf ? '<span style="margin-left: 6px; font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
@@ -7005,8 +7154,18 @@ function renderBantuanTable(search) {
         </tr>
       `;
     }
+    renderTablePagination('bantuan-pagination-container', 1, 0, BANTUAN_PAGE_SIZE, 'changeBantuanPage');
     return;
   }
+
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / BANTUAN_PAGE_SIZE) || 1;
+  if (currentBantuanPage > totalPages) currentBantuanPage = totalPages;
+  if (currentBantuanPage < 1) currentBantuanPage = 1;
+  const startIdx = (currentBantuanPage - 1) * BANTUAN_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + BANTUAN_PAGE_SIZE);
+
+  renderTablePagination('bantuan-pagination-container', currentBantuanPage, totalItems, BANTUAN_PAGE_SIZE, 'changeBantuanPage');
 
   const badgeKategoriMap = {
     'Alat Bantu': { bg: '#FEF3C7', color: '#B45309', border: '#FCD34D', icon: '🦯' },
@@ -7019,11 +7178,11 @@ function renderBantuanTable(search) {
 
   // Render table
   if (tbody) {
-    const newTbodyHtml = list.map((b, idx) => {
+    const newTbodyHtml = paginatedList.map((b, idx) => {
       const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
           <td style="white-space: nowrap;">
             <span style="font-weight: 700; color: #1E293B; font-size: 13px;">📅 ${formatDate(b.tanggal)}</span>
           </td>
@@ -7412,12 +7571,22 @@ function renderRencanaKegiatanTable() {
         </tr>
       `;
     }
+    renderTablePagination('rencana-pagination-container', 1, 0, RENCANA_PAGE_SIZE, 'changeRencanaPage');
     return;
   }
 
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / RENCANA_PAGE_SIZE) || 1;
+  if (currentRencanaPage > totalPages) currentRencanaPage = totalPages;
+  if (currentRencanaPage < 1) currentRencanaPage = 1;
+  const startIdx = (currentRencanaPage - 1) * RENCANA_PAGE_SIZE;
+  const paginatedList = filtered.slice(startIdx, startIdx + RENCANA_PAGE_SIZE);
+
+  renderTablePagination('rencana-pagination-container', currentRencanaPage, totalItems, RENCANA_PAGE_SIZE, 'changeRencanaPage');
+
   // Render table
   if (tbody) {
-    tbody.innerHTML = filtered.map((item, idx) => {
+    tbody.innerHTML = paginatedList.map((item, idx) => {
       let tglText = formatDate(item.tglMulai);
       if (item.tglSelesai && item.tglSelesai !== item.tglMulai) {
         tglText += ` s/d ${formatDate(item.tglSelesai)}`;
@@ -7428,7 +7597,7 @@ function renderRencanaKegiatanTable() {
 
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: #64748B;">${idx + 1}</td>
+          <td style="text-align: center; font-weight: 700; color: #64748B;">${startIdx + idx + 1}</td>
           <td>
             <div style="font-weight: 800; color: #0F172A; font-size: 13px; line-height: 1.35;">${item.judul}</div>
             <div style="font-size: 11px; color: #059669; font-weight: 600; margin-top: 3px;">🏷️ ${item.kategori}</div>
@@ -8202,14 +8371,24 @@ function renderPelatihanTable(search) {
         </td>
       </tr>
     `;
+    renderTablePagination('pelatihan-pagination-container', 1, 0, PELATIHAN_PAGE_SIZE, 'changePelatihanPage');
     return;
   }
+
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / PELATIHAN_PAGE_SIZE) || 1;
+  if (currentPelatihanPage > totalPages) currentPelatihanPage = totalPages;
+  if (currentPelatihanPage < 1) currentPelatihanPage = 1;
+  const startIdx = (currentPelatihanPage - 1) * PELATIHAN_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + PELATIHAN_PAGE_SIZE);
+
+  renderTablePagination('pelatihan-pagination-container', currentPelatihanPage, totalItems, PELATIHAN_PAGE_SIZE, 'changePelatihanPage');
 
   const allAnggota = DB.get('lhg_anggota', []);
   const anggotaMap = new Map();
   allAnggota.forEach(a => anggotaMap.set(a.id, a));
 
-  tbody.innerHTML = list.map((p, idx) => {
+  tbody.innerHTML = paginatedList.map((p, idx) => {
     const pesertaIds = Array.isArray(p.peserta) ? p.peserta : [];
     const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
 
@@ -8236,7 +8415,7 @@ function renderPelatihanTable(search) {
 
     return `
       <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
         <td>
           <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${p.nama}</div>
           ${p.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${p.keterangan}</div>` : ''}
@@ -8439,14 +8618,24 @@ function renderPerjalananTable(search) {
         </td>
       </tr>
     `;
+    renderTablePagination('perjalanan-pagination-container', 1, 0, PERJALANAN_PAGE_SIZE, 'changePerjalananPage');
     return;
   }
+
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / PERJALANAN_PAGE_SIZE) || 1;
+  if (currentPerjalananPage > totalPages) currentPerjalananPage = totalPages;
+  if (currentPerjalananPage < 1) currentPerjalananPage = 1;
+  const startIdx = (currentPerjalananPage - 1) * PERJALANAN_PAGE_SIZE;
+  const paginatedList = list.slice(startIdx, startIdx + PERJALANAN_PAGE_SIZE);
+
+  renderTablePagination('perjalanan-pagination-container', currentPerjalananPage, totalItems, PERJALANAN_PAGE_SIZE, 'changePerjalananPage');
 
   const allAnggota = DB.get('lhg_anggota', []);
   const anggotaMap = new Map();
   allAnggota.forEach(a => anggotaMap.set(a.id, a));
 
-  tbody.innerHTML = list.map((pr, idx) => {
+  tbody.innerHTML = paginatedList.map((pr, idx) => {
     const pesertaIds = Array.isArray(pr.peserta) ? pr.peserta : [];
     const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
 
@@ -8473,7 +8662,7 @@ function renderPerjalananTable(search) {
 
     return `
       <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
         <td>
           <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${pr.nama}</div>
           ${pr.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${pr.keterangan}</div>` : ''}
