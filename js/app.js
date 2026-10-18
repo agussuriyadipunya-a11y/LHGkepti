@@ -4008,11 +4008,18 @@ function renderLaporan() {
         <td>${k.lokasi || '-'}</td>
         <td style="text-align: center; font-weight: 800; color: #059669;">${k.peserta || 0} org</td>
         <td style="text-align: center;">
-          <span class="disability-pill ${k.status === 'Selesai' ? 'badge-grahita' : 'badge-autis'}">${k.status}</span>
+          <span class="data-anak-status-pill ${k.status === 'Selesai' ? 'status-pill-green' : 'status-pill-gray'}">${k.status || 'Selesai'}</span>
         </td>
         <td style="text-align: center;">
-          <div class="action-buttons-group">
-            <button class="btn-action-icon danger" onclick="deleteLaporan(${k.id})" title="Hapus">🗑️</button>
+          <div class="data-anak-actions">
+            <button type="button" class="action-btn-clean action-delete" onclick="deleteLaporan(${k.id})" title="Hapus Laporan">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </button>
           </div>
         </td>
       </tr>
@@ -5842,12 +5849,27 @@ function renderArsipTable(search) {
             `}
           </td>
           <td style="text-align: center;">
-            <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
-              <button type="button" onclick="viewArsip(${a.id})" title="Buka Jendela Data Lengkap" style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">
-                <span>👁️</span> <span>View</span>
+            <div class="data-anak-actions">
+              <button type="button" class="action-btn-clean action-edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
               </button>
-              <button class="btn-action-icon edit" onclick="openEditArsip(${a.id})" title="Edit Arsip">✏️</button>
-              <button class="btn-action-icon delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">🗑️</button>
+              <button type="button" class="action-btn-clean action-view" onclick="viewArsip(${a.id})" title="Buka Jendela Data Lengkap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean action-delete" onclick="deleteArsip(${a.id})" title="Hapus Berkas">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
             </div>
           </td>
         </tr>
@@ -6749,20 +6771,20 @@ function renderManajemenUserTable(search, filterRole) {
           </td>
           <td style="font-size: 12px; color: #64748B;">${u.createdAt || '-'}</td>
           <td style="text-align: center;">
-            <div class="action-buttons-group">
-              <button class="btn-action-icon" onclick="openEditUser('${u.username}')" title="Edit Pengguna & Foto Profil">
+            <div class="data-anak-actions">
+              <button type="button" class="action-btn-clean action-edit" onclick="openEditUser('${u.username}')" title="Edit Pengguna & Foto Profil">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
               </button>
               ${!isSelf && u.username !== '2172041908850002' ? `
-                <button class="btn-action-icon danger" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">
+                <button type="button" class="action-btn-clean action-delete" onclick="deleteUser('${u.username}')" title="Hapus Pengguna">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
                   </svg>
                 </button>
               ` : ''}
@@ -7180,10 +7202,27 @@ function renderBantuanTable(search) {
             <span style="font-size: 12px; color: #475569;">👤 ${b.petugas || '-'}</span>
           </td>
           <td style="text-align: center;">
-            <div style="display: flex; gap: 4px; justify-content: center;">
-              <button class="btn-action-icon" onclick="openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">👁️</button>
-              <button class="btn-action-icon edit" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">✏️</button>
-              <button class="btn-action-icon delete" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">🗑️</button>
+            <div class="data-anak-actions">
+              <button type="button" class="action-btn-clean action-edit" onclick="openEditBantuan(${b.id})" title="Edit Catatan Bantuan">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean action-view" onclick="openDetailBantuan(${b.id})" title="Lihat Detail Bantuan">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean action-delete" onclick="deleteBantuan(${b.id})" title="Hapus Catatan Bantuan">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
             </div>
           </td>
         </tr>
@@ -7592,11 +7631,34 @@ function renderRencanaKegiatanTable() {
             ${getRencanaStatusBadge(item.status || 'Draf / Pengajuan')}
           </td>
           <td style="text-align: center;">
-            <div class="action-buttons-group">
-              <button class="btn-action-icon" style="color: #2563EB;" onclick="viewRencanaKegiatan(${item.id})" title="Lihat Detail Rencana">👁️</button>
-              <button class="btn-action-icon" style="color: #059669;" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen Resmi A4">🖨️</button>
-              <button class="btn-action-icon" style="color: #D97706;" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">✏️</button>
-              <button class="btn-action-icon danger" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">🗑️</button>
+            <div class="data-anak-actions">
+              <button type="button" class="action-btn-clean action-edit" onclick="openEditRencanaKegiatan(${item.id})" title="Edit Rencana">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean action-view" onclick="viewRencanaKegiatan(${item.id})" title="Lihat Detail Rencana">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean" onclick="printRencanaKegiatanDoc(${item.id})" title="Cetak Lembar Dokumen Resmi A4" style="color: #059669;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+              </button>
+              <button type="button" class="action-btn-clean action-delete" onclick="deleteRencanaKegiatan(${item.id})" title="Hapus Rencana">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
             </div>
           </td>
         </tr>
@@ -8401,10 +8463,29 @@ function renderPelatihanTable(search) {
           ${pesertaBadgesHtml}
         </td>
         <td style="text-align: center;">
-          <div style="display: flex; gap: 4px; justify-content: center;">
-            <button class="btn-action-icon" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')" title="Kelola Peserta Anak">👥</button>
-            <button class="btn-action-icon edit" onclick="openEditPelatihan('${p.id}')" title="Edit Kegiatan Pelatihan">✏️</button>
-            <button class="btn-action-icon delete" onclick="deletePelatihan('${p.id}')" title="Hapus Kegiatan Pelatihan">🗑️</button>
+          <div class="data-anak-actions">
+            <button type="button" class="action-btn-clean" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')" title="Kelola Peserta Anak" style="color: #7C3AED;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-edit" onclick="openEditPelatihan('${p.id}')" title="Edit Kegiatan Pelatihan">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-delete" onclick="deletePelatihan('${p.id}')" title="Hapus Kegiatan Pelatihan">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </button>
           </div>
         </td>
       </tr>
@@ -8648,10 +8729,29 @@ function renderPerjalananTable(search) {
           ${pesertaBadgesHtml}
         </td>
         <td style="text-align: center;">
-          <div style="display: flex; gap: 4px; justify-content: center;">
-            <button class="btn-action-icon" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')" title="Kelola Peserta Anak">👥</button>
-            <button class="btn-action-icon edit" onclick="openEditPerjalanan('${pr.id}')" title="Edit Kegiatan Perjalanan">✏️</button>
-            <button class="btn-action-icon delete" onclick="deletePerjalanan('${pr.id}')" title="Hapus Kegiatan Perjalanan">🗑️</button>
+          <div class="data-anak-actions">
+            <button type="button" class="action-btn-clean" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')" title="Kelola Peserta Anak" style="color: #D97706;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-edit" onclick="openEditPerjalanan('${pr.id}')" title="Edit Kegiatan Perjalanan">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-delete" onclick="deletePerjalanan('${pr.id}')" title="Hapus Kegiatan Perjalanan">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </button>
           </div>
         </td>
       </tr>
