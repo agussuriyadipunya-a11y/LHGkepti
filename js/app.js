@@ -317,6 +317,32 @@ const DB = {
       PhotoStore.saveAll(val);
       return;
     }
+    if (key === 'lhg_arsip' && Array.isArray(val)) {
+      // Pastikan string base64 ukuran besar tidak membebani localStorage untuk mencegah quota exceeded
+      const cleanVal = val.map(item => {
+        if (item && item.fileBase64) {
+          if (typeof ArsipStore !== 'undefined') {
+            ArsipStore.saveFile(item.id, {
+              fileBase64: item.fileBase64,
+              fileName: item.fileName,
+              fileSize: item.fileSize,
+              fileType: item.fileType
+            });
+          }
+          const copy = { ...item };
+          delete copy.fileBase64;
+          return copy;
+        }
+        return item;
+      });
+      try {
+        localStorage.setItem(key, JSON.stringify(cleanVal));
+      } catch(e) {
+        console.warn('LocalStorage Quota Warning on key:', key, e);
+      }
+      syncKeyToSupabase(key, cleanVal);
+      return;
+    }
     try {
       localStorage.setItem(key, JSON.stringify(val));
     } catch(e) {
@@ -331,6 +357,11 @@ const DB = {
 function initData() {
   PhotoStore.init();
   if (typeof SuratStore !== 'undefined') SuratStore.init();
+  if (typeof ArsipStore !== 'undefined') {
+    ArsipStore.init().then(() => {
+      migrateLegacyArsipFiles();
+    });
+  }
   // Always ensure dummy data is cleared if old caches exist
   if (!localStorage.getItem('lhg_init_clean_v3')) {
     localStorage.removeItem('lhg_init');
@@ -5809,7 +5840,138 @@ function deleteCurrentViewPhoto() {
 // ==============================================================================
 // ARSIP BERKAS YAYASAN MODULE
 // ==============================================================================
+// IndexedDB Storage dedicated for Arsip Attachments & Digital Scans (Unlimited Quota)
+const ArsipStore = {
+  dbName: 'lhg_arsip_storage_v1',
+  storeName: 'arsip_documents',
+  _db: null,
+  _cache: {},
+
+  init: function() {
+    return new Promise((resolve) => {
+      if (this._db) return resolve(this._db);
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        return resolve(null);
+      }
+      try {
+        const req = indexedDB.open(this.dbName, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.storeName)) {
+            db.createObjectStore(this.storeName, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => {
+          this._db = e.target.result;
+          resolve(this._db);
+        };
+        req.onerror = () => resolve(null);
+      } catch(err) {
+        resolve(null);
+      }
+    });
+  },
+
+  getFile: async function(id) {
+    const key = String(id);
+    if (this._cache[key]) return this._cache[key];
+    if (!this._db) await this.init();
+    if (!this._db) {
+      try {
+        const fb = localStorage.getItem('lhg_arsip_file_' + key);
+        return fb ? JSON.parse(fb) : null;
+      } catch(e) {
+        return null;
+      }
+    }
+    return new Promise((resolve) => {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readonly');
+        const store = tx.objectStore(this.storeName);
+        const req = store.get(key);
+        req.onsuccess = () => {
+          const res = req.result || null;
+          if (res) this._cache[key] = res;
+          resolve(res);
+        };
+        req.onerror = () => resolve(null);
+      } catch(e) {
+        resolve(null);
+      }
+    });
+  },
+
+  saveFile: async function(id, data) {
+    const key = String(id);
+    this._cache[key] = data;
+    if (!this._db) await this.init();
+    if (!this._db) {
+      try {
+        localStorage.setItem('lhg_arsip_file_' + key, JSON.stringify(data));
+      } catch(e) {}
+      return true;
+    }
+    return new Promise((resolve) => {
+      try {
+        const tx = this._db.transaction(this.storeName, 'readwrite');
+        const store = tx.objectStore(this.storeName);
+        store.put({ id: key, ...data, updatedAt: Date.now() });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      } catch(e) {
+        resolve(false);
+      }
+    });
+  },
+
+  deleteFile: async function(id) {
+    const key = String(id);
+    delete this._cache[key];
+    try { localStorage.removeItem('lhg_arsip_file_' + key); } catch(e) {}
+    if (!this._db) await this.init();
+    if (!this._db) return;
+    try {
+      const tx = this._db.transaction(this.storeName, 'readwrite');
+      const store = tx.objectStore(this.storeName);
+      store.delete(key);
+    } catch(e) {}
+  }
+};
+
+// Automatic migration: Move existing legacy base64 files out of localStorage into ArsipStore
+async function migrateLegacyArsipFiles() {
+  try {
+    const raw = localStorage.getItem('lhg_arsip');
+    if (!raw) return;
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list)) return;
+    let modified = false;
+    for (const item of list) {
+      if (item && item.id && item.fileBase64) {
+        await ArsipStore.saveFile(item.id, {
+          fileBase64: item.fileBase64,
+          fileName: item.fileName || 'dokumen_arsip.pdf',
+          fileSize: item.fileSize || 0,
+          fileType: item.fileType || ''
+        });
+        delete item.fileBase64;
+        modified = true;
+      }
+    }
+    if (modified) {
+      localStorage.setItem('lhg_arsip', JSON.stringify(list));
+      console.log('Migrasi berkas arsip legacy ke IndexedDB ArsipStore selesai.');
+    }
+  } catch(e) {
+    console.warn('Gagal migrasi arsip legacy:', e);
+  }
+}
+
 let activeArsipKategori = '';
+let isArsipFileLoading = false;
+let isArsipFileRemoved = false;
+let selectedArsipFileSize = 0;
+let selectedArsipFileType = '';
 
 function getArsipList() {
   return DB.get('lhg_arsip', []);
@@ -5904,7 +6066,7 @@ function renderArsipTable(search) {
   if (tbody) {
     tbody.innerHTML = paginatedList.map((a, idx) => {
       const katStyle = badgeKategoriMap[a.kategori] || badgeKategoriMap['Administrasi & Lainnya'];
-      const hasDigital = a.fileUrl || a.fileBase64;
+      const hasDigital = !!(a.fileUrl || a.fileBase64 || a.fileName);
       return `
         <tr>
           <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
@@ -5914,10 +6076,10 @@ function renderArsipTable(search) {
           </td>
           <td>
             <div style="font-weight: 800; font-size: 13.5px; color: #047857; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="viewArsip(${a.id})" title="Klik untuk membuka jendela data arsip lengkap">
-              <span>📄</span> <span style="text-decoration: underline;">${a.nama}</span>
+              <span>📄</span> <span style="text-decoration: underline;">${escapeHtmlStr(a.nama)}</span>
             </div>
-            ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${a.penerbit}</strong></div>` : ''}
-            ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan}"</div>` : ''}
+            ${a.penerbit ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Instansi: <strong>${escapeHtmlStr(a.penerbit)}</strong></div>` : ''}
+            ${a.keterangan ? `<div style="font-size: 11px; color: #475569; margin-top: 3px; font-style: italic;">"${escapeHtmlStr(a.keterangan.length > 70 ? a.keterangan.slice(0, 70) + '...' : a.keterangan)}"</div>` : ''}
           </td>
           <td>
             <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -5927,7 +6089,7 @@ function renderArsipTable(search) {
           <td>
             <div style="display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="viewArsip(${a.id})" title="Lihat detail lokasi fisik di jendela">
               <span style="font-size: 14px;">📍</span>
-              <span style="font-weight: 600; font-size: 12px; color: #065F46; background: #ECFDF5; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0;">${a.lokasiFisik || '-'}</span>
+              <span style="font-weight: 600; font-size: 12px; color: #065F46; background: #ECFDF5; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0;">${escapeHtmlStr(a.lokasiFisik || '-')}</span>
             </div>
           </td>
           <td style="text-align: center;">
@@ -5976,42 +6138,134 @@ function handleArsipFileInput(event) {
   const infoEl = document.getElementById('arsip-file-preview-info');
   const base64El = document.getElementById('arsip-file-base64');
   const nameEl = document.getElementById('arsip-file-name');
+  const removeFlag = document.getElementById('arsip-remove-file-flag');
 
   if (!file) {
     base64El.value = '';
-    nameEl.value = '';
-    if (infoEl) infoEl.style.display = 'none';
     return;
   }
 
-  // Batas ukuran 5MB
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('Ukuran file terlalu besar! Maksimal 5MB.', 'error');
+  // Batas ukuran 15MB berkat sistem IndexedDB modern
+  if (file.size > 15 * 1024 * 1024) {
+    showToast('Ukuran file terlalu besar! Maksimal 15MB.', 'error');
     event.target.value = '';
     base64El.value = '';
-    nameEl.value = '';
-    if (infoEl) infoEl.style.display = 'none';
     return;
+  }
+
+  if (removeFlag) removeFlag.value = 'false';
+  isArsipFileRemoved = false;
+  isArsipFileLoading = true;
+  selectedArsipFileSize = file.size;
+  selectedArsipFileType = file.type;
+
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.innerHTML = `<span style="color: #2563EB;">⏳ Sedang membaca dan memproses berkas <strong>${escapeHtmlStr(file.name)}</strong>...</span>`;
   }
 
   const reader = new FileReader();
   reader.onload = function(e) {
+    isArsipFileLoading = false;
     base64El.value = e.target.result;
     nameEl.value = file.name;
     if (infoEl) {
       infoEl.style.display = 'block';
       const sizeKb = Math.round(file.size / 1024);
-      infoEl.innerHTML = `✅ <strong>${file.name}</strong> (${sizeKb} KB) siap disimpan.`;
+      const sizeStr = sizeKb > 1024 ? (sizeKb / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      infoEl.innerHTML = `
+        <div style="background: #F0FDF4; border: 1px solid #86EFAC; padding: 8px 12px; border-radius: 8px; color: #065F46; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span>${isPdf ? '📄' : '🖼️'} <strong>${escapeHtmlStr(file.name)}</strong> (${sizeStr}) siap disimpan.</span>
+          <button type="button" class="btn-sec" onclick="removeArsipAttachedFile()" style="padding: 2px 8px; font-size: 11px; color: #DC2626;">Batal</button>
+        </div>
+      `;
     }
+  };
+  reader.onerror = function() {
+    isArsipFileLoading = false;
+    showToast('Gagal membaca berkas dokumen!', 'error');
+    if (infoEl) infoEl.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeArsipAttachedFile() {
+  const removeFlag = document.getElementById('arsip-remove-file-flag');
+  if (removeFlag) removeFlag.value = 'true';
+  isArsipFileRemoved = true;
+  isArsipFileLoading = false;
+  selectedArsipFileSize = 0;
+  selectedArsipFileType = '';
+
+  const base64El = document.getElementById('arsip-file-base64');
+  if (base64El) base64El.value = '';
+  const nameEl = document.getElementById('arsip-file-name');
+  if (nameEl) nameEl.value = '';
+  const fileInput = document.getElementById('arsip-file-input');
+  if (fileInput) fileInput.value = '';
+  const infoEl = document.getElementById('arsip-file-preview-info');
+  if (infoEl) {
+    infoEl.style.display = 'block';
+    infoEl.innerHTML = `<span style="color: #D97706; font-weight: 600;">⚠️ Berkas lampiran akan dihapus saat data arsip disimpan.</span>`;
+  }
+}
+
+async function uploadArsipDirectlyFromView(id, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 15 * 1024 * 1024) {
+    showToast('Ukuran file terlalu besar! Maksimal 15MB.', 'error');
+    return;
+  }
+
+  showToast('Mengunggah berkas arsip...', 'info');
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const fileBase64 = e.target.result;
+    const list = getArsipList();
+    const idx = list.findIndex(x => String(x.id) === String(id));
+    if (idx !== -1) {
+      list[idx].fileName = file.name;
+      list[idx].fileSize = file.size;
+      list[idx].fileType = file.type;
+      delete list[idx].fileBase64;
+
+      DB.set('lhg_arsip', list);
+
+      await ArsipStore.saveFile(id, {
+        fileBase64: fileBase64,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
+      showToast('Berkas arsip digital berhasil disimpan!', 'success');
+      renderArsip();
+      viewArsip(id);
+    }
+  };
+  reader.onerror = function() {
+    showToast('Gagal membaca berkas!', 'error');
   };
   reader.readAsDataURL(file);
 }
 
 function openAddArsip() {
+  isArsipFileRemoved = false;
+  isArsipFileLoading = false;
+  selectedArsipFileSize = 0;
+  selectedArsipFileType = '';
+
   document.getElementById('form-arsip').reset();
   document.getElementById('arsip-edit-id').value = '';
   document.getElementById('arsip-file-base64').value = '';
   document.getElementById('arsip-file-name').value = '';
+  const removeFlag = document.getElementById('arsip-remove-file-flag');
+  if (removeFlag) removeFlag.value = 'false';
+
   const infoEl = document.getElementById('arsip-file-preview-info');
   if (infoEl) {
     infoEl.style.display = 'none';
@@ -6028,10 +6282,15 @@ function openAddArsip() {
   document.getElementById('modal-arsip').classList.add('open');
 }
 
-function openEditArsip(id) {
+async function openEditArsip(id) {
   const list = getArsipList();
   const a = list.find(x => x.id === id);
   if (!a) return;
+
+  isArsipFileRemoved = false;
+  isArsipFileLoading = false;
+  selectedArsipFileSize = a.fileSize || 0;
+  selectedArsipFileType = a.fileType || '';
 
   document.getElementById('form-arsip').reset();
   document.getElementById('arsip-edit-id').value = a.id;
@@ -6042,17 +6301,25 @@ function openEditArsip(id) {
   document.getElementById('arsip-penerbit').value = a.penerbit || '';
   document.getElementById('arsip-lokasi').value = a.lokasiFisik || '';
   document.getElementById('arsip-file-url').value = a.fileUrl || '';
-  document.getElementById('arsip-file-base64').value = a.fileBase64 || '';
+  document.getElementById('arsip-file-base64').value = '';
   document.getElementById('arsip-file-name').value = a.fileName || '';
   document.getElementById('arsip-keterangan').value = a.keterangan || '';
+  const removeFlag = document.getElementById('arsip-remove-file-flag');
+  if (removeFlag) removeFlag.value = 'false';
 
   const infoEl = document.getElementById('arsip-file-preview-info');
   if (infoEl) {
     if (a.fileName) {
       infoEl.style.display = 'block';
-      infoEl.innerHTML = `📎 Berkas tersimpan: <strong>${a.fileName}</strong>. Pilih file baru jika ingin mengganti.`;
+      infoEl.innerHTML = `
+        <div style="background: #F0FDF4; border: 1px solid #86EFAC; padding: 8px 12px; border-radius: 8px; color: #065F46; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span>📎 Berkas tersimpan: <strong>${escapeHtmlStr(a.fileName)}</strong>. Pilih file baru jika ingin mengganti.</span>
+          <button type="button" class="btn-sec" onclick="removeArsipAttachedFile()" style="padding: 2px 8px; font-size: 11px; color: #DC2626;">Hapus Berkas</button>
+        </div>
+      `;
     } else {
       infoEl.style.display = 'none';
+      infoEl.innerHTML = '';
     }
   }
 
@@ -6060,7 +6327,12 @@ function openEditArsip(id) {
   document.getElementById('modal-arsip').classList.add('open');
 }
 
-function saveArsip() {
+async function saveArsip() {
+  if (isArsipFileLoading) {
+    showToast('Sedang membaca berkas, harap tunggu beberapa saat...', 'info');
+    return;
+  }
+
   const editId = document.getElementById('arsip-edit-id').value;
   const nama = document.getElementById('arsip-nama').value.trim();
   const kategori = document.getElementById('arsip-kategori').value;
@@ -6072,6 +6344,7 @@ function saveArsip() {
   const fileBase64 = document.getElementById('arsip-file-base64').value;
   const fileName = document.getElementById('arsip-file-name').value;
   const keterangan = document.getElementById('arsip-keterangan').value.trim();
+  const removeFlag = document.getElementById('arsip-remove-file-flag')?.value === 'true' || isArsipFileRemoved;
 
   if (!nama || !lokasiFisik) {
     showToast('Harap lengkapi judul dokumen dan lokasi penyimpanan fisik!', 'error');
@@ -6083,8 +6356,24 @@ function saveArsip() {
   const uploader = user ? (user.nama || user.username) : 'Pengurus Yayasan';
 
   if (editId) {
-    const idx = list.findIndex(x => x.id === parseInt(editId));
+    const targetId = parseInt(editId);
+    const idx = list.findIndex(x => x.id === targetId);
     if (idx !== -1) {
+      let finalFileName = list[idx].fileName || '';
+
+      if (removeFlag) {
+        finalFileName = '';
+        await ArsipStore.deleteFile(targetId);
+      } else if (fileBase64) {
+        finalFileName = fileName;
+        await ArsipStore.saveFile(targetId, {
+          fileBase64: fileBase64,
+          fileName: fileName,
+          fileSize: selectedArsipFileSize || 0,
+          fileType: selectedArsipFileType || ''
+        });
+      }
+
       list[idx] = {
         ...list[idx],
         nama: nama,
@@ -6094,16 +6383,27 @@ function saveArsip() {
         penerbit: penerbit,
         lokasiFisik: lokasiFisik,
         fileUrl: fileUrl,
-        fileBase64: fileBase64 || list[idx].fileBase64,
-        fileName: fileName || list[idx].fileName,
+        fileName: finalFileName,
         keterangan: keterangan
       };
+      delete list[idx].fileBase64;
+
       DB.set('lhg_arsip', list);
       showToast('Arsip berkas berhasil diperbarui!', 'success');
     }
   } else {
+    const newId = Date.now();
+    if (fileBase64) {
+      await ArsipStore.saveFile(newId, {
+        fileBase64: fileBase64,
+        fileName: fileName,
+        fileSize: selectedArsipFileSize || 0,
+        fileType: selectedArsipFileType || ''
+      });
+    }
+
     const newRecord = {
-      id: Date.now(),
+      id: newId,
       nama: nama,
       kategori: kategori,
       nomor: nomor,
@@ -6111,7 +6411,6 @@ function saveArsip() {
       penerbit: penerbit,
       lokasiFisik: lokasiFisik,
       fileUrl: fileUrl,
-      fileBase64: fileBase64,
       fileName: fileName,
       keterangan: keterangan,
       uploadedBy: uploader
@@ -6138,6 +6437,7 @@ async function deleteArsip(id) {
   if (!confirmed) return;
   let list = getArsipList().filter(x => x.id !== id);
   localStorage.setItem('lhg_arsip', JSON.stringify(list));
+  await ArsipStore.deleteFile(id);
   try {
     await SupabaseAPI.delete('lhg_arsip', 'id', id);
   } catch (e) {
@@ -6167,14 +6467,29 @@ function getArsipPdfBlobUrl(base64Data) {
   }
 }
 
-function openArsipPdfInNewTab(id) {
+async function openArsipPdfInNewTab(id) {
   const list = getArsipList();
   const a = list.find(x => String(x.id) === String(id));
-  if (!a || !a.fileBase64) {
+  if (!a) {
     showToast('File dokumen tidak ditemukan!', 'error');
     return;
   }
-  const blobUrl = getArsipPdfBlobUrl(a.fileBase64);
+  let base64 = a.fileBase64;
+  if (!base64) {
+    try {
+      const f = await ArsipStore.getFile(id);
+      if (f && f.fileBase64) base64 = f.fileBase64;
+    } catch(e) {}
+  }
+  if (!base64) {
+    if (a.fileUrl) {
+      window.open(a.fileUrl, '_blank');
+      return;
+    }
+    showToast('File dokumen tidak ditemukan!', 'error');
+    return;
+  }
+  const blobUrl = getArsipPdfBlobUrl(base64);
   if (blobUrl) {
     const win = window.open(blobUrl, '_blank');
     if (!win) {
@@ -6186,17 +6501,32 @@ function openArsipPdfInNewTab(id) {
   }
 }
 
-function downloadArsipFile(id) {
+async function downloadArsipFile(id) {
   const list = getArsipList();
   const a = list.find(x => String(x.id) === String(id));
-  if (!a || !a.fileBase64) {
+  if (!a) {
+    showToast('File dokumen tidak ditemukan!', 'error');
+    return;
+  }
+  let base64 = a.fileBase64;
+  if (!base64) {
+    try {
+      const f = await ArsipStore.getFile(id);
+      if (f && f.fileBase64) base64 = f.fileBase64;
+    } catch(e) {}
+  }
+  if (!base64) {
+    if (a.fileUrl) {
+      window.open(a.fileUrl, '_blank');
+      return;
+    }
     showToast('File dokumen tidak ditemukan!', 'error');
     return;
   }
   try {
-    const isPdf = a.fileBase64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf'));
+    const isPdf = base64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf'));
     const mimeType = isPdf ? 'application/pdf' : 'application/octet-stream';
-    const parts = a.fileBase64.split(',');
+    const parts = base64.split(',');
     const raw = parts.length > 1 ? parts[1] : parts[0];
     const byteCharacters = atob(raw);
     const byteNumbers = new Uint8Array(byteCharacters.length);
@@ -6219,7 +6549,7 @@ function downloadArsipFile(id) {
   }
 }
 
-function viewArsip(id) {
+async function viewArsip(id) {
   const list = getArsipList();
   const a = list.find(x => x.id === id);
   if (!a) return;
@@ -6229,6 +6559,17 @@ function viewArsip(id) {
     URL.revokeObjectURL(activeArsipBlobUrl);
     activeArsipBlobUrl = null;
   }
+
+  // Retrieve file from ArsipStore
+  let fileRecord = null;
+  try {
+    fileRecord = await ArsipStore.getFile(id);
+  } catch(e) {}
+
+  const fileBase64 = (fileRecord && fileRecord.fileBase64) || a.fileBase64 || '';
+  const fileName = (fileRecord && fileRecord.fileName) || a.fileName || '';
+  const fileSize = (fileRecord && fileRecord.fileSize) || a.fileSize || 0;
+  const fileUrl = a.fileUrl || '';
 
   const badgeKategoriMap = {
     'Legalitas & Perizinan': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '📜' },
@@ -6248,12 +6589,12 @@ function viewArsip(id) {
   const leftActions = document.getElementById('view-arsip-left-actions');
   if (!body) return;
 
-  const isPdf = a.fileBase64 && (a.fileBase64.startsWith('data:application/pdf') || (a.fileName && a.fileName.toLowerCase().endsWith('.pdf')));
-  const isImg = a.fileBase64 && (a.fileBase64.startsWith('data:image/') || (a.fileName && /\.(jpg|jpeg|png|webp)$/i.test(a.fileName)));
+  const isPdf = fileBase64 && (fileBase64.startsWith('data:application/pdf') || (fileName && fileName.toLowerCase().endsWith('.pdf')));
+  const isImg = fileBase64 && (fileBase64.startsWith('data:image/') || (fileName && /\.(jpg|jpeg|png|webp)$/i.test(fileName)));
 
   let pdfBlobUrl = null;
   if (isPdf) {
-    pdfBlobUrl = getArsipPdfBlobUrl(a.fileBase64);
+    pdfBlobUrl = getArsipPdfBlobUrl(fileBase64);
     activeArsipBlobUrl = pdfBlobUrl;
   }
 
@@ -6266,7 +6607,7 @@ function viewArsip(id) {
         </div>
         <div>
           <div style="font-size: 11px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.6px;">Lokasi Penyimpanan Fisik Berkas di Kantor:</div>
-          <div style="font-size: 17px; font-weight: 800; color: #064E3B; margin-top: 2px;">${a.lokasiFisik}</div>
+          <div style="font-size: 17px; font-weight: 800; color: #064E3B; margin-top: 2px;">${escapeHtmlStr(a.lokasiFisik || '-')}</div>
           <div style="font-size: 11.5px; color: #047857; margin-top: 3px;">💡 Ambil map atau bantex fisik di lemari tersebut jika memerlukan berkas bertandatangan dan berstempel asli.</div>
         </div>
       </div>
@@ -6283,7 +6624,7 @@ function viewArsip(id) {
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 13px;">
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Nama / Judul Dokumen:</span>
-          <strong style="color: #0F172A; font-size: 14px;">${a.nama}</strong>
+          <strong style="color: #0F172A; font-size: 14px;">${escapeHtmlStr(a.nama)}</strong>
         </div>
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Kategori Klasifikasi:</span>
@@ -6293,7 +6634,7 @@ function viewArsip(id) {
         </div>
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Nomor / Kode Resmi:</span>
-          <strong style="color: #0F172A; font-family: monospace; font-size: 13px;">${a.nomor || '<span style="color:#94A3B8; font-weight: normal; font-style: italic;">(Tidak ada nomor resmi)</span>'}</strong>
+          <strong style="color: #0F172A; font-family: monospace; font-size: 13px;">${escapeHtmlStr(a.nomor || '') || '<span style="color:#94A3B8; font-weight: normal; font-style: italic;">(Tidak ada nomor resmi)</span>'}</strong>
         </div>
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Tanggal Dokumen / Pengesahan:</span>
@@ -6301,26 +6642,31 @@ function viewArsip(id) {
         </div>
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Instansi / Lembaga Penerbit:</span>
-          <strong style="color: #0F172A;">🏛️ ${a.penerbit || '-'}</strong>
+          <strong style="color: #0F172A;">🏛️ ${escapeHtmlStr(a.penerbit || '-')}</strong>
         </div>
         <div>
           <span style="color: #64748B; font-size: 11.5px; display: block;">Petugas yang Mencatat:</span>
-          <span style="color: #334155; font-size: 12.5px;">👤 <strong>${a.uploadedBy || 'Pengurus Yayasan'}</strong></span>
+          <span style="color: #334155; font-size: 12.5px;">👤 <strong>${escapeHtmlStr(a.uploadedBy || 'Pengurus Yayasan')}</strong></span>
         </div>
       </div>
 
       ${a.keterangan ? `
         <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #CBD5E1;">
           <span style="color: #64748B; font-size: 11.5px; font-weight: 700; display: block; margin-bottom: 4px;">Uraian & Ringkasan Dokumen:</span>
-          <p style="color: #1E293B; font-size: 13px; line-height: 1.6; margin: 0; background: white; padding: 12px 14px; border-radius: 8px; border: 1px solid #E2E8F0;">${a.keterangan}</p>
+          <p style="color: #1E293B; font-size: 13px; line-height: 1.6; margin: 0; background: white; padding: 12px 14px; border-radius: 8px; border: 1px solid #E2E8F0;">${escapeHtmlStr(a.keterangan)}</p>
         </div>
       ` : ''}
     </div>
 
     <!-- PRATINJAU DOKUMEN DIGITAL (INTERACTIVE VIEWER) -->
     <div style="margin-top: 10px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
         <span style="font-weight: 800; font-size: 13px; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Pratinjau / Lampiran Berkas Digital</span>
+        ${(fileBase64 || fileUrl) ? `
+          <button type="button" class="btn-sec" onclick="closeModal('modal-view-arsip'); openEditArsip(${a.id})" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700;">
+            <span>📎</span> Ganti / Kelola File
+          </button>
+        ` : ''}
       </div>
 
       ${isPdf && pdfBlobUrl ? `
@@ -6330,7 +6676,7 @@ function viewArsip(id) {
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 26px;">📄</span>
               <div>
-                <strong style="font-size: 13.5px; color: #065F46; display: block;">${a.fileName || 'Dokumen PDF'}</strong>
+                <strong style="font-size: 13.5px; color: #065F46; display: block;">${escapeHtmlStr(fileName || 'Dokumen PDF')}</strong>
                 <span style="font-size: 11px; color: #047857; font-weight: 600;">✓ Format Dokumen PDF Resmi • Siap Dibaca & Dicetak</span>
               </div>
             </div>
@@ -6365,12 +6711,12 @@ function viewArsip(id) {
       ` : isImg ? `
         <div style="background: #0F172A; border-radius: 12px; padding: 14px; text-align: center;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #94A3B8; font-size: 12px; padding: 0 4px;">
-            <span>🖼️ Pratinjau Foto Dokumen: <strong>${a.fileName}</strong></span>
+            <span>🖼️ Pratinjau Foto Dokumen: <strong>${escapeHtmlStr(fileName || 'Foto Dokumen')}</strong></span>
             <button type="button" class="btn-prim" onclick="downloadArsipFile('${a.id}')" style="padding: 5px 12px; font-size: 11px;">
               <span>⬇️</span> Unduh Foto
             </button>
           </div>
-          <img src="${a.fileBase64}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px;" alt="${a.nama}">
+          <img src="${fileBase64}" style="max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px;" alt="${escapeHtmlStr(a.nama)}">
         </div>
       ` : a.fileUrl ? `
         <div style="background: #EFF6FF; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 18px;">
@@ -6381,7 +6727,7 @@ function viewArsip(id) {
               </div>
               <div>
                 <div style="font-weight: 800; color: #1E40AF; font-size: 14px;">Tautan Dokumen Cloud / Google Drive</div>
-                <div style="font-size: 12px; color: #2563EB; margin-top: 2px; word-break: break-all;">${a.fileUrl}</div>
+                <div style="font-size: 12px; color: #2563EB; margin-top: 2px; word-break: break-all;">${escapeHtmlStr(a.fileUrl)}</div>
               </div>
             </div>
             <a href="${a.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn-prim" style="text-decoration: none; padding: 8px 18px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
@@ -6393,7 +6739,11 @@ function viewArsip(id) {
         <div style="background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 12px; padding: 22px; text-align: center; color: #64748B;">
           <div style="font-size: 32px; margin-bottom: 6px;">📦</div>
           <div style="font-weight: 800; color: #334155; font-size: 13.5px;">Dokumen Diarsipkan Secara Fisik</div>
-          <div style="font-size: 12px; margin-top: 4px;">Tidak ada lampiran file digital. Silakan ambil berkas fisik di: <strong style="color: #059669;">${a.lokasiFisik}</strong>.</div>
+          <div style="font-size: 12px; margin-top: 4px; margin-bottom: 14px;">Tidak ada lampiran file digital. Silakan ambil berkas fisik di: <strong style="color: #059669;">${escapeHtmlStr(a.lokasiFisik || '-')}</strong>.</div>
+          <label class="btn-prim" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 12px;">
+            <span>📎</span> Unggah Scan Berkas Digital Sekarang
+            <input type="file" accept=".pdf,image/*" onchange="uploadArsipDirectlyFromView(${a.id}, event)" style="display: none;">
+          </label>
         </div>
       `}
     </div>
@@ -6495,7 +6845,7 @@ function printArsip(id) {
         </tr>
         <tr>
           <th>Ketersediaan Lampiran Digital</th>
-          <td>${a.fileBase64 ? 'Tersimpan File Digital (' + (a.fileName || 'PDF/Gambar') + ')' : a.fileUrl ? 'Tautan Cloud (' + a.fileUrl + ')' : 'Hanya Arsip Fisik'}</td>
+          <td>${(a.fileName || a.fileBase64) ? 'Tersimpan File Digital (' + (a.fileName || 'PDF/Gambar') + ')' : a.fileUrl ? 'Tautan Cloud (' + a.fileUrl + ')' : 'Hanya Arsip Fisik'}</td>
         </tr>
         <tr>
           <th>Uraian & Ringkasan Dokumen</th>
@@ -9729,6 +10079,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await PhotoStore.init();
       if (typeof SuratStore !== 'undefined') await SuratStore.init();
+      if (typeof ArsipStore !== 'undefined') {
+        await ArsipStore.init();
+        await migrateLegacyArsipFiles();
+      }
     } catch(e) {}
   }
   updateClock();

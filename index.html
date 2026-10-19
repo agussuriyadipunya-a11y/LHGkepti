@@ -2978,10 +2978,11 @@
             <label class="lbl" style="font-weight: 700; color: #1E293B; margin-bottom: 6px; display: block;">Lampiran Berkas Digital (Opsional)</label>
             <div class="form-grid-2">
               <div class="form-field">
-                <label class="lbl" style="font-size: 11px;">Upload Dokumen (PDF / JPG / PNG max 5MB):</label>
+                <label class="lbl" style="font-size: 11px;">Upload Dokumen (PDF / JPG / PNG max 15MB):</label>
                 <input type="file" id="arsip-file-input" class="pelangi-input" accept=".pdf,image/*" onchange="handleArsipFileInput(event)" style="padding-top: 6px;">
                 <input type="hidden" id="arsip-file-base64" value="">
                 <input type="hidden" id="arsip-file-name" value="">
+                <input type="hidden" id="arsip-remove-file-flag" value="false">
                 <div id="arsip-file-preview-info" style="font-size: 11px; color: #059669; margin-top: 4px; display: none;"></div>
               </div>
               <div class="form-field">
