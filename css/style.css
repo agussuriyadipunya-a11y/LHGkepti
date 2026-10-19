@@ -7116,8 +7116,28 @@ body.drawer-open {
 }
 
 .status-pill-green {
-  background: #D1FAE5;
-  color: #059669;
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.status-pill-orange {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.status-pill-blue {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.status-pill-purple {
+  background: #F3E8FF;
+  color: #7C3AED;
+}
+
+.status-pill-cyan {
+  background: #E0F2FE;
+  color: #0284C7;
 }
 
 .status-pill-gray {

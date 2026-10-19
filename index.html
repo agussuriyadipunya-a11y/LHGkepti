@@ -1182,87 +1182,61 @@
         <section id="page-bantuan" class="page">
           <div class="card-panel">
             
-            <!-- PAGE TOP HEADER (SESUAI STYLE REFERENSI) -->
+            <!-- PAGE TOP HEADER (SESUAI GAMBAR 1) -->
             <div class="data-anak-top-header">
               <div class="data-anak-title-group">
-                <div class="data-anak-icon-box" style="background: #ECFDF5; border-color: #A7F3D0; color: #059669;">
+                <div class="data-anak-icon-box" style="background: #EBF5FF; border-color: #D0E7FE; color: #1376F8;">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
                   </svg>
                 </div>
-                <h3 class="data-anak-title">Catatan Penyerahan Bantuan</h3>
+                <h3 class="data-anak-title">Data Bantuan</h3>
               </div>
               <button type="button" class="btn-tambah-anak-clean" onclick="openAddBantuan()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Catat Bantuan Baru</span>
+                <span>Tambah Data</span>
               </button>
             </div>
 
-            <!-- STAT KARTU RINGKASAN BANTUAN -->
-            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎁</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Total Penyerahan</div>
-                  <div id="stat-bantuan-total" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👶</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Penerima</div>
-                  <div id="stat-bantuan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🦯</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Alat Bantu Fisik</div>
-                  <div id="stat-bantuan-alat" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📦</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Sembako & Nutrisi</div>
-                  <div id="stat-bantuan-sembako" style="font-size: 22px; font-weight: 800; color: #4C1D95;">0</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SEARCH & FILTER TOOLBAR (SESUAI STYLE REFERENSI) -->
+            <!-- SEARCH & FILTER TOOLBAR (SESUAI GAMBAR 1) -->
             <div class="data-anak-toolbar">
               <div class="data-anak-search-box">
                 <svg class="data-anak-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="bantuan-search-input" class="data-anak-search-input" placeholder="Cari nama anak, jenis bantuan, atau sumber bantuan..." oninput="renderBantuanTable(this.value)">
+                <input type="text" id="bantuan-search-input" class="data-anak-search-input" placeholder="Cari nama anak, jenis bantuan..." oninput="renderBantuanTable(this.value)">
               </div>
               <div class="data-anak-filters">
                 <div class="custom-select-wrap">
-                  <select id="bantuan-filter-kategori" class="data-anak-select" onchange="filterBantuanByKategori(this.value)">
-                    <option value="">Semua Kategori Bantuan</option>
-                    <option value="Alat Bantu">Alat Bantu (Kursi Roda/Tongkat/Hearing Aid)</option>
-                    <option value="Sembako & Nutrisi">Sembako & Nutrisi</option>
-                    <option value="Santunan / Uang Tunai">Santunan / Uang Tunai</option>
-                    <option value="Pendidikan & Sekolah">Pendidikan & Sekolah</option>
-                    <option value="Kesehatan & Obat">Kesehatan & Obat / Vitamin</option>
-                    <option value="Lainnya">Lainnya</option>
+                  <select id="bantuan-filter-jenis" class="data-anak-select" onchange="renderBantuanTable()">
+                    <option value="">Semua Jenis Bantuan</option>
+                    <option value="Program Pendidikan">Program Pendidikan</option>
+                    <option value="Bantuan Kesehatan">Bantuan Kesehatan</option>
+                    <option value="Bantuan Transportasi">Bantuan Transportasi</option>
+                    <option value="Bantuan Sembako">Bantuan Sembako</option>
+                    <option value="Alat Bantu">Alat Bantu</option>
+                    <option value="Santunan">Santunan Tunai</option>
+                  </select>
+                </div>
+                <div class="custom-select-wrap">
+                  <select id="bantuan-filter-status" class="data-anak-select" onchange="renderBantuanTable()">
+                    <option value="">Semua Status</option>
+                    <option value="Cair">Cair</option>
+                    <option value="Proses">Proses</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <!-- TABEL DATA BANTUAN -->
+            <!-- TABEL DATA BANTUAN (SESUAI GAMBAR 1) -->
             <div class="table-responsive-wrapper" style="margin-top: 15px;">
               <table class="data-anak-table">
                 <thead>
                   <tr>
                     <th style="width: 50px; text-align: left; padding-left: 18px;">No</th>
-                    <th style="text-align: left;">Tanggal Penyerahan</th>
-                    <th style="text-align: left;">Nama Penerima (Anak)</th>
-                    <th style="text-align: left;">Bantuan yang Diterima</th>
-                    <th style="text-align: left;">Kategori</th>
-                    <th style="text-align: left;">Sumber / Pemberi</th>
-                    <th style="text-align: left;">Petugas Penyerah</th>
+                    <th style="text-align: left;">Nama Anak</th>
+                    <th style="text-align: left;">Jenis Bantuan</th>
+                    <th style="text-align: left;">Nominal</th>
+                    <th style="text-align: left;">Tanggal</th>
+                    <th style="text-align: center;">Status</th>
                     <th style="width: 120px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
@@ -1400,71 +1374,41 @@
         <section id="page-pelatihan" class="page">
           <div class="card-panel">
             
-            <!-- PAGE TOP HEADER (SESUAI STYLE REFERENSI) -->
+            <!-- PAGE TOP HEADER (SESUAI GAMBAR 2) -->
             <div class="data-anak-top-header">
               <div class="data-anak-title-group">
-                <div class="data-anak-icon-box" style="background: #F5F3FF; border-color: #DDD6FE; color: #7C3AED;">
+                <div class="data-anak-icon-box" style="background: #EBF5FF; border-color: #D0E7FE; color: #1376F8;">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
                   </svg>
                 </div>
-                <h3 class="data-anak-title">Catatan Pelatihan Anak Disabilitas</h3>
+                <h3 class="data-anak-title">Data Pelatihan</h3>
               </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" class="action-btn-clean" style="border: 1px solid #E2E8F0; padding: 7px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; color: #475569;" onclick="printRekapPelatihan()" title="Cetak Rekap">
-                  🖨️ Cetak Rekap
-                </button>
-                <button type="button" class="btn-tambah-anak-clean" onclick="openAddPelatihan()">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Tambah Pelatihan</span>
-                </button>
-              </div>
+              <button type="button" class="btn-tambah-anak-clean" onclick="openAddPelatihan()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Tambah Pelatihan</span>
+              </button>
             </div>
 
-            <!-- STAT KARTU RINGKASAN PELATIHAN -->
-            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #F5F3FF, #EDE9FE); border: 1px solid #DDD6FE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #8B5CF6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎓</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #6D28D9; text-transform: uppercase;">Total Pelatihan</div>
-                  <div id="stat-pelatihan-total" style="font-size: 22px; font-weight: 800; color: #4C1D95;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👥</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Terlibat</div>
-                  <div id="stat-pelatihan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">📅</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Pelatihan Bulan Ini</div>
-                  <div id="stat-pelatihan-bulan-ini" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SEARCH & FILTER TOOLBAR (SESUAI STYLE REFERENSI) -->
+            <!-- SEARCH TOOLBAR (SESUAI GAMBAR 2) -->
             <div class="data-anak-toolbar">
-              <div class="data-anak-search-box">
+              <div class="data-anak-search-box" style="max-width: 480px;">
                 <svg class="data-anak-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="pelatihan-search-input" class="data-anak-search-input" placeholder="Cari nama kegiatan pelatihan, tujuan, atau lokasi..." oninput="renderPelatihanTable(this.value)">
+                <input type="text" id="pelatihan-search-input" class="data-anak-search-input" placeholder="Cari judul pelatihan..." oninput="renderPelatihanTable(this.value)">
               </div>
             </div>
 
-            <!-- TABEL DATA PELATIHAN -->
+            <!-- TABEL DATA PELATIHAN (SESUAI GAMBAR 2) -->
             <div class="table-responsive-wrapper" style="margin-top: 15px;">
               <table class="data-anak-table">
                 <thead>
                   <tr>
                     <th style="width: 50px; text-align: left; padding-left: 18px;">No</th>
-                    <th style="text-align: left;">Nama Kegiatan Pelatihan</th>
                     <th style="width: 140px; text-align: left;">Tanggal</th>
-                    <th style="text-align: left;">Tujuan Kegiatan</th>
-                    <th style="text-align: left;">Lokasi / Tempat</th>
-                    <th style="text-align: center;">Anak yang Mengikuti</th>
+                    <th style="text-align: left;">Judul Pelatihan</th>
+                    <th style="width: 90px; text-align: center;">Peserta</th>
+                    <th style="text-align: left;">Lokasi</th>
+                    <th style="width: 130px; text-align: center;">Status</th>
                     <th style="width: 120px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
@@ -1484,71 +1428,61 @@
         <section id="page-perjalanan" class="page">
           <div class="card-panel">
             
-            <!-- PAGE TOP HEADER (SESUAI STYLE REFERENSI) -->
+            <!-- PAGE TOP HEADER (SESUAI GAMBAR 3) -->
             <div class="data-anak-top-header">
               <div class="data-anak-title-group">
-                <div class="data-anak-icon-box" style="background: #FFFBEB; border-color: #FDE68A; color: #D97706;">
+                <div class="data-anak-icon-box" style="background: #EBF5FF; border-color: #D0E7FE; color: #1376F8;">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
                   </svg>
                 </div>
-                <h3 class="data-anak-title">Catatan Perjalanan & Outing Anak</h3>
+                <h3 class="data-anak-title">Data Perjalanan</h3>
               </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" class="action-btn-clean" style="border: 1px solid #E2E8F0; padding: 7px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; color: #475569;" onclick="printRekapPerjalanan()" title="Cetak Rekap">
-                  🖨️ Cetak Rekap
-                </button>
-                <button type="button" class="btn-tambah-anak-clean" onclick="openAddPerjalanan()">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>Tambah Perjalanan</span>
-                </button>
-              </div>
+              <button type="button" class="btn-tambah-anak-clean" onclick="openAddPerjalanan()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Tambah Perjalanan</span>
+              </button>
             </div>
 
-            <!-- STAT KARTU RINGKASAN PERJALANAN -->
-            <div class="bantuan-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; padding: 0 4px;">
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 1px solid #FCD34D; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #F59E0B; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🚗</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #B45309; text-transform: uppercase;">Total Perjalanan</div>
-                  <div id="stat-perjalanan-total" style="font-size: 22px; font-weight: 800; color: #78350F;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #EFF6FF, #DBEAFE); border: 1px solid #BFDBFE; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">👥</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; text-transform: uppercase;">Anak Terlibat</div>
-                  <div id="stat-perjalanan-anak-count" style="font-size: 22px; font-weight: 800; color: #1E3A8A;">0</div>
-                </div>
-              </div>
-              <div class="bantuan-stat-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 1px solid #A7F3D0; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;">
-                <div style="width: 46px; height: 46px; border-radius: 12px; background: #10B981; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">🗺️</div>
-                <div>
-                  <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Destinasi Edukasi</div>
-                  <div id="stat-perjalanan-destinasi" style="font-size: 22px; font-weight: 800; color: #064E3B;">0</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SEARCH & FILTER TOOLBAR (SESUAI STYLE REFERENSI) -->
+            <!-- SEARCH & FILTER TOOLBAR (SESUAI GAMBAR 3) -->
             <div class="data-anak-toolbar">
               <div class="data-anak-search-box">
                 <svg class="data-anak-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="perjalanan-search-input" class="data-anak-search-input" placeholder="Cari nama kegiatan perjalanan, tujuan, atau lokasi..." oninput="renderPerjalananTable(this.value)">
+                <input type="text" id="perjalanan-search-input" class="data-anak-search-input" placeholder="Cari tujuan, nama / atau tanggal..." oninput="renderPerjalananTable(this.value)">
+              </div>
+              <div class="data-anak-filters">
+                <div class="custom-select-wrap">
+                  <select id="perjalanan-filter-jenis" class="data-anak-select" onchange="renderPerjalananTable()">
+                    <option value="">Semua Jenis</option>
+                    <option value="Monitoring">Monitoring</option>
+                    <option value="Rapat">Rapat</option>
+                    <option value="Survey">Survey</option>
+                    <option value="Koordinasi">Koordinasi</option>
+                    <option value="Outing / Rekreasi">Outing / Rekreasi</option>
+                  </select>
+                </div>
+                <div class="custom-select-wrap">
+                  <select id="perjalanan-filter-status" class="data-anak-select" onchange="renderPerjalananTable()">
+                    <option value="">Semua Status</option>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Akan Datang">Akan Datang</option>
+                    <option value="Ditunda">Ditunda</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <!-- TABEL DATA PERJALANAN -->
+            <!-- TABEL DATA PERJALANAN (SESUAI GAMBAR 3) -->
             <div class="table-responsive-wrapper" style="margin-top: 15px;">
               <table class="data-anak-table">
                 <thead>
                   <tr>
                     <th style="width: 50px; text-align: left; padding-left: 18px;">No</th>
-                    <th style="text-align: left;">Nama Kegiatan Perjalanan</th>
-                    <th style="width: 140px; text-align: left;">Tanggal</th>
-                    <th style="text-align: left;">Tujuan Kegiatan</th>
-                    <th style="text-align: left;">Lokasi / Destinasi</th>
-                    <th style="text-align: center;">Anak yang Mengikuti</th>
+                    <th style="width: 130px; text-align: left;">Tanggal</th>
+                    <th style="text-align: left;">Tujuan</th>
+                    <th style="text-align: left;">Jenis</th>
+                    <th style="width: 90px; text-align: center;">Peserta</th>
+                    <th style="width: 130px; text-align: center;">Status</th>
                     <th style="width: 120px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
@@ -1870,7 +1804,7 @@
         <section id="page-manajemen-user" class="page">
           <div class="card-panel">
             
-            <!-- PAGE TOP HEADER (SESUAI STYLE REFERENSI) -->
+            <!-- PAGE TOP HEADER (SESUAI GAMBAR 4) -->
             <div class="data-anak-top-header">
               <div class="data-anak-title-group">
                 <div class="data-anak-icon-box" style="background: #EBF5FF; border-color: #D0E7FE; color: #1376F8;">
@@ -1878,27 +1812,29 @@
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 8v1"/><path d="M19 13v1"/>
                   </svg>
                 </div>
-                <h3 class="data-anak-title">Manajemen Akun Pengguna & Hak Akses</h3>
+                <h3 class="data-anak-title">Manajemen User</h3>
               </div>
               <button type="button" class="btn-tambah-anak-clean" onclick="openAddUser()">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                <span>Tambah Pengguna</span>
+                <span>Tambah User</span>
               </button>
             </div>
 
-            <!-- SEARCH & FILTER TOOLBAR (SESUAI STYLE REFERENSI) -->
+            <!-- SEARCH & FILTER TOOLBAR (SESUAI GAMBAR 4) -->
             <div class="data-anak-toolbar">
               <div class="data-anak-search-box">
                 <svg class="data-anak-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="user-search-input" class="data-anak-search-input" placeholder="Cari username, NIK, atau nama pengguna..." oninput="renderManajemenUserTable(this.value)">
+                <input type="text" id="user-search-input" class="data-anak-search-input" placeholder="Cari nomor pengguna atau email..." oninput="renderManajemenUserTable(this.value)">
               </div>
               <div class="data-anak-filters">
                 <div class="custom-select-wrap">
                   <select id="user-filter-role" class="data-anak-select" onchange="filterUsersByRole(this.value)">
-                    <option value="">Semua Peran (Role)</option>
-                    <option value="Superadmin">Superadmin</option>
-                    <option value="Admin">Admin</option>
+                    <option value="">Semua Peran</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="Operator">Operator</option>
                     <option value="Petugas">Petugas</option>
+                    <option value="Viewer">Viewer</option>
+                    <option value="Kepala">Kepala</option>
                   </select>
                 </div>
               </div>
@@ -1909,12 +1845,12 @@
                 <thead>
                   <tr>
                     <th style="width: 50px; text-align: left; padding-left: 18px;">No</th>
-                    <th style="text-align: left;">Username / NIK</th>
-                    <th style="text-align: left;">Nama Lengkap Pengguna</th>
-                    <th style="text-align: center;">Hak Peran (Role)</th>
-                    <th style="text-align: center;">Status</th>
-                    <th style="text-align: left;">Tanggal Dibuat</th>
-                    <th style="width: 120px; text-align: center;">Aksi</th>
+                    <th style="width: 130px; text-align: left;">Tanggal</th>
+                    <th style="text-align: left;">Username</th>
+                    <th style="text-align: left;">Email</th>
+                    <th style="width: 140px; text-align: center;">Peran</th>
+                    <th style="width: 110px; text-align: center;">Status</th>
+                    <th style="width: 110px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="user-tbody">

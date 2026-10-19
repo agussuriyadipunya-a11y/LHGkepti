@@ -366,6 +366,9 @@ function initData() {
   }
 
   initUsersData();
+  if (typeof initBantuanSampleData === 'function') initBantuanSampleData();
+  if (typeof initPelatihanSampleData === 'function') initPelatihanSampleData();
+  if (typeof initPerjalananSampleData === 'function') initPerjalananSampleData();
   if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
 }
 
@@ -400,37 +403,80 @@ function initUsersData() {
     username: '2172041908850002',
     password: '19081985',
     nama: 'KAMARIDA',
-    role: 'Superadmin',
+    email: 'kamarida@lenterahati.go.id',
+    role: 'Administrator',
     status: 'Aktif',
-    createdAt: '2024-01-01'
+    createdAt: '2025-10-10'
   };
 
-  const isSetupDone = localStorage.getItem('lhg_users_setup_v3');
+  const isSetupDone = localStorage.getItem('lhg_users_setup_v4');
   const deletedUsers = getDeletedUsers();
   let users = DB.get('lhg_users', []);
 
-  if (!users || users.length === 0) {
+  if (!users || users.length === 0 || !isSetupDone) {
     users = [
       defaultSuperadmin,
       {
-        username: 'admin',
+        username: 'Admin01',
         password: 'admin123',
-        nama: 'Admin Pelayanan LHG',
-        role: 'Admin',
+        nama: 'Administrator Sistem',
+        email: 'admin@lenterahati.go.id',
+        role: 'Administrator',
         status: 'Aktif',
-        createdAt: '2024-02-01'
+        createdAt: '2025-10-10'
       },
       {
-        username: 'petugas',
+        username: 'Operator01',
+        password: 'operator123',
+        nama: 'Operator Data',
+        email: 'operator@lenterahati.go.id',
+        role: 'Operator',
+        status: 'Aktif',
+        createdAt: '2025-10-08'
+      },
+      {
+        username: 'Petugas01',
         password: 'petugas123',
-        nama: 'Petugas Pendataan Lapangan',
+        nama: 'Petugas Lapangan',
+        email: 'petugas@lenterahati.go.id',
         role: 'Petugas',
         status: 'Aktif',
-        createdAt: '2024-03-01'
+        createdAt: '2025-10-05'
+      },
+      {
+        username: 'Viewer01',
+        password: 'viewer123',
+        nama: 'Viewer Yayasan',
+        email: 'viewer@lenterahati.go.id',
+        role: 'Viewer',
+        status: 'Aktif',
+        createdAt: '2025-10-01'
+      },
+      {
+        username: 'Kepala01',
+        password: 'kepala123',
+        nama: 'Kepala Yayasan',
+        email: 'kepala@lenterahati.go.id',
+        role: 'Kepala',
+        status: 'Proses',
+        createdAt: '2025-09-28'
       }
     ];
-    localStorage.setItem('lhg_users_setup_v3', '1');
+    localStorage.setItem('lhg_users_setup_v4', '1');
   }
+
+  // Ensure every user has email and createdAt
+  users.forEach(u => {
+    if (!u.email) {
+      u.email = (u.username.includes('@') ? u.username : `${u.username.toLowerCase()}@lenterahati.go.id`);
+    }
+    if (!u.createdAt) {
+      u.createdAt = '2025-10-10';
+    }
+    if (u.role === 'Superadmin') {
+      u.role = 'Administrator';
+    }
+  });
 
   // Jangan pernah memunculkan akun yang sudah dihapus
   users = users.filter(u => !deletedUsers.includes(u.username));
@@ -441,7 +487,6 @@ function initUsersData() {
     users.unshift(defaultSuperadmin);
   } else {
     users[idx].password = '19081985';
-    users[idx].role = 'Superadmin';
     users[idx].status = 'Aktif';
   }
 
@@ -827,6 +872,26 @@ function formatDate(d) {
   const mIdx = parseInt(parts[1], 10) - 1;
   if (mIdx < 0 || mIdx > 11) return d;
   return `${parseInt(parts[2], 10)} ${months[mIdx]} ${parts[0]}`;
+}
+
+function formatDateShortIndo(d) {
+  if (!d) return '-';
+  const clean = String(d).split('T')[0].split(' ')[0];
+  const parts = clean.split('-');
+  if (parts.length < 3) return d;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const mIdx = parseInt(parts[1], 10) - 1;
+  if (mIdx < 0 || mIdx > 11) return d;
+  const day = String(parts[2]).padStart(2, '0');
+  return `${day} ${months[mIdx]} ${parts[0]}`;
+}
+
+function formatRupiahClean(num) {
+  if (!num) return 'Rp 500.000';
+  if (typeof num === 'string' && num.trim().startsWith('Rp')) return num.trim();
+  const clean = parseInt(String(num).replace(/\D/g, ''), 10);
+  if (isNaN(clean) || clean === 0) return 'Rp 500.000';
+  return 'Rp ' + clean.toLocaleString('id-ID');
 }
 
 // FORMAT RIBUAN INDONESIA (1.248)
@@ -6683,9 +6748,19 @@ async function saveDirectInputAnak(e) {
 // ================= MENU MANAJEMEN USER (KHUSUS SUPERADMIN) =================
 let userEditTarget = null;
 
+function getUserRoleBadgeClass(role) {
+  if (role === 'Administrator' || role === 'Superadmin') return 'status-pill-blue';
+  if (role === 'Operator') return 'status-pill-cyan';
+  if (role === 'Petugas') return 'status-pill-purple';
+  if (role === 'Viewer') return 'status-pill-gray';
+  if (role === 'Kepala') return 'status-pill-orange';
+  return 'status-pill-blue';
+}
+
 function renderManajemenUserTable(search, filterRole) {
   try {
-    search = (search || '').toLowerCase().trim();
+    const searchInput = document.getElementById('user-search-input');
+    search = (search !== undefined ? search : (searchInput ? searchInput.value : '')).toLowerCase().trim();
     filterRole = filterRole || (document.getElementById('user-filter-role') ? document.getElementById('user-filter-role').value : '');
 
     let users = DB.get('lhg_users', []);
@@ -6697,11 +6772,12 @@ function renderManajemenUserTable(search, filterRole) {
     if (search) {
       users = users.filter(u => 
         (u.username && u.username.toLowerCase().includes(search)) ||
+        (u.email && u.email.toLowerCase().includes(search)) ||
         (u.nama && u.nama.toLowerCase().includes(search))
       );
     }
     if (filterRole) {
-      users = users.filter(u => u.role === filterRole);
+      users = users.filter(u => u.role === filterRole || (filterRole === 'Administrator' && u.role === 'Superadmin'));
     }
 
     const tbody = document.getElementById('user-tbody');
@@ -6730,49 +6806,41 @@ function renderManajemenUserTable(search, filterRole) {
     renderTablePagination('user-pagination-container', currentUserPage, totalItems, USER_PAGE_SIZE, 'changeUserPage');
 
     const currentUser = getAuthUser();
-    let userPhotos = {};
-    try {
-      userPhotos = JSON.parse(localStorage.getItem('lhg_user_photos') || '{}');
-    } catch(e) {}
 
     tbody.innerHTML = paginatedUsers.map((u, i) => {
-      const roleBadgeClass = u.role === 'Superadmin' ? 'badge-role-superadmin' : (u.role === 'Admin' ? 'badge-role-admin' : 'badge-role-petugas');
       const isSelf = currentUser && currentUser.username === u.username;
-      const fotoUrl = u.foto || userPhotos[u.username];
-      const displayName = u.nama || u.username || '-';
+      const email = u.email || `${u.username.toLowerCase()}@lenterahati.go.id`;
+      const roleClass = getUserRoleBadgeClass(u.role);
+      const isProses = (u.status === 'Proses' || u.status === 'Pending');
+      const statusLabel = isProses ? 'Proses' : 'Aktif';
+      const statusClass = isProses ? 'status-pill-orange' : 'status-pill-green';
 
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: #64748B;">${startIdx + i + 1}</td>
+          <td style="width: 50px; text-align: left; padding-left: 18px; font-weight: 700; color: #64748B;">${startIdx + i + 1}</td>
+          <td style="white-space: nowrap;">
+            <span style="color: #64748B; font-size: 13px;">${formatDateShortIndo(u.createdAt)}</span>
+          </td>
           <td>
             <span style="font-family: monospace; font-weight: 700; color: #0F172A; font-size: 13px;">${escapeHtml(u.username)}</span>
-            ${isSelf ? '<span style="margin-left: 6px; font-size: 10px; background: #ECFDF5; color: #059669; padding: 2px 6px; border-radius: 10px; font-weight: 800;">Akun Anda</span>' : ''}
+            ${isSelf ? '<span style="margin-left: 6px; font-size: 9.5px; background: #ECFDF5; color: #059669; padding: 1px 6px; border-radius: 10px; font-weight: 800;">Anda</span>' : ''}
           </td>
           <td>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              ${fotoUrl ? `
-                <img src="${fotoUrl}" alt="${escapeHtml(displayName)}" class="table-user-img" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #0D7A84; flex-shrink: 0; box-shadow: 0 2px 6px rgba(13, 122, 132, 0.2);" onerror="this.style.display='none';">
-              ` : `
-                <div class="table-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #E6F4F5, #CFE8EC); color: #0D7A84; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1.5px solid #B3DEE2; flex-shrink: 0;">
-                  ${getInitials(displayName)}
-                </div>
-              `}
-              <div style="min-width: 0;">
-                <strong style="color: #0F172A; font-size: 13.5px; display: block; line-height: 1.25;">${escapeHtml(displayName)}</strong>
-                <span style="font-size: 11px; color: #64748B;">NIK: ${escapeHtml(u.username)}</span>
-              </div>
-            </div>
+            <span style="color: #2563EB; font-size: 13px;">${escapeHtml(email)}</span>
           </td>
           <td style="text-align: center;">
-            <span class="${roleBadgeClass}">${u.role}</span>
+            <span class="data-anak-status-pill ${roleClass}">
+              ${escapeHtml(u.role)}
+            </span>
           </td>
           <td style="text-align: center;">
-            <span class="${u.status === 'Aktif' ? 'badge-status-aktif' : 'badge-status-tidak-aktif'}">${u.status}</span>
+            <span class="data-anak-status-pill ${statusClass}">
+              ${statusLabel}
+            </span>
           </td>
-          <td style="font-size: 12px; color: #64748B;">${u.createdAt || '-'}</td>
           <td style="text-align: center;">
             <div class="data-anak-actions">
-              <button type="button" class="action-btn-clean action-edit" onclick="openEditUser('${u.username}')" title="Edit Pengguna & Foto Profil">
+              <button type="button" class="action-btn-clean action-edit" onclick="openEditUser('${u.username}')" title="Edit Pengguna">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 20h9"/>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -7076,7 +7144,30 @@ async function deleteUser(username) {
 // MENU BANTUAN ANAK (CATATAN SEMUA BANTUAN YANG TELAH DITERIMA)
 // ==============================================================================
 
+function initBantuanSampleData() {
+  const existing = DB.get('lhg_bantuan', []);
+  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_bantuan_samples_v1')) {
+    const samples = [
+      { id: 101, anakNama: 'Kevin Wijaya', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-10-10', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
+      { id: 102, anakNama: 'Siti Nurhaliza', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-10-08', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
+      { id: 103, anakNama: 'Budi Santoso', namaBantuan: 'Bantuan Transportasi', nominal: 'Rp 500.000', tanggal: '2025-10-05', status: 'Proses', sumber: 'Donatur', petugas: 'Petugas' },
+      { id: 104, anakNama: 'Rina Amalia', namaBantuan: 'Bantuan Sembako', nominal: 'Rp 300.000', tanggal: '2025-10-03', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
+      { id: 105, anakNama: 'Agus Setiawan', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-10-01', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
+      { id: 106, anakNama: 'Dewi Lestari', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-09-28', status: 'Cair', sumber: 'Donatur', petugas: 'Petugas' },
+      { id: 107, anakNama: 'Fajar Maulana', namaBantuan: 'Bantuan Sembako', nominal: 'Rp 300.000', tanggal: '2025-09-25', status: 'Proses', sumber: 'Yayasan LHG', petugas: 'Petugas' },
+      { id: 108, anakNama: 'Novi Anggraini', namaBantuan: 'Bantuan Transportasi', nominal: 'Rp 500.000', tanggal: '2025-09-22', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
+      { id: 109, anakNama: 'Rizky Saputra', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-09-20', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
+      { id: 110, anakNama: 'Putri Wijaya', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-09-18', status: 'Cair', sumber: 'Donatur', petugas: 'Petugas' }
+    ];
+    if (!existing || existing.length === 0) {
+      DB.set('lhg_bantuan', samples);
+    }
+    localStorage.setItem('lhg_bantuan_samples_v1', '1');
+  }
+}
+
 function getBantuanList() {
+  initBantuanSampleData();
   return DB.get('lhg_bantuan', []);
 }
 
@@ -7090,8 +7181,8 @@ function renderBantuanStats() {
   const list = getBantuanList();
   const total = list.length;
   const uniqueAnak = new Set(list.map(b => b.anakId || b.anakNama)).size;
-  const alatBantu = list.filter(b => b.kategori === 'Alat Bantu').length;
-  const sembako = list.filter(b => b.kategori === 'Sembako & Nutrisi').length;
+  const alatBantu = list.filter(b => b.kategori === 'Alat Bantu' || (b.namaBantuan && b.namaBantuan.includes('Alat'))).length;
+  const sembako = list.filter(b => b.kategori === 'Sembako & Nutrisi' || (b.namaBantuan && b.namaBantuan.includes('Sembako'))).length;
 
   setText('stat-bantuan-total', total);
   setText('stat-bantuan-anak-count', uniqueAnak);
@@ -7100,20 +7191,29 @@ function renderBantuanStats() {
   setText('nav-badge-bantuan', total);
 }
 
-let activeBantuanKategori = '';
-
-function filterBantuanByKategori(kat) {
-  activeBantuanKategori = kat;
-  const search = (document.getElementById('bantuan-search-input') || {}).value || '';
-  renderBantuanTable(search);
-}
-
 function renderBantuanTable(search) {
-  search = (search || '').toLowerCase().trim();
+  const searchInput = document.getElementById('bantuan-search-input');
+  search = (search !== undefined ? search : (searchInput ? searchInput.value : '')).toLowerCase().trim();
+  
+  const filterJenisEl = document.getElementById('bantuan-filter-jenis');
+  const filterJenis = filterJenisEl ? filterJenisEl.value.trim() : '';
+
+  const filterStatusEl = document.getElementById('bantuan-filter-status');
+  const filterStatus = filterStatusEl ? filterStatusEl.value.trim() : '';
+
   let list = getBantuanList();
 
-  if (activeBantuanKategori) {
-    list = list.filter(b => b.kategori === activeBantuanKategori);
+  if (filterJenis) {
+    list = list.filter(b => {
+      const bNama = (b.namaBantuan || '').toLowerCase();
+      const bKat = (b.kategori || '').toLowerCase();
+      const f = filterJenis.toLowerCase();
+      return bNama.includes(f) || bKat.includes(f);
+    });
+  }
+
+  if (filterStatus) {
+    list = list.filter(b => (b.status || 'Cair') === filterStatus);
   }
 
   if (search) {
@@ -7122,8 +7222,8 @@ function renderBantuanTable(search) {
       const bantuan = (b.namaBantuan || '').toLowerCase();
       const sumber = (b.sumber || '').toLowerCase();
       const petugas = (b.petugas || '').toLowerCase();
-      const dis = (b.anakDisabilitas || '').toLowerCase();
-      return nama.includes(search) || bantuan.includes(search) || sumber.includes(search) || petugas.includes(search) || dis.includes(search);
+      const nominal = (b.nominal || b.jumlah || '').toLowerCase();
+      return nama.includes(search) || bantuan.includes(search) || sumber.includes(search) || petugas.includes(search) || nominal.includes(search);
     });
   }
 
@@ -7136,10 +7236,10 @@ function renderBantuanTable(search) {
     if (tbody) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
             <div style="font-size: 38px; margin-bottom: 8px;">🎁</div>
             <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Bantuan</p>
-            <p style="font-size: 12px;">Klik tombol "Catat Bantuan Baru" di atas untuk merekam bantuan yang diserahkan kepada anak.</p>
+            <p style="font-size: 12px;">Klik tombol "Tambah Data" di atas untuk merekam bantuan yang diserahkan.</p>
           </td>
         </tr>
       `;
@@ -7157,49 +7257,33 @@ function renderBantuanTable(search) {
 
   renderTablePagination('bantuan-pagination-container', currentBantuanPage, totalItems, BANTUAN_PAGE_SIZE, 'changeBantuanPage');
 
-  const badgeKategoriMap = {
-    'Alat Bantu': { bg: '#FEF3C7', color: '#B45309', border: '#FCD34D', icon: '🦯' },
-    'Sembako & Nutrisi': { bg: '#F3E8FF', color: '#6D28D9', border: '#DDD6FE', icon: '📦' },
-    'Santunan / Uang Tunai': { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', icon: '💵' },
-    'Pendidikan & Sekolah': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', icon: '🎒' },
-    'Kesehatan & Obat': { bg: '#FEE2E2', color: '#B91C1C', border: '#FECACA', icon: '💊' },
-    'Lainnya': { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', icon: '🎁' }
-  };
-
-  // Render table
+  // Render table 7 kolom persis Gambar 1
   if (tbody) {
     const newTbodyHtml = paginatedList.map((b, idx) => {
-      const katStyle = badgeKategoriMap[b.kategori] || badgeKategoriMap['Lainnya'];
+      const isProses = (b.status === 'Proses' || b.status === 'Pending');
+      const statusLabel = isProses ? 'Proses' : 'Cair';
+      const statusClass = isProses ? 'status-pill-orange' : 'status-pill-green';
+      const nominalStr = formatRupiahClean(b.nominal || b.jumlah);
+
       return `
         <tr>
-          <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
+          <td style="width: 50px; text-align: left; padding-left: 18px; font-weight: 700; color: #64748B;">${startIdx + idx + 1}</td>
+          <td>
+            <span class="data-anak-name" onclick="openDetailBantuan(${b.id})" style="cursor: pointer; font-weight: 700; color: #1E293B;" title="Klik untuk lihat rincian bantuan">${escapeHtml(b.anakNama)}</span>
+          </td>
+          <td>
+            <span style="font-weight: 500; color: #334155;">${escapeHtml(b.namaBantuan || b.jenis || b.kategori || 'Program Bantuan')}</span>
+          </td>
+          <td>
+            <span style="font-weight: 600; color: #0F172A;">${nominalStr}</span>
+          </td>
           <td style="white-space: nowrap;">
-            <span style="font-weight: 700; color: #1E293B; font-size: 13px;">📅 ${formatDate(b.tanggal)}</span>
+            <span style="color: #64748B; font-size: 13px;">${formatDateShortIndo(b.tanggal)}</span>
           </td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div class="table-avatar">${getInitials(b.anakNama)}</div>
-              <div>
-                <strong style="color: #0F172A; font-size: 13px;">${b.anakNama}</strong>
-                ${b.anakDisabilitas ? `<div style="font-size: 11px; color: #64748B;">${b.anakDisabilitas}</div>` : ''}
-              </div>
-            </div>
-          </td>
-          <td>
-            <div style="font-weight: 700; color: #047857; font-size: 13.5px;">${b.namaBantuan}</div>
-            ${b.jumlah ? `<span style="font-size: 11px; color: #64748B; font-weight: 600;">Jumlah: ${b.jumlah}</span>` : ''}
-            ${b.keterangan ? `<div style="font-size: 11.5px; color: #475569; margin-top: 3px; font-style: italic;">"${b.keterangan}"</div>` : ''}
-          </td>
-          <td>
-            <span style="background: ${katStyle.bg}; color: ${katStyle.color}; border: 1px solid ${katStyle.border}; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
-              ${katStyle.icon} ${b.kategori}
+          <td style="text-align: center;">
+            <span class="data-anak-status-pill ${statusClass}">
+              ${statusLabel}
             </span>
-          </td>
-          <td>
-            <span style="font-weight: 600; font-size: 12.5px; color: #334155;">${b.sumber || '-'}</span>
-          </td>
-          <td>
-            <span style="font-size: 12px; color: #475569;">👤 ${b.petugas || '-'}</span>
           </td>
           <td style="text-align: center;">
             <div class="data-anak-actions">
@@ -8371,8 +8455,31 @@ function renderPelatihanStats() {
   setText('nav-badge-pelatihan', total);
 }
 
+function initPelatihanSampleData() {
+  const existing = DB.get('lhg_pelatihan', []);
+  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_pelatihan_samples_v1')) {
+    const samples = [
+      { id: 'pel-101', tanggal: '2025-10-15', nama: 'Pelatihan Manajemen Anak', pesertaCount: 35, lokasi: 'Aula Dinas Sosial', status: 'Selesai' },
+      { id: 'pel-102', tanggal: '2025-09-22', nama: 'Pelatihan Pendampingan Disabilitas', pesertaCount: 28, lokasi: 'Ruang PKK', status: 'Selesai' },
+      { id: 'pel-103', tanggal: '2025-09-30', nama: 'Pelatihan Komunikasi Ortang Tua', pesertaCount: 32, lokasi: 'Aula Kantor Kecamatan', status: 'Selesai' },
+      { id: 'pel-104', tanggal: '2025-10-07', nama: 'Pelatihan Kewirausahaan', pesertaCount: 40, lokasi: 'Aula Dinas Koperasi', status: 'Akan Datang' },
+      { id: 'pel-105', tanggal: '2025-10-14', nama: 'Pelatihan Digitalisasi Layanan', pesertaCount: 25, lokasi: 'Aula Diskominfo', status: 'Akan Datang' }
+    ];
+    if (!existing || existing.length === 0) {
+      DB.set('lhg_pelatihan', samples);
+    }
+    localStorage.setItem('lhg_pelatihan_samples_v1', '1');
+  }
+}
+
+function getPelatihanList() {
+  initPelatihanSampleData();
+  return DB.get('lhg_pelatihan', []);
+}
+
 function renderPelatihanTable(search) {
-  search = (search || '').toLowerCase().trim();
+  const searchInput = document.getElementById('pelatihan-search-input');
+  search = (search !== undefined ? search : (searchInput ? searchInput.value : '')).toLowerCase().trim();
   let list = getPelatihanList();
 
   if (search) {
@@ -8414,68 +8521,44 @@ function renderPelatihanTable(search) {
 
   renderTablePagination('pelatihan-pagination-container', currentPelatihanPage, totalItems, PELATIHAN_PAGE_SIZE, 'changePelatihanPage');
 
-  const allAnggota = DB.get('lhg_anggota', []);
-  const anggotaMap = new Map();
-  allAnggota.forEach(a => anggotaMap.set(a.id, a));
-
   tbody.innerHTML = paginatedList.map((p, idx) => {
-    const pesertaIds = Array.isArray(p.peserta) ? p.peserta : [];
-    const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
-
-    let pesertaBadgesHtml = '';
-    if (pesertaAnak.length === 0) {
-      pesertaBadgesHtml = `
-        <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada anak dipilih</span>
-        <button type="button" class="btn-sec" style="padding: 2px 8px; font-size: 10.5px; margin-top: 4px;" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')">+ Pilih Peserta</button>
-      `;
-    } else {
-      const top3 = pesertaAnak.slice(0, 3);
-      const remaining = pesertaAnak.length - top3.length;
-      pesertaBadgesHtml = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
-          <span style="background: #F5F3FF; color: #7C3AED; border: 1px solid #DDD6FE; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">
-            👥 ${pesertaAnak.length} Anak
-          </span>
-        </div>
-        <div style="font-size: 11px; color: #475569; margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${pesertaAnak.map(x => x.nama).join(', ')}">
-          ${top3.map(x => x.nama).join(', ')}${remaining > 0 ? ` +${remaining} lainnya` : ''}
-        </div>
-      `;
-    }
+    const pCount = Array.isArray(p.peserta) ? p.peserta.length : (p.pesertaCount || p.peserta || 0);
+    const isAkanDatang = (p.status === 'Akan Datang');
+    const statusLabel = isAkanDatang ? 'Akan Datang' : 'Selesai';
+    const statusClass = isAkanDatang ? 'status-pill-blue' : 'status-pill-green';
 
     return `
       <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
-        <td>
-          <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${p.nama}</div>
-          ${p.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${p.keterangan}</div>` : ''}
-        </td>
+        <td style="width: 50px; text-align: left; padding-left: 18px; font-weight: 700; color: #64748B;">${startIdx + idx + 1}</td>
         <td style="white-space: nowrap;">
-          <span style="font-weight: 700; color: #1E293B; font-size: 12.5px;">📅 ${formatDateIndoFull(p.tanggal)}</span>
+          <span style="color: #64748B; font-size: 13px;">${formatDateShortIndo(p.tanggal)}</span>
         </td>
         <td>
-          <div style="font-size: 12px; color: #334155; line-height: 1.45; max-width: 280px;">${p.tujuan || '-'}</div>
-        </td>
-        <td>
-          <span style="font-size: 12px; color: #475569;">📍 ${p.lokasi || '-'}</span>
+          <span style="font-weight: 600; color: #0F172A;">${escapeHtml(p.nama)}</span>
         </td>
         <td style="text-align: center;">
-          ${pesertaBadgesHtml}
+          <span style="font-weight: 600; color: #334155;">${pCount}</span>
+        </td>
+        <td>
+          <span style="color: #64748B;">${escapeHtml(p.lokasi || '-')}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="data-anak-status-pill ${statusClass}">
+            ${statusLabel}
+          </span>
         </td>
         <td style="text-align: center;">
           <div class="data-anak-actions">
-            <button type="button" class="action-btn-clean" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')" title="Kelola Peserta Anak" style="color: #7C3AED;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </button>
             <button type="button" class="action-btn-clean action-edit" onclick="openEditPelatihan('${p.id}')" title="Edit Kegiatan Pelatihan">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9"/>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-view" onclick="openKelolaPesertaModal('pelatihan', '${p.id}')" title="Kelola / Lihat Peserta">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
             <button type="button" class="action-btn-clean action-delete" onclick="deletePelatihan('${p.id}')" title="Hapus Kegiatan Pelatihan">
@@ -8637,17 +8720,56 @@ function renderPerjalananStats() {
   setText('nav-badge-perjalanan', total);
 }
 
+function initPerjalananSampleData() {
+  const existing = DB.get('lhg_perjalanan', []);
+  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_perjalanan_samples_v1')) {
+    const samples = [
+      { id: 'per-101', tanggal: '2025-10-10', tujuan: 'Tanjungpinang - Batam', jenis: 'Monitoring', pesertaCount: 3, status: 'Selesai', nama: 'Monitoring Bantuan Batam' },
+      { id: 'per-102', tanggal: '2025-10-08', tujuan: 'Tanjungpinang - Jakarta', jenis: 'Rapat', pesertaCount: 2, status: 'Selesai', nama: 'Rapat Koordinasi Nasional' },
+      { id: 'per-103', tanggal: '2025-09-30', tujuan: 'Tanjungpinang - Karimun', jenis: 'Survey', pesertaCount: 4, status: 'Ditunda', nama: 'Survey Calon Anak Binaan' },
+      { id: 'per-104', tanggal: '2025-10-20', tujuan: 'Tanjungpinang - Bintan', jenis: 'Koordinasi', pesertaCount: 3, status: 'Akan Datang', nama: 'Koordinasi Mitra Bintan' },
+      { id: 'per-105', tanggal: '2025-09-28', tujuan: 'Tanjungpinang - Lingga', jenis: 'Rapat', pesertaCount: 2, status: 'Selesai', nama: 'Rapat Evaluasi Program Lingga' }
+    ];
+    if (!existing || existing.length === 0) {
+      DB.set('lhg_perjalanan', samples);
+    }
+    localStorage.setItem('lhg_perjalanan_samples_v1', '1');
+  }
+}
+
+function getPerjalananList() {
+  initPerjalananSampleData();
+  return DB.get('lhg_perjalanan', []);
+}
+
 function renderPerjalananTable(search) {
-  search = (search || '').toLowerCase().trim();
+  const searchInput = document.getElementById('perjalanan-search-input');
+  search = (search !== undefined ? search : (searchInput ? searchInput.value : '')).toLowerCase().trim();
+
+  const filterJenisEl = document.getElementById('perjalanan-filter-jenis');
+  const filterJenis = filterJenisEl ? filterJenisEl.value.trim().toLowerCase() : '';
+
+  const filterStatusEl = document.getElementById('perjalanan-filter-status');
+  const filterStatus = filterStatusEl ? filterStatusEl.value.trim() : '';
+
   let list = getPerjalananList();
+
+  if (filterJenis) {
+    list = list.filter(pr => (pr.jenis || '').toLowerCase().includes(filterJenis));
+  }
+
+  if (filterStatus) {
+    list = list.filter(pr => (pr.status || 'Selesai') === filterStatus);
+  }
 
   if (search) {
     list = list.filter(pr => {
       const nm = (pr.nama || '').toLowerCase();
       const tj = (pr.tujuan || '').toLowerCase();
       const lk = (pr.lokasi || '').toLowerCase();
+      const jn = (pr.jenis || '').toLowerCase();
       const kt = (pr.keterangan || '').toLowerCase();
-      return nm.includes(search) || tj.includes(search) || lk.includes(search) || kt.includes(search);
+      return nm.includes(search) || tj.includes(search) || lk.includes(search) || jn.includes(search) || kt.includes(search);
     });
   }
 
@@ -8662,8 +8784,8 @@ function renderPerjalananTable(search) {
       <tr>
         <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
           <div style="font-size: 38px; margin-bottom: 8px;">🚗</div>
-          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Perjalanan & Outing</p>
-          <p style="font-size: 12px;">Klik tombol "Tambah Perjalanan" di atas untuk merekam perjalanan rekreasi dan edukasi anak binaan.</p>
+          <p style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Belum Ada Catatan Perjalanan</p>
+          <p style="font-size: 12px;">Klik tombol "Tambah Perjalanan" di atas untuk merekam perjalanan dinas dan edukasi.</p>
         </td>
       </tr>
     `;
@@ -8680,68 +8802,45 @@ function renderPerjalananTable(search) {
 
   renderTablePagination('perjalanan-pagination-container', currentPerjalananPage, totalItems, PERJALANAN_PAGE_SIZE, 'changePerjalananPage');
 
-  const allAnggota = DB.get('lhg_anggota', []);
-  const anggotaMap = new Map();
-  allAnggota.forEach(a => anggotaMap.set(a.id, a));
-
   tbody.innerHTML = paginatedList.map((pr, idx) => {
-    const pesertaIds = Array.isArray(pr.peserta) ? pr.peserta : [];
-    const pesertaAnak = pesertaIds.map(id => anggotaMap.get(id)).filter(Boolean);
-
-    let pesertaBadgesHtml = '';
-    if (pesertaAnak.length === 0) {
-      pesertaBadgesHtml = `
-        <span style="font-size: 11px; color: #94A3B8; font-style: italic;">Belum ada anak dipilih</span>
-        <button type="button" class="btn-sec" style="padding: 2px 8px; font-size: 10.5px; margin-top: 4px;" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')">+ Pilih Peserta</button>
-      `;
-    } else {
-      const top3 = pesertaAnak.slice(0, 3);
-      const remaining = pesertaAnak.length - top3.length;
-      pesertaBadgesHtml = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap;">
-          <span style="background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">
-            👥 ${pesertaAnak.length} Anak
-          </span>
-        </div>
-        <div style="font-size: 11px; color: #475569; margin-top: 3px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${pesertaAnak.map(x => x.nama).join(', ')}">
-          ${top3.map(x => x.nama).join(', ')}${remaining > 0 ? ` +${remaining} lainnya` : ''}
-        </div>
-      `;
-    }
+    const pCount = Array.isArray(pr.peserta) ? pr.peserta.length : (pr.pesertaCount || pr.peserta || 0);
+    const isDitunda = (pr.status === 'Ditunda');
+    const isAkanDatang = (pr.status === 'Akan Datang');
+    const statusLabel = pr.status || 'Selesai';
+    const statusClass = isDitunda ? 'status-pill-orange' : (isAkanDatang ? 'status-pill-blue' : 'status-pill-green');
 
     return `
       <tr>
-        <td style="text-align: center; font-weight: 700; color: var(--text-muted);">${startIdx + idx + 1}</td>
-        <td>
-          <div style="font-weight: 800; color: #0F172A; font-size: 13.5px;">${pr.nama}</div>
-          ${pr.keterangan ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">ℹ️ ${pr.keterangan}</div>` : ''}
-        </td>
+        <td style="width: 50px; text-align: left; padding-left: 18px; font-weight: 700; color: #64748B;">${startIdx + idx + 1}</td>
         <td style="white-space: nowrap;">
-          <span style="font-weight: 700; color: #1E293B; font-size: 12.5px;">📅 ${formatDateIndoFull(pr.tanggal)}</span>
+          <span style="color: #64748B; font-size: 13px;">${formatDateShortIndo(pr.tanggal)}</span>
         </td>
         <td>
-          <div style="font-size: 12px; color: #334155; line-height: 1.45; max-width: 280px;">${pr.tujuan || '-'}</div>
+          <span style="font-weight: 600; color: #0F172A;">${escapeHtml(pr.tujuan || pr.lokasi || pr.nama || '-')}</span>
         </td>
         <td>
-          <span style="font-size: 12px; color: #475569;">📍 ${pr.lokasi || '-'}</span>
+          <span style="color: #334155;">${escapeHtml(pr.jenis || 'Monitoring')}</span>
         </td>
         <td style="text-align: center;">
-          ${pesertaBadgesHtml}
+          <span style="font-weight: 600; color: #334155;">${pCount}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="data-anak-status-pill ${statusClass}">
+            ${statusLabel}
+          </span>
         </td>
         <td style="text-align: center;">
           <div class="data-anak-actions">
-            <button type="button" class="action-btn-clean" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')" title="Kelola Peserta Anak" style="color: #D97706;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </button>
             <button type="button" class="action-btn-clean action-edit" onclick="openEditPerjalanan('${pr.id}')" title="Edit Kegiatan Perjalanan">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9"/>
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="action-btn-clean action-view" onclick="openKelolaPesertaModal('perjalanan', '${pr.id}')" title="Kelola / Lihat Peserta">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
             <button type="button" class="action-btn-clean action-delete" onclick="deletePerjalanan('${pr.id}')" title="Hapus Kegiatan Perjalanan">
