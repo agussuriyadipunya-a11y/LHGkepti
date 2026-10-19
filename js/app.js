@@ -366,10 +366,64 @@ function initData() {
   }
 
   initUsersData();
-  if (typeof initBantuanSampleData === 'function') initBantuanSampleData();
-  if (typeof initPelatihanSampleData === 'function') initPelatihanSampleData();
-  if (typeof initPerjalananSampleData === 'function') initPerjalananSampleData();
+  purgeDummySampleData();
   if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
+}
+
+function purgeDummySampleData() {
+  try {
+    // 1. Bersihkan data dummy bantuan (Kevin Wijaya dkk / id sample 101-110)
+    const dummyBantuanNames = [
+      'Kevin Wijaya', 'Siti Nurhaliza', 'Budi Santoso', 'Rina Amalia', 
+      'Agus Setiawan', 'Dewi Lestari', 'Fajar Maulana', 'Novi Anggraini', 
+      'Rizky Saputra', 'Putri Wijaya'
+    ];
+    let bList = DB.get('lhg_bantuan', []);
+    if (Array.isArray(bList) && bList.length > 0) {
+      const cleanedB = bList.filter(b => {
+        const isDummyId = (typeof b.id === 'number' && b.id >= 101 && b.id <= 110);
+        const isDummyName = dummyBantuanNames.includes(b.anakNama);
+        return !isDummyId && !isDummyName;
+      });
+      if (cleanedB.length !== bList.length) {
+        DB.set('lhg_bantuan', cleanedB);
+      }
+    }
+    localStorage.removeItem('lhg_bantuan_samples_v1');
+
+    // 2. Bersihkan data dummy pelatihan (id pel-101 s/d pel-105)
+    let pList = DB.get('lhg_pelatihan', []);
+    if (Array.isArray(pList) && pList.length > 0) {
+      const cleanedP = pList.filter(p => !String(p.id).startsWith('pel-10'));
+      if (cleanedP.length !== pList.length) {
+        DB.set('lhg_pelatihan', cleanedP);
+      }
+    }
+    localStorage.removeItem('lhg_pelatihan_samples_v1');
+
+    // 3. Bersihkan data dummy perjalanan (id per-101 s/d per-105)
+    let prList = DB.get('lhg_perjalanan', []);
+    if (Array.isArray(prList) && prList.length > 0) {
+      const cleanedPr = prList.filter(pr => !String(pr.id).startsWith('per-10'));
+      if (cleanedPr.length !== prList.length) {
+        DB.set('lhg_perjalanan', cleanedPr);
+      }
+    }
+    localStorage.removeItem('lhg_perjalanan_samples_v1');
+
+    // 4. Bersihkan data dummy user (Admin01, Operator01, Petugas01, Viewer01, Kepala01)
+    const dummyUsers = ['Admin01', 'Operator01', 'Petugas01', 'Viewer01', 'Kepala01'];
+    let uList = DB.get('lhg_users', []);
+    if (Array.isArray(uList) && uList.length > 0) {
+      const cleanedU = uList.filter(u => !dummyUsers.includes(u.username));
+      if (cleanedU.length !== uList.length) {
+        DB.set('lhg_users', cleanedU);
+      }
+    }
+    localStorage.removeItem('lhg_users_setup_v4');
+  } catch (err) {
+    console.warn('Error purging dummy sample data:', err);
+  }
 }
 
 // ================= USER DATABASE & AUTHENTICATION =================
@@ -409,60 +463,11 @@ function initUsersData() {
     createdAt: '2025-10-10'
   };
 
-  const isSetupDone = localStorage.getItem('lhg_users_setup_v4');
   const deletedUsers = getDeletedUsers();
   let users = DB.get('lhg_users', []);
 
-  if (!users || users.length === 0 || !isSetupDone) {
-    users = [
-      defaultSuperadmin,
-      {
-        username: 'Admin01',
-        password: 'admin123',
-        nama: 'Administrator Sistem',
-        email: 'admin@lenterahati.go.id',
-        role: 'Administrator',
-        status: 'Aktif',
-        createdAt: '2025-10-10'
-      },
-      {
-        username: 'Operator01',
-        password: 'operator123',
-        nama: 'Operator Data',
-        email: 'operator@lenterahati.go.id',
-        role: 'Operator',
-        status: 'Aktif',
-        createdAt: '2025-10-08'
-      },
-      {
-        username: 'Petugas01',
-        password: 'petugas123',
-        nama: 'Petugas Lapangan',
-        email: 'petugas@lenterahati.go.id',
-        role: 'Petugas',
-        status: 'Aktif',
-        createdAt: '2025-10-05'
-      },
-      {
-        username: 'Viewer01',
-        password: 'viewer123',
-        nama: 'Viewer Yayasan',
-        email: 'viewer@lenterahati.go.id',
-        role: 'Viewer',
-        status: 'Aktif',
-        createdAt: '2025-10-01'
-      },
-      {
-        username: 'Kepala01',
-        password: 'kepala123',
-        nama: 'Kepala Yayasan',
-        email: 'kepala@lenterahati.go.id',
-        role: 'Kepala',
-        status: 'Proses',
-        createdAt: '2025-09-28'
-      }
-    ];
-    localStorage.setItem('lhg_users_setup_v4', '1');
+  if (!users || users.length === 0) {
+    users = [defaultSuperadmin];
   }
 
   // Ensure every user has email and createdAt
@@ -7167,30 +7172,7 @@ async function deleteUser(username) {
 // MENU BANTUAN ANAK (CATATAN SEMUA BANTUAN YANG TELAH DITERIMA)
 // ==============================================================================
 
-function initBantuanSampleData() {
-  const existing = DB.get('lhg_bantuan', []);
-  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_bantuan_samples_v1')) {
-    const samples = [
-      { id: 101, anakNama: 'Kevin Wijaya', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-10-10', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
-      { id: 102, anakNama: 'Siti Nurhaliza', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-10-08', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
-      { id: 103, anakNama: 'Budi Santoso', namaBantuan: 'Bantuan Transportasi', nominal: 'Rp 500.000', tanggal: '2025-10-05', status: 'Proses', sumber: 'Donatur', petugas: 'Petugas' },
-      { id: 104, anakNama: 'Rina Amalia', namaBantuan: 'Bantuan Sembako', nominal: 'Rp 300.000', tanggal: '2025-10-03', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
-      { id: 105, anakNama: 'Agus Setiawan', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-10-01', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
-      { id: 106, anakNama: 'Dewi Lestari', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-09-28', status: 'Cair', sumber: 'Donatur', petugas: 'Petugas' },
-      { id: 107, anakNama: 'Fajar Maulana', namaBantuan: 'Bantuan Sembako', nominal: 'Rp 300.000', tanggal: '2025-09-25', status: 'Proses', sumber: 'Yayasan LHG', petugas: 'Petugas' },
-      { id: 108, anakNama: 'Novi Anggraini', namaBantuan: 'Bantuan Transportasi', nominal: 'Rp 500.000', tanggal: '2025-09-22', status: 'Cair', sumber: 'Dinas Sosial', petugas: 'Admin' },
-      { id: 109, anakNama: 'Rizky Saputra', namaBantuan: 'Program Pendidikan', nominal: 'Rp 1.000.000', tanggal: '2025-09-20', status: 'Cair', sumber: 'Yayasan LHG', petugas: 'Admin' },
-      { id: 110, anakNama: 'Putri Wijaya', namaBantuan: 'Bantuan Kesehatan', nominal: 'Rp 750.000', tanggal: '2025-09-18', status: 'Cair', sumber: 'Donatur', petugas: 'Petugas' }
-    ];
-    if (!existing || existing.length === 0) {
-      DB.set('lhg_bantuan', samples);
-    }
-    localStorage.setItem('lhg_bantuan_samples_v1', '1');
-  }
-}
-
 function getBantuanList() {
-  initBantuanSampleData();
   return DB.get('lhg_bantuan', []);
 }
 
@@ -8478,25 +8460,7 @@ function renderPelatihanStats() {
   setText('nav-badge-pelatihan', total);
 }
 
-function initPelatihanSampleData() {
-  const existing = DB.get('lhg_pelatihan', []);
-  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_pelatihan_samples_v1')) {
-    const samples = [
-      { id: 'pel-101', tanggal: '2025-10-15', nama: 'Pelatihan Manajemen Anak', pesertaCount: 35, lokasi: 'Aula Dinas Sosial', status: 'Selesai' },
-      { id: 'pel-102', tanggal: '2025-09-22', nama: 'Pelatihan Pendampingan Disabilitas', pesertaCount: 28, lokasi: 'Ruang PKK', status: 'Selesai' },
-      { id: 'pel-103', tanggal: '2025-09-30', nama: 'Pelatihan Komunikasi Ortang Tua', pesertaCount: 32, lokasi: 'Aula Kantor Kecamatan', status: 'Selesai' },
-      { id: 'pel-104', tanggal: '2025-10-07', nama: 'Pelatihan Kewirausahaan', pesertaCount: 40, lokasi: 'Aula Dinas Koperasi', status: 'Akan Datang' },
-      { id: 'pel-105', tanggal: '2025-10-14', nama: 'Pelatihan Digitalisasi Layanan', pesertaCount: 25, lokasi: 'Aula Diskominfo', status: 'Akan Datang' }
-    ];
-    if (!existing || existing.length === 0) {
-      DB.set('lhg_pelatihan', samples);
-    }
-    localStorage.setItem('lhg_pelatihan_samples_v1', '1');
-  }
-}
-
 function getPelatihanList() {
-  initPelatihanSampleData();
   return DB.get('lhg_pelatihan', []);
 }
 
@@ -8743,25 +8707,7 @@ function renderPerjalananStats() {
   setText('nav-badge-perjalanan', total);
 }
 
-function initPerjalananSampleData() {
-  const existing = DB.get('lhg_perjalanan', []);
-  if (!existing || existing.length === 0 || !localStorage.getItem('lhg_perjalanan_samples_v1')) {
-    const samples = [
-      { id: 'per-101', tanggal: '2025-10-10', tujuan: 'Tanjungpinang - Batam', jenis: 'Monitoring', pesertaCount: 3, status: 'Selesai', nama: 'Monitoring Bantuan Batam' },
-      { id: 'per-102', tanggal: '2025-10-08', tujuan: 'Tanjungpinang - Jakarta', jenis: 'Rapat', pesertaCount: 2, status: 'Selesai', nama: 'Rapat Koordinasi Nasional' },
-      { id: 'per-103', tanggal: '2025-09-30', tujuan: 'Tanjungpinang - Karimun', jenis: 'Survey', pesertaCount: 4, status: 'Ditunda', nama: 'Survey Calon Anak Binaan' },
-      { id: 'per-104', tanggal: '2025-10-20', tujuan: 'Tanjungpinang - Bintan', jenis: 'Koordinasi', pesertaCount: 3, status: 'Akan Datang', nama: 'Koordinasi Mitra Bintan' },
-      { id: 'per-105', tanggal: '2025-09-28', tujuan: 'Tanjungpinang - Lingga', jenis: 'Rapat', pesertaCount: 2, status: 'Selesai', nama: 'Rapat Evaluasi Program Lingga' }
-    ];
-    if (!existing || existing.length === 0) {
-      DB.set('lhg_perjalanan', samples);
-    }
-    localStorage.setItem('lhg_perjalanan_samples_v1', '1');
-  }
-}
-
 function getPerjalananList() {
-  initPerjalananSampleData();
   return DB.get('lhg_perjalanan', []);
 }
 
