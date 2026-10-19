@@ -528,6 +528,11 @@ function initAuth() {
     if (loginScreen) loginScreen.style.display = 'flex';
     if (appRoot) appRoot.style.display = 'none';
   } else {
+    // Pastikan user session tersinkronisasi jika merupakan superadmin utama
+    if (user.username === '2172041908850002' && (!user.role || user.role === 'Petugas')) {
+      user.role = 'Administrator';
+      localStorage.setItem('lhg_auth_user', JSON.stringify(user));
+    }
     if (loginScreen) loginScreen.style.display = 'none';
     if (appRoot) appRoot.style.display = 'flex';
     applyRoleUI(user);
@@ -681,11 +686,20 @@ function applyRoleUI(user) {
 
   // Filter sidebar menu items
   const userRole = (user.role || '').toLowerCase();
+  const isSuperadmin = (userRole === 'superadmin' || userRole === 'administrator');
+
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(btn => {
     const allowed = btn.getAttribute('data-allowed-roles');
-    if (!allowed) return;
+    if (!allowed) {
+      btn.style.display = 'flex';
+      return;
+    }
     const allowedList = allowed.split(',').map(r => r.trim().toLowerCase());
-    if (allowedList.includes(userRole)) {
+    if (isSuperadmin) {
+      btn.style.display = 'flex';
+    } else if (allowedList.includes(userRole) || allowedList.includes('administrator')) {
+      btn.style.display = 'flex';
+    } else if (allowedList.includes('petugas') && (userRole === 'operator' || userRole === 'viewer' || userRole === 'kepala')) {
       btn.style.display = 'flex';
     } else {
       btn.style.display = 'none';
@@ -696,7 +710,7 @@ function applyRoleUI(user) {
   document.querySelectorAll('.nav-section-label').forEach(sec => {
     const sType = sec.getAttribute('data-nav-section');
     if (sType === 'pengaturan') {
-      sec.style.display = userRole === 'superadmin' ? 'block' : 'none';
+      sec.style.display = isSuperadmin ? 'block' : 'none';
     } else {
       sec.style.display = 'block';
     }
@@ -705,12 +719,21 @@ function applyRoleUI(user) {
 }
 
 function hasPermission(role, page) {
+  const normRole = (role || '').trim().toLowerCase();
+  // Administrator dan Superadmin memiliki akses penuh ke seluruh menu
+  if (normRole === 'superadmin' || normRole === 'administrator') {
+    return true;
+  }
   const permissions = {
-    Superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
-    Admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    Petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
+    superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    administrator: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    operator: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    viewer: ['dashboard', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    kepala: ['dashboard', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
   };
-  const list = permissions[role] || [];
+  const list = permissions[normRole] || [];
   return list.includes(page);
 }
 

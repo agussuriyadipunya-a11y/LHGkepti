@@ -7263,3 +7263,9 @@ body.drawer-open {
   cursor: pointer;
 }
 
+
+.user-role-pill.administrator {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #FDE68A;
+}
