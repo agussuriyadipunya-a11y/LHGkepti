@@ -49,6 +49,39 @@ try {
 }
 
 // FIREBASE REST & SDK HELPER
+// ==============================================================================
+// PERMANENT DELETED RECORDS TRACKER (TOMBSTONES)
+// ==============================================================================
+function getDeletedRecords(table) {
+  try {
+    const raw = localStorage.getItem(lhg_deleted_ + table);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function addDeletedRecord(table, id, skipCloud) {
+  if (!table || !id) return;
+  const idStr = String(id).trim();
+  const list = getDeletedRecords(table);
+  if (!list.includes(idStr)) {
+    list.push(idStr);
+    localStorage.setItem(lhg_deleted_ + table, JSON.stringify(list));
+  }
+  // Catat tombstone ke Firebase Realtime Database agar seluruh perangkat mengetahui bahwa data ini dihapus permanen
+  if (!skipCloud && typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
+    try {
+      fetch(FIREBASE_CONFIG.databaseURL + /lhg_tombstones/ + table + / + idStr + .json, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletedAt: new Date().toISOString() })
+      }).catch(function() {});
+    } catch(e) {}
+  }
+}
+
 const FirebaseAPI = {
   isOnline: false,
   tablesReady: true,
@@ -10135,6 +10168,19 @@ function initRealtimeFirebaseSync() {
   if (!firebaseDb) return;
   _isRealtimeSyncInitialized = true;
 
+  // Sinkronkan tombstones dari cloud secara realtime
+  try {
+    firebaseDb.ref('lhg_tombstones').on('child_added', (snapshot) => {
+      const tbl = snapshot.key;
+      const idsObj = snapshot.val();
+      if (idsObj && typeof idsObj === 'object') {
+        Object.keys(idsObj).forEach(id => {
+          addDeletedRecord(tbl, id, true);
+        });
+      }
+    });
+  } catch(e) {}
+
   const tablesToListen = [
     'lhg_anggota',
     'lhg_bantuan',
@@ -10148,73 +10194,127 @@ function initRealtimeFirebaseSync() {
 
   tablesToListen.forEach(tableName => {
     try {
+      // 1. Pemantau snapshot perubahan data & penghapusan (value listener)
       firebaseDb.ref(tableName).on('value', (snapshot) => {
         const val = snapshot.val();
-        if (!val) return;
         let cloudList = [];
         if (Array.isArray(val)) {
           cloudList = val.filter(x => x !== null && x !== undefined);
-        } else if (typeof val === 'object') {
+        } else if (val && typeof val === 'object') {
           cloudList = Object.values(val);
         }
-        if (!Array.isArray(cloudList) || cloudList.length === 0) return;
 
-        const mapped = cloudList.map(r => fromSupabaseRow(tableName, r));
-        const localList = DB.get(tableName, []);
-        const cloudIdSet = new Set(mapped.map(m => String(m.id)));
-        const unpushed = localList.filter(l => l && l.id && !cloudIdSet.has(String(l.id)));
+        const deletedIds = new Set(getDeletedRecords(tableName).map(String));
+        const mapped = cloudList
+          .map(r => fromSupabaseRow(tableName, r))
+          .filter(item => item && item.id && !deletedIds.has(String(item.id)));
 
-        const itemMap = new Map();
-        mapped.forEach(item => {
-          const existingLocal = localList.find(l => String(l.id) === String(item.id));
-          if (existingLocal) {
-            itemMap.set(String(item.id), { ...existingLocal, ...item });
-          } else {
-            itemMap.set(String(item.id), item);
-          }
-        });
-        unpushed.forEach(item => itemMap.set(String(item.id), item));
-        const merged = Array.from(itemMap.values());
-
+        // Selalu update localStorage agar persis mencerminkan Cloud (jika dihapus di cloud, lokal langsung terhapus)
         const currentRaw = localStorage.getItem(tableName) || '[]';
-        const newRaw = JSON.stringify(merged);
+        const newRaw = JSON.stringify(mapped);
         if (currentRaw !== newRaw) {
           localStorage.setItem(tableName, newRaw);
 
-          // Update real-time UI berdasarkan tabel yang berubah
+          // Update real-time UI secara instan di semua perangkat
           if (tableName === 'lhg_anggota') {
             if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
-            setText('nav-badge-anak', merged.length);
+            setText('nav-badge-anak', mapped.length);
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : 'dashboard';
             if (activePage === 'input-data') renderAnggotaTable();
             if (activePage === 'dashboard') renderDashboard();
             if (activePage === 'cetak-kta' && typeof renderCetakKTA === 'function') renderCetakKTA();
           } else if (tableName === 'lhg_bantuan') {
-            setText('nav-badge-bantuan', merged.length);
+            setText('nav-badge-bantuan', mapped.length);
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
             if (activePage === 'bantuan') renderBantuanPage();
             if (activePage === 'dashboard') renderDashboard();
           } else if (tableName === 'lhg_pelatihan') {
-            setText('nav-badge-pelatihan', merged.length);
+            setText('nav-badge-pelatihan', mapped.length);
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
             if (activePage === 'pelatihan') renderPelatihanPage();
             if (activePage === 'dashboard') renderDashboard();
           } else if (tableName === 'lhg_perjalanan') {
-            setText('nav-badge-perjalanan', merged.length);
+            setText('nav-badge-perjalanan', mapped.length);
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
             if (activePage === 'perjalanan') renderPerjalananPage();
             if (activePage === 'dashboard') renderDashboard();
           } else if (tableName === 'lhg_rencana_kegiatan') {
-            setText('nav-badge-rencana', merged.length);
+            setText('nav-badge-rencana', mapped.length);
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
             if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
             if (activePage === 'dashboard') renderDashboard();
+          } else if (tableName === 'lhg_kegiatan') {
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'laporan-kegiatan') renderLaporan();
+            if (activePage === 'dashboard') renderDashboard();
+          } else if (tableName === 'lhg_surat_masuk' || tableName === 'lhg_surat_keluar') {
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'surat-menyurat') renderSurat();
           }
+        }
+      });
+
+      // 2. Pemantau saat satu data spesifik dihapus di cloud (child_removed)
+      firebaseDb.ref(tableName).on('child_removed', (oldChildSnapshot) => {
+        const removedKey = oldChildSnapshot.key;
+        const removedVal = oldChildSnapshot.val();
+        const removedId = (removedVal && (removedVal.id || removedVal.username)) ? String(removedVal.id || removedVal.username) : String(removedKey);
+
+        addDeletedRecord(tableName, removedId, true);
+
+        const localList = DB.get(tableName, []);
+        const filtered = localList.filter(item => String(item.id || item.username || '') !== removedId);
+        localStorage.setItem(tableName, JSON.stringify(filtered));
+
+        // Update real-time UI
+        if (tableName === 'lhg_anggota') {
+          if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
+          setText('nav-badge-anak', filtered.length);
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : 'dashboard';
+          if (activePage === 'input-data') renderAnggotaTable();
+          if (activePage === 'dashboard') renderDashboard();
+          if (activePage === 'cetak-kta' && typeof renderCetakKTA === 'function') renderCetakKTA();
+        } else if (tableName === 'lhg_bantuan') {
+          setText('nav-badge-bantuan', filtered.length);
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'bantuan') renderBantuanPage();
+          if (activePage === 'dashboard') renderDashboard();
+        } else if (tableName === 'lhg_pelatihan') {
+          setText('nav-badge-pelatihan', filtered.length);
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'pelatihan') renderPelatihanPage();
+          if (activePage === 'dashboard') renderDashboard();
+        } else if (tableName === 'lhg_perjalanan') {
+          setText('nav-badge-perjalanan', filtered.length);
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'perjalanan') renderPerjalananPage();
+          if (activePage === 'dashboard') renderDashboard();
+        } else if (tableName === 'lhg_rencana_kegiatan') {
+          setText('nav-badge-rencana', filtered.length);
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
+          if (activePage === 'dashboard') renderDashboard();
+        } else if (tableName === 'lhg_kegiatan') {
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'laporan-kegiatan') renderLaporan();
+          if (activePage === 'dashboard') renderDashboard();
+        } else if (tableName === 'lhg_surat_masuk' || tableName === 'lhg_surat_keluar') {
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'surat-menyurat') renderSurat();
         }
       });
     } catch(e) {
