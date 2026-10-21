@@ -74,7 +74,7 @@ function addDeletedRecord(table, id, skipCloud) {
   if (!skipCloud && typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
     try {
       fetch(FIREBASE_CONFIG.databaseURL + '/lhg_tombstones/' + table + '/' + idStr + '.json', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deletedAt: new Date().toISOString() })
       }).catch(function() {});
@@ -159,7 +159,7 @@ const FirebaseAPI = {
         payload = obj;
       }
       const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}.json`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -10076,34 +10076,18 @@ async function syncWithSupabase(isManual) {
           }
 
           if (cloudData.length > 0) {
-            const cloudMapped = cloudData.map(r => fromSupabaseRow(t, r));
-            const cloudIdSet = new Set(cloudMapped.map(c => String(c.id)));
+            const deletedIds = new Set(getDeletedRecords(t).map(String));
+            const cloudMapped = cloudData
+              .map(r => fromSupabaseRow(t, r))
+              .filter(c => c && c.id && !deletedIds.has(String(c.id)));
 
-            // Check unpushed local items
-            const unpushed = (Array.isArray(localList) ? localList : []).filter(l => l && l.id && !cloudIdSet.has(String(l.id)));
-            if (unpushed.length > 0) {
-              const rows = unpushed.map(item => toSupabaseRow(t, item));
-              await SupabaseAPI.upsert(t, rows);
-            }
-
-            // Merge cloud + unpushed (preserve local file attachments & attributes)
-            const itemMap = new Map();
-            cloudMapped.forEach(item => {
-              const existingLocal = (Array.isArray(localList) ? localList : []).find(l => String(l.id) === String(item.id));
-              if (existingLocal) {
-                itemMap.set(String(item.id), { ...existingLocal, ...item });
-              } else {
-                itemMap.set(String(item.id), item);
-              }
-            });
-            unpushed.forEach(item => itemMap.set(String(item.id), item));
-            const merged = Array.from(itemMap.values());
-
-            localStorage.setItem(t, JSON.stringify(merged));
+            localStorage.setItem(t, JSON.stringify(cloudMapped));
             if (t === 'lhg_anggota' && typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
           } else {
-            // Cloud is empty: push local data to cloud so other devices can access
-            if (Array.isArray(localList) && localList.length > 0) {
+            const deletedRecords = getDeletedRecords(t);
+            if (deletedRecords.length > 0) {
+              localStorage.setItem(t, JSON.stringify([]));
+            } else if (Array.isArray(localList) && localList.length > 0) {
               const rows = localList.map(item => toSupabaseRow(t, item));
               await SupabaseAPI.upsert(t, rows);
             }
