@@ -1,5 +1,5 @@
 // Service Worker - Lentera Hati Gurindam PWA
-const CACHE_NAME = 'lhg-pwa-v70';
+const CACHE_NAME = 'lhg-pwa-v71';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -40,8 +40,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Never intercept Supabase API calls or non-GET requests
-  if (event.request.url.includes('supabase.co') || event.request.method !== 'GET') {
+  // Never intercept Firebase / Supabase API calls or non-GET requests
+  const url = event.request.url;
+  if (
+    url.includes('firebasedatabase.app') ||
+    url.includes('firebaseio.com') ||
+    url.includes('googleapis.com') ||
+    url.includes('supabase.co') ||
+    event.request.method !== 'GET'
+  ) {
     return;
   }
 

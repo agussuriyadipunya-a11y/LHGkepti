@@ -1,4 +1,4 @@
-// ==============================================================================
+﻿// ==============================================================================
 // LENTERA HATI GURINDAM - MODERN DASHBOARD APPLICATION LOGIC
 // ==============================================================================
 'use strict';
@@ -881,6 +881,11 @@ function navigate(page) {
   if (page === 'foto-kegiatan') renderFoto();
   if (page === 'arsip-berkas') renderArsip();
   if (page === 'manajemen-user') renderManajemenUserTable();
+
+  // Sinkronisasi background otomatis saat berpindah halaman agar data antar perangkat selalu up-to-date
+  if (typeof syncWithSupabase === 'function') {
+    syncWithSupabase(false);
+  }
 }
 
 // REALTIME CLOCK SESUAI FORMAT DESAIN: Jumat, 17 Oktober 2025 | 10:45 WIB
@@ -1700,6 +1705,18 @@ function renderTablePagination(containerId, currentPage, totalItems, pageSize, o
   `;
 }
 
+function generateNextAnggotaId(anggota) {
+  const list = Array.isArray(anggota) ? anggota : [];
+  let maxNum = 0;
+  list.forEach(a => {
+    if (!a) return;
+    const raw = String(a.id || a.noAnggota || '');
+    const num = parseInt(raw.replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num > maxNum) maxNum = num;
+  });
+  return 'LHG-' + String(maxNum + 1).padStart(3, '0');
+}
+
 function renderAnggotaTable(search) {
   syncSemuaUmurAnggota();
   if (search !== undefined) currentSearch = search;
@@ -1726,6 +1743,8 @@ function renderAnggotaTable(search) {
   list.sort((a, b) => (a.nama || '').localeCompare(b.nama || '', 'id', { sensitivity: 'base' }));
 
   setText('table-total-count-text', `Total: ${list.length} Anak`);
+  const allAnggotaForBadge = DB.get('lhg_anggota', []);
+  setText('nav-badge-anak', allAnggotaForBadge.length);
   const tbody = document.getElementById('anggota-tbody');
 
   if (!list.length) {
@@ -1999,7 +2018,7 @@ function saveDirectInputAnak(event) {
   }
 
   const anggota = DB.get('lhg_anggota');
-  const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
+  const no = generateNextAnggotaId(anggota);
   const newRecord = {
     id: no,
     noAnggota: no,
@@ -2222,7 +2241,7 @@ function saveAnggota() {
     }
     showToast('Data anak berhasil diperbarui!');
   } else {
-    const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
+    const no = generateNextAnggotaId(anggota);
     anggota.unshift({ ...fd, id: no, noAnggota: no, tglDaftar: tglDaftarVal });
     showToast('Data anak baru berhasil ditambahkan!');
   }
@@ -7063,7 +7082,7 @@ async function saveDirectInputAnak(e) {
   }
 
   const anggota = DB.get('lhg_anggota', []);
-  const no = 'LHG-' + String(anggota.length + 1).padStart(3, '0');
+  const no = generateNextAnggotaId(anggota);
 
   const newChild = {
     id: no,
@@ -9871,6 +9890,19 @@ async function syncKeyToSupabase(key, val) {
 
 // Master bidirectional synchronization with Supabase
 async function syncWithSupabase(isManual) {
+  try {
+    const agList = DB.get('lhg_anggota', []);
+    setText('nav-badge-anak', agList.length);
+    const bList = DB.get('lhg_bantuan', []);
+    setText('nav-badge-bantuan', bList.length);
+    const rList = DB.get('lhg_rencana_kegiatan', []);
+    setText('nav-badge-rencana', rList.length);
+    const pList = DB.get('lhg_pelatihan', []);
+    setText('nav-badge-pelatihan', pList.length);
+    const jList = DB.get('lhg_perjalanan', []);
+    setText('nav-badge-perjalanan', jList.length);
+  } catch(e) {}
+
   if (isManual) {
     showToast('Memeriksa koneksi database online Supabase...', 'info');
   }
@@ -10067,9 +10099,128 @@ async function syncWithSupabase(isManual) {
     if (activePage === 'manajemen-user') renderManajemenUserTable();
   }
 
+  try {
+    const agList = DB.get('lhg_anggota', []);
+    setText('nav-badge-anak', agList.length);
+    const bList = DB.get('lhg_bantuan', []);
+    setText('nav-badge-bantuan', bList.length);
+    const rList = DB.get('lhg_rencana_kegiatan', []);
+    setText('nav-badge-rencana', rList.length);
+    const pList = DB.get('lhg_pelatihan', []);
+    setText('nav-badge-pelatihan', pList.length);
+    const jList = DB.get('lhg_perjalanan', []);
+    setText('nav-badge-perjalanan', jList.length);
+  } catch(e) {}
+
   if (isManual) {
     showToast(`Sinkronisasi Firebase Online selesai! (${syncedCount} tabel)`, 'success');
   }
+}
+
+// ==============================================================================
+// REALTIME MULTI-DEVICE SYNCHRONIZATION VIA FIREBASE REALTIME DATABASE
+// ==============================================================================
+let _isRealtimeSyncInitialized = false;
+
+function initRealtimeFirebaseSync() {
+  if (_isRealtimeSyncInitialized) return;
+
+  if (typeof firebaseDb === 'undefined' || !firebaseDb) {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebaseDb = firebase.database();
+      }
+    } catch(e) {}
+  }
+  if (!firebaseDb) return;
+  _isRealtimeSyncInitialized = true;
+
+  const tablesToListen = [
+    'lhg_anggota',
+    'lhg_bantuan',
+    'lhg_rencana_kegiatan',
+    'lhg_pelatihan',
+    'lhg_perjalanan',
+    'lhg_kegiatan',
+    'lhg_surat_masuk',
+    'lhg_surat_keluar'
+  ];
+
+  tablesToListen.forEach(tableName => {
+    try {
+      firebaseDb.ref(tableName).on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (!val) return;
+        let cloudList = [];
+        if (Array.isArray(val)) {
+          cloudList = val.filter(x => x !== null && x !== undefined);
+        } else if (typeof val === 'object') {
+          cloudList = Object.values(val);
+        }
+        if (!Array.isArray(cloudList) || cloudList.length === 0) return;
+
+        const mapped = cloudList.map(r => fromSupabaseRow(tableName, r));
+        const localList = DB.get(tableName, []);
+        const cloudIdSet = new Set(mapped.map(m => String(m.id)));
+        const unpushed = localList.filter(l => l && l.id && !cloudIdSet.has(String(l.id)));
+
+        const itemMap = new Map();
+        mapped.forEach(item => {
+          const existingLocal = localList.find(l => String(l.id) === String(item.id));
+          if (existingLocal) {
+            itemMap.set(String(item.id), { ...existingLocal, ...item });
+          } else {
+            itemMap.set(String(item.id), item);
+          }
+        });
+        unpushed.forEach(item => itemMap.set(String(item.id), item));
+        const merged = Array.from(itemMap.values());
+
+        const currentRaw = localStorage.getItem(tableName) || '[]';
+        const newRaw = JSON.stringify(merged);
+        if (currentRaw !== newRaw) {
+          localStorage.setItem(tableName, newRaw);
+
+          // Update real-time UI berdasarkan tabel yang berubah
+          if (tableName === 'lhg_anggota') {
+            if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
+            setText('nav-badge-anak', merged.length);
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : 'dashboard';
+            if (activePage === 'input-data') renderAnggotaTable();
+            if (activePage === 'dashboard') renderDashboard();
+            if (activePage === 'cetak-kta' && typeof renderCetakKTA === 'function') renderCetakKTA();
+          } else if (tableName === 'lhg_bantuan') {
+            setText('nav-badge-bantuan', merged.length);
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'bantuan') renderBantuanPage();
+            if (activePage === 'dashboard') renderDashboard();
+          } else if (tableName === 'lhg_pelatihan') {
+            setText('nav-badge-pelatihan', merged.length);
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'pelatihan') renderPelatihanPage();
+            if (activePage === 'dashboard') renderDashboard();
+          } else if (tableName === 'lhg_perjalanan') {
+            setText('nav-badge-perjalanan', merged.length);
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'perjalanan') renderPerjalananPage();
+            if (activePage === 'dashboard') renderDashboard();
+          } else if (tableName === 'lhg_rencana_kegiatan') {
+            setText('nav-badge-rencana', merged.length);
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
+            if (activePage === 'dashboard') renderDashboard();
+          }
+        }
+      });
+    } catch(e) {
+      console.warn("Realtime listener warning on " + tableName + ":", e);
+    }
+  });
 }
 
 // INITIALIZATION
@@ -10090,6 +10241,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
   // Check and sync with Supabase Online in background
   syncWithSupabase(false);
+  // Aktifkan Firebase Realtime listener agar semua perubahan di perangkat lain langsung masuk secara live
+  if (typeof initRealtimeFirebaseSync === 'function') {
+    initRealtimeFirebaseSync();
+  }
   // Register PWA Service Worker
   registerPWA();
   // Initialize touch-friendly modal backdrop tap listeners
@@ -10159,4 +10314,25 @@ function triggerInstallApp() {
     // If browser doesn't support beforeinstallprompt or already installed
     showToast('Untuk menginstall: Buka menu titik tiga browser (⋮) lalu pilih "Install Aplikasi" atau "Tambahkan ke Layar Utama".', 'info');
   }
+}
+
+
+// Otomatis sinkronisasi data saat user kembali membuka tab browser HP / perangkat lain
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && typeof syncWithSupabase === 'function') {
+      syncWithSupabase(false);
+    }
+  });
+  window.addEventListener('focus', () => {
+    if (typeof syncWithSupabase === 'function') {
+      syncWithSupabase(false);
+    }
+  });
+  // Auto-sync berkala setiap 25 detik
+  setInterval(() => {
+    if (typeof syncWithSupabase === 'function') {
+      syncWithSupabase(false);
+    }
+  }, 25000);
 }
