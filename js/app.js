@@ -1,4 +1,4 @@
-﻿// ==============================================================================
+// ==============================================================================
 // LENTERA HATI GURINDAM - MODERN DASHBOARD APPLICATION LOGIC
 // ==============================================================================
 'use strict';
@@ -53,33 +53,12 @@ try {
 // PERMANENT DELETED RECORDS TRACKER (TOMBSTONES)
 // ==============================================================================
 function getDeletedRecords(table) {
-  try {
-    const raw = localStorage.getItem('lhg_deleted_' + table);
-    const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
-  } catch(e) {
-    return [];
-  }
+  // Seluruh data bersumber murni dari Firebase Realtime Database
+  return [];
 }
 
 function addDeletedRecord(table, id, skipCloud) {
-  if (!table || !id) return;
-  const idStr = String(id).trim();
-  const list = getDeletedRecords(table);
-  if (!list.includes(idStr)) {
-    list.push(idStr);
-    localStorage.setItem('lhg_deleted_' + table, JSON.stringify(list));
-  }
-  // Catat tombstone ke Firebase Realtime Database agar seluruh perangkat mengetahui bahwa data ini dihapus permanen
-  if (!skipCloud && typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
-    try {
-      fetch(FIREBASE_CONFIG.databaseURL + '/lhg_tombstones/' + table + '/' + idStr + '.json', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deletedAt: new Date().toISOString() })
-      }).catch(function() {});
-    } catch(e) {}
-  }
+  // Penghapusan data dilakukan permanen langsung pada node Firebase (DELETE /table/id.json).
 }
 
 const FirebaseAPI = {
@@ -171,7 +150,8 @@ const FirebaseAPI = {
   delete: async function(table, filterCol, filterVal) {
     try {
       // Hapus data spesifik dari node tabel di Firebase Realtime Database
-      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}/${filterVal}.json`, {
+      const safeKey = encodeURIComponent(String(filterVal).trim());
+      const resp = await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}/${safeKey}.json`, {
         method: 'DELETE'
       });
       return resp.ok;
@@ -395,8 +375,9 @@ function initData() {
       migrateLegacyArsipFiles();
     });
   }
-  // Always ensure dummy data is cleared if old caches exist
-  if (!localStorage.getItem('lhg_init_clean_v3')) {
+  // Bersihkan cache lama/tombstones agar data Firebase tidak terblokir
+  ['lhg_deleted_lhg_anggota', 'lhg_deleted_lhg_bantuan', 'lhg_deleted_lhg_kegiatan', 'lhg_deleted_lhg_surat_masuk', 'lhg_deleted_lhg_surat_keluar', 'lhg_deleted_lhg_foto', 'lhg_deleted_lhg_arsip', 'lhg_deleted_lhg_rencana_kegiatan', 'lhg_deleted_lhg_pelatihan', 'lhg_deleted_lhg_perjalanan', 'lhg_deleted_users'].forEach(function(k) { localStorage.removeItem(k); });
+  if (false) {
     localStorage.removeItem('lhg_init');
     localStorage.removeItem('lhg_init_modern_v1');
     localStorage.removeItem('lhg_init_clean_prod_v2');
@@ -413,6 +394,12 @@ function initData() {
     localStorage.setItem('lhg_init_clean_v3', '1');
   }
 
+  if (!localStorage.getItem('lhg_anggota')) localStorage.setItem('lhg_anggota', JSON.stringify([]));
+  if (!localStorage.getItem('lhg_bantuan')) localStorage.setItem('lhg_bantuan', JSON.stringify([]));
+  if (!localStorage.getItem('lhg_kegiatan')) localStorage.setItem('lhg_kegiatan', JSON.stringify([]));
+  if (!localStorage.getItem('lhg_foto')) localStorage.setItem('lhg_foto', JSON.stringify([]));
+  if (!localStorage.getItem('lhg_surat_masuk')) localStorage.setItem('lhg_surat_masuk', JSON.stringify([]));
+  if (!localStorage.getItem('lhg_surat_keluar')) localStorage.setItem('lhg_surat_keluar', JSON.stringify([]));
   if (!localStorage.getItem('lhg_arsip')) {
     localStorage.setItem('lhg_arsip', JSON.stringify([]));
   }
@@ -9601,6 +9588,7 @@ function toSupabaseRow(table, item) {
     };
   }
   if (table === 'lhg_anggota') {
+
     return {
       id: item.id,
       nama: item.nama,
@@ -9776,32 +9764,33 @@ function fromSupabaseRow(table, row) {
       password: row.password,
       nama: row.nama,
       role: row.role,
-      status: row.status,
+      status: (typeof row.status === 'string' && row.status.indexOf('; sub_disabilitas=') !== -1 ? row.status.split('; sub_disabilitas=')[0].trim() : (row.status || 'Aktif')),
       foto: row.foto || null,
       createdAt: row.created_at ? row.created_at.split('T')[0] : (row.createdAt || '-')
     };
   }
   if (table === 'lhg_anggota') {
+
     return {
       id: row.id,
       nama: row.nama,
       nik: row.nik,
-      noKk: row.no_kk,
+      noKk: (row.no_kk !== undefined ? row.no_kk : (row.noKk || '')),
       umur: row.umur,
       ttl: row.ttl,
       jk: row.jk,
       alamat: row.alamat,
       kelurahan: row.kelurahan,
       disabilitas: row.disabilitas,
-      subDisabilitas: row.sub_disabilitas,
+      subDisabilitas: (row.sub_disabilitas || row.subDisabilitas || (typeof row.status === 'string' && row.status.indexOf('; sub_disabilitas=') !== -1 ? row.status.split('; sub_disabilitas=')[1].trim() : '')),
       wali: row.wali,
       ibu: row.ibu,
-      hubWali: row.hub_wali,
-      telWali: row.tel_wali,
-      kontakWA: row.kontak_wa,
-      status: row.status,
+      hubWali: (row.hub_wali !== undefined ? row.hub_wali : (row.hubWali || '')),
+      telWali: (row.tel_wali !== undefined ? row.tel_wali : (row.telWali || '')),
+      kontakWA: (row.kontak_wa !== undefined ? row.kontak_wa : (row.kontakWA || '')),
+      status: (typeof row.status === 'string' && row.status.indexOf('; sub_disabilitas=') !== -1 ? row.status.split('; sub_disabilitas=')[0].trim() : (row.status || 'Aktif')),
       noAnggota: row.no_anggota || row.id,
-      tglDaftar: row.tgl_daftar,
+      tglDaftar: (row.tgl_daftar !== undefined ? row.tgl_daftar : (row.tglDaftar || '')),
       kelas: row.kelas,
       sekolah: row.sekolah,
       foto: row.foto
@@ -9894,7 +9883,7 @@ function fromSupabaseRow(table, row) {
       estimasiBiaya: row.estimasi_biaya,
       sumberDana: row.sumber_dana,
       prioritas: row.prioritas,
-      status: row.status,
+      status: (typeof row.status === 'string' && row.status.indexOf('; sub_disabilitas=') !== -1 ? row.status.split('; sub_disabilitas=')[0].trim() : (row.status || 'Aktif')),
       tujuan: row.tujuan,
       deskripsi: row.deskripsi,
       penyusun: row.penyusun,
@@ -10079,7 +10068,7 @@ async function syncWithSupabase(isManual) {
             const deletedIds = new Set(getDeletedRecords(t).map(String));
             const cloudMapped = cloudData
               .map(r => fromSupabaseRow(t, r))
-              .filter(c => c && c.id && !deletedIds.has(String(c.id)));
+              .filter(c => c && (c.id || c.noAnggota || c.nomor || c.username));
 
             localStorage.setItem(t, JSON.stringify(cloudMapped));
             if (t === 'lhg_anggota' && typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
@@ -10188,10 +10177,10 @@ function initRealtimeFirebaseSync() {
           cloudList = Object.values(val);
         }
 
-        const deletedIds = new Set(getDeletedRecords(tableName).map(String));
+        const deletedIds = new Set();
         const mapped = cloudList
           .map(r => fromSupabaseRow(tableName, r))
-          .filter(item => item && item.id && !deletedIds.has(String(item.id)));
+          .filter(item => item && (item.id || item.username || item.nomor));
 
         // Selalu update localStorage agar persis mencerminkan Cloud (jika dihapus di cloud, lokal langsung terhapus)
         const currentRaw = localStorage.getItem(tableName) || '[]';
@@ -10251,7 +10240,8 @@ function initRealtimeFirebaseSync() {
         const removedVal = oldChildSnapshot.val();
         const removedId = (removedVal && (removedVal.id || removedVal.username)) ? String(removedVal.id || removedVal.username) : String(removedKey);
 
-        addDeletedRecord(tableName, removedId, true);
+        // Hapus langsung dari daftar lokal tanpa menambahkan tombstone
+        // addDeletedRecord(tableName, removedId, true);
 
         const localList = DB.get(tableName, []);
         const filtered = localList.filter(item => String(item.id || item.username || '') !== removedId);
@@ -10322,9 +10312,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   updateClock();
   setInterval(updateClock, 1000);
+  // Sinkronisasi data dari Firebase Realtime Database terlebih dahulu agar data langsung tampil
+  try {
+    await syncWithSupabase(false);
+  } catch(e) {}
   initAuth();
   // Check and sync with Supabase Online in background
-  syncWithSupabase(false);
+  // syncWithSupabase(false); // Sudah dipanggil di awal
   // Aktifkan Firebase Realtime listener agar semua perubahan di perangkat lain langsung masuk secara live
   if (typeof initRealtimeFirebaseSync === 'function') {
     initRealtimeFirebaseSync();
