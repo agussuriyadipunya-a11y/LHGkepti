@@ -54,7 +54,7 @@ try {
 // ==============================================================================
 function getDeletedRecords(table) {
   try {
-    const raw = localStorage.getItem(lhg_deleted_ + table);
+    const raw = localStorage.getItem('lhg_deleted_' + table);
     const list = raw ? JSON.parse(raw) : [];
     return Array.isArray(list) ? list : [];
   } catch(e) {
@@ -68,12 +68,12 @@ function addDeletedRecord(table, id, skipCloud) {
   const list = getDeletedRecords(table);
   if (!list.includes(idStr)) {
     list.push(idStr);
-    localStorage.setItem(lhg_deleted_ + table, JSON.stringify(list));
+    localStorage.setItem('lhg_deleted_' + table, JSON.stringify(list));
   }
   // Catat tombstone ke Firebase Realtime Database agar seluruh perangkat mengetahui bahwa data ini dihapus permanen
   if (!skipCloud && typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
     try {
-      fetch(FIREBASE_CONFIG.databaseURL + /lhg_tombstones/ + table + / + idStr + .json, {
+      fetch(FIREBASE_CONFIG.databaseURL + '/lhg_tombstones/' + table + '/' + idStr + '.json', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deletedAt: new Date().toISOString() })
