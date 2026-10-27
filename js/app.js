@@ -416,7 +416,12 @@ function initData() {
     localStorage.setItem('lhg_perjalanan', JSON.stringify([]));
   }
 
+  if (!localStorage.getItem('lhg_verifikasi')) {
+    localStorage.setItem('lhg_verifikasi', JSON.stringify([]));
+  }
+
   initUsersData();
+  updateVerifikasiBadges();
   purgeDummySampleData();
   if (typeof syncSemuaUmurAnggota === 'function') syncSemuaUmurAnggota();
 }
@@ -781,11 +786,11 @@ function hasPermission(role, page) {
     return true;
   }
   const permissions = {
-    superadmin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
-    administrator: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
-    admin: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    operator: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
-    petugas: ['dashboard', 'input-data-form', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    superadmin: ['dashboard', 'verifikasi-anggota', 'input-data-form', 'lengkapi-data', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    administrator: ['dashboard', 'verifikasi-anggota', 'input-data-form', 'lengkapi-data', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas', 'manajemen-user'],
+    admin: ['dashboard', 'verifikasi-anggota', 'input-data-form', 'lengkapi-data', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    operator: ['dashboard', 'verifikasi-anggota', 'input-data-form', 'lengkapi-data', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
+    petugas: ['dashboard', 'verifikasi-anggota', 'input-data-form', 'lengkapi-data', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
     viewer: ['dashboard', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas'],
     kepala: ['dashboard', 'input-data', 'bantuan', 'rencana-kegiatan', 'pelatihan', 'perjalanan', 'cetak-kta', 'form-pendaftaran', 'laporan-kegiatan', 'surat-menyurat', 'foto-kegiatan', 'arsip-berkas']
   };
@@ -842,13 +847,15 @@ function navigate(page) {
   }
 
   // Update sidebar active buttons
+  const resolvedPage = page === 'lengkapi-data' ? 'input-data-form' : page;
   document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-page') === page);
+    const p = btn.getAttribute('data-page');
+    btn.classList.toggle('active', p === page || (page === 'lengkapi-data' && p === 'input-data-form'));
   });
 
   // Switch pages
   document.querySelectorAll('.page').forEach(sec => sec.classList.remove('active'));
-  const target = document.getElementById('page-' + page);
+  const target = document.getElementById('page-' + resolvedPage);
   if (target) target.classList.add('active');
 
   // Close mobile sidebar if open
@@ -868,7 +875,9 @@ function navigate(page) {
   // Update topbar headers
   const pageTitles = {
     'dashboard': ['Dashboard Ringkasan', 'Statistik dan data terpadu anak penyandang disabilitas Kota Tanjungpinang'],
-    'input-data-form': ['Input Data Anak', 'Formulir input data calon anak disabilitas langsung ke database yayasan'],
+    'verifikasi-anggota': ['Verifikasi Anggota', 'Daftar data calon anggota hasil import file Excel untuk diverifikasi dan dilengkapi'],
+    'input-data-form': ['Lengkapi Data Calon Anggota', 'Formulir input & kelengkapan identitas calon anak disabilitas ke database'],
+    'lengkapi-data': ['Lengkapi Data Calon Anggota', 'Formulir input & kelengkapan identitas calon anak disabilitas ke database'],
     'input-data': ['Data Anak Disabilitas', 'Kelola pendaftaran lengkap anak, identitas KK, ragam disabilitas, dan kontak wali'],
     'bantuan': ['Catatan Penerimaan Bantuan Anak', 'Daftar semua bantuan yang telah diterima anak lengkap dengan tanggal penyerahan'],
     'rencana-kegiatan': ['Rencana Kegiatan & Program Kerja', 'Penyusunan agenda kerja, sasaran disabilitas, jadwal, dan estimasi anggaran yayasan'],
@@ -888,7 +897,8 @@ function navigate(page) {
   setText('topbar-page-desc', info[1]);
 
   if (page === 'dashboard') renderDashboard();
-  if (page === 'input-data-form') initDirectInputPage();
+  if (page === 'verifikasi-anggota') renderVerifikasiTable();
+  if (page === 'input-data-form' || page === 'lengkapi-data') initDirectInputPage();
   if (page === 'input-data') renderAnggotaTable();
   if (page === 'bantuan') renderBantuanPage();
   if (page === 'rencana-kegiatan') renderRencanaKegiatanPage();
@@ -1071,6 +1081,7 @@ function renderDashboard() {
   setText('nav-badge-rencana', rencana.length);
   setText('nav-badge-pelatihan', pelatihan.length);
   setText('nav-badge-perjalanan', perjalanan.length);
+  updateVerifikasiBadges();
 
   // 1. Ringkasan Data Anak Disabilitas (100% Data Real)
   renderDisabilitySummary(anggota);
@@ -1977,108 +1988,462 @@ function compressImage(base64, maxW, maxH, quality, callback) {
   img.src = base64;
 }
 
-// ================= DIRECT INPUT FORM (MENU INPUT DATA) =================
-function initDirectInputPage() {
-  resetDirectInputForm();
-  const directTgl = document.getElementById('direct-tglDaftar');
-  if (directTgl) directTgl.value = getTodayLocalDateStr();
-}
+// ==============================================================================
+// MODUL VERIFIKASI ANGGOTA (IMPORT FILE EXCEL & VALIDASI DATA)
+// ==============================================================================
 
-function resetDirectInputForm() {
-  const f = document.getElementById('form-direct-input-anak');
-  if (f) f.reset();
-  removeDirectPhoto();
-  const directTgl = document.getElementById('direct-tglDaftar');
-  if (directTgl) directTgl.value = getTodayLocalDateStr();
-}
+window.activeVerifikasiData = null;
+let currentVerifikasiSearch = '';
+let currentVerifikasiJKFilter = '';
+let currentVerifikasiKelurahanFilter = '';
 
-function handleDirectDisabilityChange(val) {
-  const subEl = document.getElementById('direct-subDisabilitas');
-  if (!subEl) return;
-  const presets = {
-    'Fisik': 'Disabilitas Fisik / Gangguan Motorik',
-    'Tuna Rungu': 'Gangguan Pendengaran & Wicara',
-    'Tuna Netra': 'Hambatan Penglihatan / Low Vision',
-    'Tuna Grahita': 'Hambatan Perkembangan Intelektual',
-    'Autis': 'Autisme Spectrum Disorder (ASD)',
-    'Down Syndrome': 'Kelainan Genetik Trisomi 21',
-    'Disabilitas Berat': 'Hambatan Ganda / Kebutuhan Bantuan Khusus',
-    'Tuna Daksa Kursi Roda': 'Mobilitas Menggunakan Kursi Roda',
-    'Tuna Daksa Tongkat': 'Mobilitas Menggunakan Tongkat / Kruk',
-    'Tuna Daksa Kaku': 'Cerebral Palsy / Kekakuan Otot',
-    'Tuna Daksa Tanpa Tangan': 'Hambatan Fisik Anggota Gerak Atas'
-  };
-  if (presets[val] && (!subEl.value || Object.values(presets).includes(subEl.value))) {
-    subEl.value = presets[val];
+function updateVerifikasiBadges() {
+  const list = DB.get('lhg_verifikasi', []);
+  const count = list.length;
+  setText('nav-badge-verifikasi', count);
+  const badgeEl = document.getElementById('nav-badge-verifikasi');
+  if (badgeEl) {
+    badgeEl.style.display = count > 0 ? 'inline-flex' : 'none';
   }
 }
 
-function saveDirectInputAnak(event) {
-  if (event) event.preventDefault();
-  const nama = document.getElementById('direct-nama').value.trim();
-  const nik = document.getElementById('direct-nik').value.trim();
-  const noKk = (document.getElementById('direct-noKk') ? document.getElementById('direct-noKk').value.trim() : '');
-  const ttl = document.getElementById('direct-ttl').value.trim();
-  const jk = document.getElementById('direct-jk').value;
-  const kontakWA = document.getElementById('direct-kontakWA').value.trim();
-  const disabilitas = document.getElementById('direct-disabilitas').value;
-  const subDisabilitas = (document.getElementById('direct-subDisabilitas') ? document.getElementById('direct-subDisabilitas').value.trim() : '');
-  const status = (document.getElementById('direct-status') ? document.getElementById('direct-status').value : 'Aktif');
-  const sekolah = (document.getElementById('direct-sekolah') ? document.getElementById('direct-sekolah').value.trim() : '');
-  const kelas = (document.getElementById('direct-kelas') ? document.getElementById('direct-kelas').value.trim() : '1');
-  const alamat = (document.getElementById('direct-alamat') ? document.getElementById('direct-alamat').value.trim() : '');
-  const kelurahan = (document.getElementById('direct-kelurahan') ? document.getElementById('direct-kelurahan').value.trim() : '');
-  const wali = (document.getElementById('direct-wali') ? document.getElementById('direct-wali').value.trim() : '');
-  const ibu = (document.getElementById('direct-ibu') ? document.getElementById('direct-ibu').value.trim() : '');
-  const hubWali = (document.getElementById('direct-hubWali') ? document.getElementById('direct-hubWali').value : 'Orang Tua');
+function filterVerifikasiJK(val) {
+  currentVerifikasiJKFilter = val;
+  renderVerifikasiTable();
+}
 
-  if (!nama || !nik || !disabilitas) {
-    showToast('Harap isi field Nama, NIK, dan Ragam Disabilitas!', 'error');
+function filterVerifikasiKelurahan(val) {
+  currentVerifikasiKelurahanFilter = val;
+  renderVerifikasiTable();
+}
+
+function populateVerifikasiKelurahanFilter(list) {
+  const select = document.getElementById('verifikasi-filter-kelurahan');
+  if (!select) return;
+  const currentVal = select.value;
+  const kelSet = new Set();
+  list.forEach(item => {
+    if (item.kelurahan && item.kelurahan !== '-') {
+      kelSet.add(item.kelurahan.trim());
+    }
+  });
+  const sorted = Array.from(kelSet).sort();
+  select.innerHTML = '<option value="">Semua Kelurahan</option>' +
+    sorted.map(k => `<option value="${k}" ${k === currentVal ? 'selected' : ''}>${k}</option>`).join('');
+}
+
+function renderVerifikasiTable(search) {
+  if (search !== undefined) currentVerifikasiSearch = search;
+  const rawList = DB.get('lhg_verifikasi', []);
+
+  populateVerifikasiKelurahanFilter(rawList);
+
+  const filtered = rawList.filter(item => {
+    const s = (currentVerifikasiSearch || '').toLowerCase();
+    const matchSearch = !s ||
+      (item.nama && item.nama.toLowerCase().includes(s)) ||
+      (item.tempatLahir && item.tempatLahir.toLowerCase().includes(s)) ||
+      (item.tanggalLahir && item.tanggalLahir.toLowerCase().includes(s)) ||
+      (item.namaAyah && item.namaAyah.toLowerCase().includes(s)) ||
+      (item.namaIbu && item.namaIbu.toLowerCase().includes(s)) ||
+      (item.alamat && item.alamat.toLowerCase().includes(s)) ||
+      (item.kelurahan && item.kelurahan.toLowerCase().includes(s)) ||
+      (item.agama && item.agama.toLowerCase().includes(s)) ||
+      (item.noHp && item.noHp.toLowerCase().includes(s)) ||
+      (item.keterangan && item.keterangan.toLowerCase().includes(s));
+
+    let matchJK = true;
+    if (currentVerifikasiJKFilter) {
+      if (currentVerifikasiJKFilter === 'L') {
+        matchJK = String(item.jenisKelamin).toUpperCase().startsWith('L');
+      } else if (currentVerifikasiJKFilter === 'P') {
+        matchJK = String(item.jenisKelamin).toUpperCase().startsWith('P');
+      }
+    }
+
+    const matchKel = !currentVerifikasiKelurahanFilter || item.kelurahan === currentVerifikasiKelurahanFilter;
+
+    return matchSearch && matchJK && matchKel;
+  });
+
+  setText('verifikasi-total-count-text', `Total: ${filtered.length} Calon Anggota`);
+  const clearBtn = document.getElementById('btn-clear-all-verif');
+  if (clearBtn) {
+    clearBtn.style.display = rawList.length > 0 ? 'inline-flex' : 'none';
+  }
+
+  const tbody = document.getElementById('verifikasi-tbody');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="13" style="text-align: center; padding: 48px 20px; color: #94A3B8;">
+          <div style="font-size: 38px; margin-bottom: 8px;">📑</div>
+          <div style="font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 4px;">Belum Ada Data Calon Anggota untuk Diverifikasi</div>
+          <p style="font-size: 12px; color: #94A3B8; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.5;">
+            Klik tombol <strong>"Import File Excel"</strong> di atas atau unduh template Excel resmi untuk memasukkan daftar calon anak binaan yayasan.
+          </p>
+          <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn-sec" onclick="downloadExcelTemplate()">
+              <span>📥 Unduh Template Excel</span>
+            </button>
+            <button type="button" class="btn-top-add" style="background: #10B981;" onclick="document.getElementById('excel-file-input').click()">
+              <span>📂 Import File Excel Sekarang</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
     return;
   }
 
-  const anggota = DB.get('lhg_anggota');
-  const no = generateNextAnggotaId(anggota);
-  const newRecord = {
-    id: no,
-    noAnggota: no,
-    nama: nama.toUpperCase(),
-    nik: nik,
-    noKk: noKk,
-    ttl: ttl,
-    jk: jk,
-    kontakWA: kontakWA,
-    disabilitas: disabilitas,
-    subDisabilitas: subDisabilitas,
-    status: status,
-    sekolah: sekolah,
-    kelas: kelas || '101',
-    alamat: alamat,
-    kelurahan: kelurahan,
-    wali: wali,
-    ibu: ibu,
-    hubWali: hubWali,
-    telWali: kontakWA,
-    umur: hitungUsia({ ttl: ttl, nik: nik }),
-    tglDaftar: (document.getElementById('direct-tglDaftar') && document.getElementById('direct-tglDaftar').value) ? document.getElementById('direct-tglDaftar').value : getTodayLocalDateStr(),
-    foto: currentDirectPhotoBase64 || null
+  tbody.innerHTML = filtered.map((item, index) => {
+    const isP = String(item.jenisKelamin).toUpperCase().startsWith('P');
+    const jkBadge = isP 
+      ? '<span style="background: #FDF2F8; color: #BE185D; border: 1px solid #FBCFE8; padding: 3px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700;">👧 Perempuan</span>'
+      : '<span style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 3px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700;">👦 Laki-laki</span>';
+
+    const waNum = (item.noHp || '').replace(/[^0-9]/g, '');
+    const waLink = waNum ? `
+      <a href="javascript:void(0)" onclick="openWhatsApp('${item.noHp}')" class="table-wa-link" title="Buka WhatsApp">
+        <svg width="12" height="12" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        ${item.noHp}
+      </a>
+    ` : (item.noHp || '-');
+
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 700; color: #64748B;">${index + 1}</td>
+        <td>
+          <div style="font-weight: 800; color: #0F172A; font-size: 13px;">${item.nama}</div>
+          <div style="font-size: 10px; color: #94A3B8;">ID: ${item.id}</div>
+        </td>
+        <td style="color: #334155; font-weight: 600;">${item.tempatLahir || '-'}</td>
+        <td style="text-align: center; color: #475569; font-weight: 600; white-space: nowrap;">${item.tanggalLahir || '-'}</td>
+        <td style="color: #1E293B; font-weight: 600;">${item.namaAyah || '-'}</td>
+        <td style="color: #1E293B; font-weight: 600;">${item.namaIbu || '-'}</td>
+        <td style="font-size: 11.5px; color: #475569; max-width: 200px; line-height: 1.35;">${item.alamat || '-'}</td>
+        <td>
+          ${item.kelurahan && item.kelurahan !== '-' 
+            ? `<span style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0; display: inline-block;">📍 ${item.kelurahan}</span>` 
+            : '-'}
+        </td>
+        <td style="text-align: center;">
+          <span style="background: #F1F5F9; color: #334155; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;">${item.agama || '-'}</span>
+        </td>
+        <td style="text-align: center; white-space: nowrap;">${jkBadge}</td>
+        <td style="white-space: nowrap;">${waLink}</td>
+        <td style="font-size: 11px; color: #64748B; max-width: 170px;">${item.keterangan || '-'}</td>
+        <td style="text-align: center; white-space: nowrap;">
+          <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+            <button type="button" class="btn-table-verify" onclick="startVerifikasi('${item.id}')" title="Verifikasi & Lengkapi Data">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+              <span>Verifikasi</span>
+            </button>
+            <button type="button" class="btn-table-cancel" onclick="cancelVerifikasi('${item.id}')" title="Batalkan & Hapus Data">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <span>Cancell</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function downloadExcelTemplate() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Library Excel belum siap. Silakan muat ulang halaman.', 'error');
+    return;
+  }
+  const headers = [
+    ['No', 'Nama', 'Tempat Lahir', 'Tanggal Lahir', 'Nama Ayah', 'Nama Ibu', 'Alamat', 'Kelurahan', 'Agama', 'Jenis Kelamin', 'No HP', 'Keterangan'],
+    [1, 'MUHAMMAD RIZKY', 'Tanjungpinang', '15-05-2012', 'Ahmad Fadillah', 'Nurhayati', 'Jl. Merdeka No. 12 RT 02 / RW 04', 'Tanjungpinang Kota', 'Islam', 'Laki-laki', '081234567890', 'Calon binaan baru'],
+    [2, 'AFIFAH SALSABILA', 'Tanjungpinang', '20-08-2014', 'Bambang Irawan', 'Siti Rahma', 'Jl. D.I. Panjaitan KM 7', 'Melayu Kota Piring', 'Islam', 'Perempuan', '081987654321', 'Rekomendasi dari RT/Kelurahan']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = [
+    { wch: 6 },
+    { wch: 25 },
+    { wch: 18 },
+    { wch: 15 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 35 },
+    { wch: 22 },
+    { wch: 12 },
+    { wch: 15 },
+    { wch: 16 },
+    { wch: 25 }
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Verifikasi');
+  XLSX.writeFile(wb, 'Template_Verifikasi_Anggota_LHG.xlsx');
+  showToast('Template Excel berhasil diunduh!', 'success');
+}
+
+function handleExcelImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (typeof XLSX === 'undefined') {
+    showToast('Library Excel belum termuat. Silakan muat ulang halaman.', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      if (!rows || rows.length < 2) {
+        showToast('File Excel kosong atau tidak memiliki baris data!', 'warning');
+        return;
+      }
+
+      const rawHeaders = rows[0].map(h => String(h || '').trim().toLowerCase());
+      const findColIdx = (keywords) => {
+        return rawHeaders.findIndex(h => keywords.some(k => h.includes(k)));
+      };
+
+      const colNama = findColIdx(['nama']);
+      const colTempat = findColIdx(['tempat lahir', 'tempat_lahir', 'tempat']);
+      const colTanggal = findColIdx(['tanggal lahir', 'tanggal_lahir', 'tgl lahir', 'tgl_lahir', 'lahir']);
+      const colAyah = findColIdx(['nama ayah', 'nama_ayah', 'ayah', 'bapak', 'wali']);
+      const colIbu = findColIdx(['nama ibu', 'nama_ibu', 'ibu']);
+      const colAlamat = findColIdx(['alamat', 'domisili', 'tempat tinggal']);
+      const colKelurahan = findColIdx(['kelurahan', 'desa', 'wilayah']);
+      const colAgama = findColIdx(['agama']);
+      const colJK = findColIdx(['jenis kelamin', 'jenis_kelamin', 'kelamin', 'jk', 'gender']);
+      const colHP = findColIdx(['no hp', 'no_hp', 'nohp', 'no wa', 'hp', 'telepon', 'telp', 'kontak', 'whatsapp']);
+      const colKet = findColIdx(['keterangan', 'ket', 'catatan']);
+
+      if (colNama === -1) {
+        showToast('Kolom "Nama" tidak ditemukan pada file Excel!', 'error');
+        return;
+      }
+
+      const currentList = DB.get('lhg_verifikasi', []);
+      let addedCount = 0;
+      const nowTs = Date.now();
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+
+        const nama = String(colNama !== -1 ? row[colNama] : '').trim();
+        if (!nama) continue;
+
+        let tglLahir = colTanggal !== -1 ? row[colTanggal] : '';
+        if (tglLahir instanceof Date) {
+          const y = tglLahir.getFullYear();
+          const m = String(tglLahir.getMonth() + 1).padStart(2, '0');
+          const d = String(tglLahir.getDate()).padStart(2, '0');
+          tglLahir = `${d}-${m}-${y}`;
+        } else {
+          tglLahir = String(tglLahir).trim();
+        }
+
+        let jk = String(colJK !== -1 ? row[colJK] : '').trim();
+        if (/^p|perempuan|wanita/i.test(jk)) {
+          jk = 'Perempuan';
+        } else if (/^l|laki/i.test(jk)) {
+          jk = 'Laki-laki';
+        } else {
+          jk = 'Laki-laki';
+        }
+
+        const newRecord = {
+          id: 'VERIF-' + (nowTs + i) + '-' + Math.floor(Math.random() * 1000),
+          nama: nama.toUpperCase(),
+          tempatLahir: String(colTempat !== -1 ? row[colTempat] : '').trim() || '-',
+          tanggalLahir: tglLahir || '-',
+          namaAyah: String(colAyah !== -1 ? row[colAyah] : '').trim() || '-',
+          namaIbu: String(colIbu !== -1 ? row[colIbu] : '').trim() || '-',
+          alamat: String(colAlamat !== -1 ? row[colAlamat] : '').trim() || '-',
+          kelurahan: String(colKelurahan !== -1 ? row[colKelurahan] : '').trim() || '-',
+          agama: String(colAgama !== -1 ? row[colAgama] : '').trim() || 'Islam',
+          jenisKelamin: jk,
+          noHp: String(colHP !== -1 ? row[colHP] : '').trim() || '-',
+          keterangan: String(colKet !== -1 ? row[colKet] : '').trim() || '-',
+          status: 'Menunggu Verifikasi',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        currentList.push(newRecord);
+        addedCount++;
+      }
+
+      if (addedCount === 0) {
+        showToast('Tidak ada data valid yang dapat diimpor.', 'warning');
+        return;
+      }
+
+      DB.set('lhg_verifikasi', currentList);
+      updateVerifikasiBadges();
+      renderVerifikasiTable();
+      showToast(`Berhasil mengimpor ${addedCount} data calon anggota dari Excel!`, 'success');
+    } catch (err) {
+      console.error('Error membaca file Excel:', err);
+      showToast('Gagal memproses file Excel: ' + err.message, 'error');
+    } finally {
+      event.target.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function startVerifikasi(id) {
+  const list = DB.get('lhg_verifikasi', []);
+  const item = list.find(x => String(x.id) === String(id));
+  if (!item) {
+    showToast('Data verifikasi tidak ditemukan.', 'error');
+    return;
+  }
+
+  window.activeVerifikasiData = item;
+  navigate('input-data-form');
+  fillDirectInputFromVerifikasi(item);
+  showToast(`Membuka form Lengkapi Data untuk ${item.nama}. Silakan lengkapi NIK & Ragam Disabilitas!`, 'info');
+}
+
+function fillDirectInputFromVerifikasi(item) {
+  const banner = document.getElementById('direct-verifikasi-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 12px; align-items: flex-start; flex: 1;">
+          <span style="font-size: 26px; line-height: 1;">📋</span>
+          <div>
+            <div style="font-weight: 800; font-size: 14px; color: #92400E; margin-bottom: 2px;">
+              Verifikasi Calon Anggota: <span style="text-decoration: underline;">${item.nama}</span>
+            </div>
+            <div style="font-size: 12px; color: #B45309; line-height: 1.4;">
+              Data ini diisi otomatis dari hasil import Excel. Silakan lengkapi nomor NIK, Kartu Keluarga (KK), dan Ragam Disabilitas untuk menyelesaikan verifikasi dan memasukkannya ke Data Anak Disabilitas.
+            </div>
+            ${item.keterangan && item.keterangan !== '-' ? `
+              <div style="margin-top: 6px; font-size: 11.5px; background: #FDE68A; padding: 4px 10px; border-radius: 6px; display: inline-block; color: #78350F;">
+                <strong>Catatan Excel:</strong> ${item.keterangan}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <button type="button" class="btn-sec" style="font-size: 11.5px; padding: 6px 12px; color: #DC2626; border-color: #FCA5A5; background: #FFFFFF; flex-shrink: 0;" onclick="cancelActiveVerifikasiMode()">
+          ✕ Batalkan Verifikasi
+        </button>
+      </div>
+    `;
+  }
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = (val && val !== '-') ? val : '';
   };
 
-  anggota.unshift(newRecord);
-  DB.set('lhg_anggota', anggota);
+  setVal('direct-nama', item.nama);
+
+  let ttlStr = '';
+  if (item.tempatLahir && item.tempatLahir !== '-') ttlStr += item.tempatLahir;
+  if (item.tanggalLahir && item.tanggalLahir !== '-') {
+    ttlStr += (ttlStr ? ', ' : '') + item.tanggalLahir;
+  }
+  setVal('direct-ttl', ttlStr);
+
+  const jkEl = document.getElementById('direct-jk');
+  if (jkEl) {
+    jkEl.value = String(item.jenisKelamin).toUpperCase().startsWith('P') ? 'P' : 'L';
+  }
+
+  setVal('direct-kontakWA', item.noHp);
+  setVal('direct-alamat', item.alamat);
+  setVal('direct-kelurahan', item.kelurahan);
+  setVal('direct-wali', item.namaAyah);
+  setVal('direct-ibu', item.namaIbu);
+  setVal('direct-agama', item.agama);
+  setVal('direct-keterangan', item.keterangan);
+
+  const submitBtn = document.querySelector('#form-direct-input-anak button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.innerHTML = '<span>✅ Selesaikan Verifikasi & Simpan ke Data Anak</span>';
+    submitBtn.style.background = '#059669';
+  }
+
+  const nikEl = document.getElementById('direct-nik');
+  if (nikEl) nikEl.focus();
+}
+
+function cancelActiveVerifikasiMode() {
+  window.activeVerifikasiData = null;
+  const banner = document.getElementById('direct-verifikasi-banner');
+  if (banner) banner.style.display = 'none';
   resetDirectInputForm();
+  const submitBtn = document.querySelector('#form-direct-input-anak button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.innerHTML = '<span>💾 Simpan Data Anak</span>';
+    submitBtn.style.background = '';
+  }
+  showToast('Mode verifikasi dibatalkan.', 'info');
+}
 
-  renderAnggotaTable();
-  renderDashboard();
-  if (typeof renderCetakKTA === 'function') renderCetakKTA();
-  if (typeof renderFormPendaftaranPage === 'function') renderFormPendaftaranPage(no);
+async function cancelVerifikasi(id) {
+  const list = DB.get('lhg_verifikasi', []);
+  const item = list.find(x => String(x.id) === String(id));
+  const nama = item ? item.nama : 'data';
 
-  showToast(`Data anak "${newRecord.nama}" berhasil disimpan & foto siap dicetak di ID Card!`, 'success');
-  
-  // Arahkan user langsung ke halaman Cetak KTA atau Data Anak
-  setTimeout(() => {
-    cetakKTAFor(no);
-  }, 700);
+  const confirmed = await showModernConfirm({
+    title: 'Batalkan & Hapus Data',
+    message: `Apakah Anda yakin ingin membatalkan verifikasi untuk "${nama}"?`,
+    subtext: 'Data ini akan dihapus secara permanen dari database verifikasi.',
+    confirmText: 'Ya, Hapus Data',
+    cancelText: 'Kembali',
+    type: 'danger',
+    icon: 'warning'
+  });
+
+  if (!confirmed) return;
+
+  const updated = list.filter(x => String(x.id) !== String(id));
+  DB.set('lhg_verifikasi', updated);
+
+  try {
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.delete) {
+      await SupabaseAPI.delete('lhg_verifikasi', 'id', id);
+    }
+  } catch (err) {
+    console.warn('Gagal menghapus dari Supabase:', err);
+  }
+
+  updateVerifikasiBadges();
+  renderVerifikasiTable();
+  showToast(`Data verifikasi untuk ${nama} berhasil dihapus dari database!`, 'info');
+}
+
+async function clearAllVerifikasi() {
+  const count = DB.get('lhg_verifikasi', []).length;
+  if (count === 0) return;
+
+  const confirmed = await showModernConfirm({
+    title: 'Hapus Semua Data Verifikasi',
+    message: `Apakah Anda yakin ingin menghapus SEMUA (${count}) data calon anggota dari antrean verifikasi?`,
+    subtext: 'Semua data verifikasi yang belum diselesaikan akan dihapus dari database.',
+    confirmText: 'Ya, Hapus Semua',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'warning'
+  });
+
+  if (!confirmed) return;
+
+  DB.set('lhg_verifikasi', []);
+  updateVerifikasiBadges();
+  renderVerifikasiTable();
+  showToast('Semua data verifikasi berhasil dibersihkan.', 'success');
 }
 
 // ================= MODAL TAMBAH & EDIT ANGGOTA =================
@@ -7045,9 +7410,19 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ================= MENU FORMULIR INPUT DATA ANAK (MANDIRI) =================
+// ================= MENU FORMULIR INPUT DATA ANAK (MANDIRI / LENGKAPI DATA) =================
 function initDirectInputPage() {
-  // Dedicated page initialization
+  if (window.activeVerifikasiData) {
+    fillDirectInputFromVerifikasi(window.activeVerifikasiData);
+  } else {
+    const banner = document.getElementById('direct-verifikasi-banner');
+    if (banner) banner.style.display = 'none';
+    const submitBtn = document.querySelector('#form-direct-input-anak button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.innerHTML = '<span>💾 Simpan Data Anak</span>';
+      submitBtn.style.background = '';
+    }
+  }
 }
 
 function handleDirectDisabilityChange(val) {
@@ -7074,6 +7449,17 @@ function handleDirectDisabilityChange(val) {
 function resetDirectInputForm() {
   const form = document.getElementById('form-direct-input-anak');
   if (form) form.reset();
+  if (typeof removeDirectPhoto === 'function') removeDirectPhoto();
+  window.activeVerifikasiData = null;
+  const banner = document.getElementById('direct-verifikasi-banner');
+  if (banner) banner.style.display = 'none';
+  const submitBtn = document.querySelector('#form-direct-input-anak button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.innerHTML = '<span>💾 Simpan Data Anak</span>';
+    submitBtn.style.background = '';
+  }
+  const directTgl = document.getElementById('direct-tglDaftar');
+  if (directTgl) directTgl.value = getTodayLocalDateStr();
   showToast('Formulir telah dikosongkan.', 'info');
 }
 
@@ -7081,12 +7467,13 @@ async function saveDirectInputAnak(e) {
   if (e) e.preventDefault();
   const nama = document.getElementById('direct-nama').value.trim();
   const nik = document.getElementById('direct-nik').value.trim();
-  const noKk = document.getElementById('direct-noKk').value.trim();
+  const noKk = document.getElementById('direct-noKk') ? document.getElementById('direct-noKk').value.trim() : '';
   const ttl = document.getElementById('direct-ttl').value.trim();
   const jk = document.getElementById('direct-jk').value;
+  const agama = document.getElementById('direct-agama') ? document.getElementById('direct-agama').value : 'Islam';
   const kontakWA = document.getElementById('direct-kontakWA').value.trim();
   const disabilitas = document.getElementById('direct-disabilitas').value;
-  const subDisabilitas = document.getElementById('direct-subDisabilitas').value.trim();
+  const subDisabilitas = document.getElementById('direct-subDisabilitas') ? document.getElementById('direct-subDisabilitas').value.trim() : '';
   const status = document.getElementById('direct-status').value;
   const sekolah = document.getElementById('direct-sekolah').value.trim();
   const kelas = document.getElementById('direct-kelas').value.trim();
@@ -7095,6 +7482,7 @@ async function saveDirectInputAnak(e) {
   const wali = document.getElementById('direct-wali').value.trim();
   const ibu = document.getElementById('direct-ibu').value.trim();
   const hubWali = document.getElementById('direct-hubWali').value;
+  const keterangan = document.getElementById('direct-keterangan') ? document.getElementById('direct-keterangan').value.trim() : '';
 
   if (!nama || !nik || !disabilitas) {
     showToast('Harap lengkapi field wajib: Nama, NIK, dan Ragam Disabilitas!', 'error');
@@ -7112,6 +7500,7 @@ async function saveDirectInputAnak(e) {
     noKk: noKk || '-',
     ttl: ttl || '-',
     jk: jk,
+    agama: agama || 'Islam',
     kontakWA: kontakWA || '-',
     alamat: alamat || '-',
     kelurahan: kelurahan || '-',
@@ -7124,10 +7513,35 @@ async function saveDirectInputAnak(e) {
     sekolah: sekolah || '-',
     kelas: kelas || '-',
     status: status,
+    keterangan: keterangan || '-',
     umur: hitungUsia({ ttl: ttl, nik: nik }),
     tglDaftar: (document.getElementById('direct-tglDaftar') && document.getElementById('direct-tglDaftar').value) ? document.getElementById('direct-tglDaftar').value : getTodayLocalDateStr(),
-    foto: null
+    foto: currentDirectPhotoBase64 || null
   };
+
+  const wasVerif = !!window.activeVerifikasiData;
+  if (window.activeVerifikasiData) {
+    const verifId = window.activeVerifikasiData.id;
+    let vList = DB.get('lhg_verifikasi', []);
+    vList = vList.filter(x => String(x.id) !== String(verifId));
+    DB.set('lhg_verifikasi', vList);
+    try {
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.delete) {
+        SupabaseAPI.delete('lhg_verifikasi', 'id', verifId);
+      }
+    } catch(err) {
+      console.warn('Gagal menghapus verifikasi di Supabase:', err);
+    }
+    window.activeVerifikasiData = null;
+    const banner = document.getElementById('direct-verifikasi-banner');
+    if (banner) banner.style.display = 'none';
+    const submitBtn = document.querySelector('#form-direct-input-anak button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.innerHTML = '<span>💾 Simpan Data Anak</span>';
+      submitBtn.style.background = '';
+    }
+    updateVerifikasiBadges();
+  }
 
   anggota.unshift(newChild);
   DB.set('lhg_anggota', anggota);
@@ -7141,16 +7555,21 @@ async function saveDirectInputAnak(e) {
 
   const form = document.getElementById('form-direct-input-anak');
   if (form) form.reset();
+  if (typeof removeDirectPhoto === 'function') removeDirectPhoto();
 
-  showToast(`Data anak ${nama.toUpperCase()} (${no}) berhasil disimpan!`, 'success');
+  if (wasVerif) {
+    showToast(`Data anak ${nama.toUpperCase()} berhasil diverifikasi dan resmi masuk ke Data Anak Disabilitas!`, 'success');
+  } else {
+    showToast(`Data anak ${nama.toUpperCase()} (${no}) berhasil disimpan!`, 'success');
+  }
 
   // Modern confirmation to directly open PDF or go to table
   const viewPdf = await showModernConfirm({
-    title: 'Pendaftaran Berhasil!',
-    message: `Data anak ${nama.toUpperCase()} berhasil disimpan di sistem.`,
+    title: wasVerif ? 'Verifikasi Selesai!' : 'Pendaftaran Berhasil!',
+    message: `Data anak ${nama.toUpperCase()} berhasil disimpan di Data Anak Disabilitas.`,
     subtext: 'Apakah Anda ingin langsung melihat & mencetak Surat Keterangan Pendaftaran (PDF)?',
     confirmText: 'Buka Surat PDF',
-    cancelText: 'Kembali ke Data',
+    cancelText: 'Buka Data Anak Disabilitas',
     type: 'primary',
     icon: 'success'
   });
@@ -9611,7 +10030,26 @@ function toSupabaseRow(table, item) {
       tgl_daftar: item.tglDaftar || item.tgl_daftar || null,
       kelas: item.kelas || null,
       sekolah: item.sekolah || null,
-      foto: item.foto || null
+      foto: item.foto || null,
+      agama: item.agama || null,
+      keterangan: item.keterangan || null
+    };
+  }
+  if (table === 'lhg_verifikasi') {
+    return {
+      id: item.id,
+      nama: item.nama,
+      tempat_lahir: item.tempatLahir || item.tempat_lahir || null,
+      tanggal_lahir: item.tanggalLahir || item.tanggal_lahir || null,
+      nama_ayah: item.namaAyah || item.nama_ayah || null,
+      nama_ibu: item.namaIbu || item.nama_ibu || null,
+      alamat: item.alamat || null,
+      kelurahan: item.kelurahan || null,
+      agama: item.agama || null,
+      jenis_kelamin: item.jenisKelamin || item.jenis_kelamin || null,
+      no_hp: item.noHp || item.no_hp || null,
+      keterangan: item.keterangan || null,
+      status: item.status || 'Menunggu Verifikasi'
     };
   }
   if (table === 'lhg_bantuan') {
@@ -9793,7 +10231,27 @@ function fromSupabaseRow(table, row) {
       tglDaftar: (row.tgl_daftar !== undefined ? row.tgl_daftar : (row.tglDaftar || '')),
       kelas: row.kelas,
       sekolah: row.sekolah,
-      foto: row.foto
+      foto: row.foto,
+      agama: row.agama || '-',
+      keterangan: row.keterangan || '-'
+    };
+  }
+  if (table === 'lhg_verifikasi') {
+    return {
+      id: row.id,
+      nama: row.nama,
+      tempatLahir: row.tempat_lahir,
+      tanggalLahir: row.tanggal_lahir,
+      namaAyah: row.nama_ayah,
+      namaIbu: row.nama_ibu,
+      alamat: row.alamat,
+      kelurahan: row.kelurahan,
+      agama: row.agama,
+      jenisKelamin: row.jenis_kelamin,
+      noHp: row.no_hp,
+      keterangan: row.keterangan,
+      status: row.status || 'Menunggu Verifikasi',
+      createdAt: row.created_at ? row.created_at.split('T')[0] : (row.createdAt || '-')
     };
   }
   if (table === 'lhg_bantuan') {
@@ -9897,7 +10355,7 @@ function fromSupabaseRow(table, row) {
 async function syncKeyToSupabase(key, val) {
   if (!Array.isArray(val)) return;
   const table = key; // matching table name
-  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan'];
+  const validTables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan', 'lhg_verifikasi'];
   if (!validTables.includes(table)) return;
 
   try {

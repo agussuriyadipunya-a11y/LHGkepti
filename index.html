@@ -134,11 +134,18 @@
           </span>
           <span class="nav-label">Dashboard Ringkasan</span>
         </button>
+        <button class="nav-item" data-page="verifikasi-anggota" data-allowed-roles="Superadmin,Administrator,Admin,Petugas" onclick="navigate('verifikasi-anggota')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <span class="nav-label">Verifikasi Anggota</span>
+          <span class="nav-badge" id="nav-badge-verifikasi" style="background: #F59E0B; display: none;">0</span>
+        </button>
         <button class="nav-item" data-page="input-data-form" data-allowed-roles="Superadmin,Administrator,Admin,Petugas" onclick="navigate('input-data-form')">
           <span class="nav-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </span>
-          <span class="nav-label">Input Data</span>
+          <span class="nav-label">Lengkapi Data</span>
         </button>
         <button class="nav-item" data-page="input-data" data-allowed-roles="Superadmin,Administrator,Admin,Petugas" onclick="navigate('input-data')">
           <span class="nav-icon">
@@ -816,7 +823,91 @@
         </section>
 
 
-        <!-- ================= PAGE 2: FORMULIR INPUT DATA ANAK (MANDIRI) ================= -->
+        <!-- ================= PAGE VERIFIKASI ANGGOTA (IMPORT EXCEL) ================= -->
+        <section id="page-verifikasi-anggota" class="page">
+          <div class="card-panel table-panel">
+            
+            <!-- HEADER PANEL -->
+            <div class="card-panel-header" style="margin-bottom: 16px;">
+              <div class="header-title-group">
+                <span class="panel-icon">📋</span>
+                <div>
+                  <h3 class="panel-heading">Verifikasi Anggota Baru</h3>
+                  <p class="panel-subheading">Data calon anggota yang di-import dari file Excel. Verifikasi dan lengkapi data sebelum diterbitkan ke Data Anak Disabilitas.</p>
+                </div>
+              </div>
+              
+              <!-- TOOLBAR ACTIONS: IMPORT EXCEL & TEMPLATE -->
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <!-- Input File Excel Tersembunyi -->
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleExcelImport(event)">
+                
+                <button type="button" class="btn-sec" onclick="downloadExcelTemplate()" title="Unduh format template Excel untuk pengisian data calon anggota">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span>Unduh Template Excel</span>
+                </button>
+
+                <button type="button" class="btn-top-add" style="background: #10B981;" onclick="document.getElementById('excel-file-input').click()" title="Import data dari file Excel (.xlsx, .xls, .csv)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Import File Excel</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- FILTER & SEARCH BAR -->
+            <div class="table-toolbar">
+              <div class="toolbar-left">
+                <div class="search-input-box">
+                  <span class="search-icon">🔍</span>
+                  <input type="text" id="verifikasi-search" class="search-field" placeholder="Cari nama, tempat/tgl lahir, orang tua, kelurahan, no hp..." oninput="renderVerifikasiTable(this.value)">
+                </div>
+                <select id="verifikasi-filter-jk" class="filter-select" onchange="filterVerifikasiJK(this.value)">
+                  <option value="">Semua Jenis Kelamin</option>
+                  <option value="L">Laki-laki (👦)</option>
+                  <option value="P">Perempuan (👧)</option>
+                </select>
+                <select id="verifikasi-filter-kelurahan" class="filter-select" onchange="filterVerifikasiKelurahan(this.value)">
+                  <option value="">Semua Kelurahan</option>
+                </select>
+              </div>
+
+              <div class="toolbar-right">
+                <span id="verifikasi-total-count-text" class="table-count-text">Total: 0 Calon Anggota</span>
+                <button type="button" class="btn-sec" onclick="clearAllVerifikasi()" id="btn-clear-all-verif" style="display: none; color: #DC2626; border-color: #FECACA;">
+                  <span>🗑️ Hapus Semua Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- TABEL DATA VERIFIKASI -->
+            <div class="table-responsive-wrapper">
+              <table class="modern-table">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">No</th>
+                    <th>Nama</th>
+                    <th>Tempat Lahir</th>
+                    <th style="text-align: center;">Tanggal Lahir</th>
+                    <th>Nama Ayah</th>
+                    <th>Nama Ibu</th>
+                    <th>Alamat</th>
+                    <th>Kelurahan</th>
+                    <th style="text-align: center;">Agama</th>
+                    <th style="text-align: center;">Jenis Kelamin</th>
+                    <th>No HP</th>
+                    <th>Keterangan</th>
+                    <th style="width: 175px; text-align: center;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="verifikasi-tbody"></tbody>
+              </table>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ================= PAGE 2: FORMULIR INPUT DATA ANAK (MANDIRI / LENGKAPI DATA) ================= -->
         <section id="page-input-data-form" class="page">
           <div class="card-panel" style="max-width: 1040px; margin: 0 auto;">
             
@@ -828,7 +919,7 @@
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </div>
-                <h3 class="data-anak-title">Formulir Pendaftaran Anak</h3>
+                <h3 class="data-anak-title" id="panel-heading-lengkapi-data">Formulir Pendaftaran & Lengkapi Data Anak</h3>
               </div>
               <button type="button" class="btn-tambah-anak-clean" onclick="navigate('input-data')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -837,6 +928,8 @@
             </div>
 
             <form id="form-direct-input-anak" onsubmit="saveDirectInputAnak(event)" style="padding: 24px;">
+              <!-- BANNER NOTIFIKASI JIKA DALAM MODE LENGKAPI DATA DARI VERIFIKASI -->
+              <div id="direct-verifikasi-banner" style="display: none; background: #FEF3C7; border: 1.5px solid #F59E0B; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; color: #92400E;"></div>
               <!-- SEKSI 1: IDENTITAS PRIBADI -->
               <div class="form-section-banner">
                 <span class="section-badge-num">1</span>
@@ -897,6 +990,21 @@
                     <option value="P">Perempuan (👧)</option>
                   </select>
                 </div>
+                <div class="form-field">
+                  <label class="lbl">Agama</label>
+                  <select id="direct-agama" class="pelangi-select">
+                    <option value="Islam" selected>Islam</option>
+                    <option value="Kristen Protestan">Kristen Protestan</option>
+                    <option value="Katolik">Katolik</option>
+                    <option value="Buddha">Buddha</option>
+                    <option value="Hindu">Hindu</option>
+                    <option value="Konghucu">Konghucu</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-1" style="margin-top: 14px;">
                 <div class="form-field">
                   <label class="lbl">Nomor WhatsApp / HP Aktif *</label>
                   <input type="tel" id="direct-kontakWA" class="pelangi-input" placeholder="08XXXXXXXXXX" required>
@@ -997,6 +1105,11 @@
                     <option value="Kakek/Nenek">Kakek / Nenek</option>
                   </select>
                 </div>
+              </div>
+
+              <div class="form-field" style="margin-top: 14px;">
+                <label class="lbl">Keterangan / Catatan Tambahan Calon Anggota</label>
+                <textarea id="direct-keterangan" class="pelangi-textarea" rows="2" placeholder="Catatan hasil verifikasi atau keterangan khusus calon anggota..."></textarea>
               </div>
 
               <!-- ACTION BUTTONS -->
@@ -3160,6 +3273,7 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/app.js?v=47.0"></script>
+  <script src="js/xlsx.full.min.js"></script>
+  <script src="js/app.js?v=48.0"></script>
 </body>
 </html>
