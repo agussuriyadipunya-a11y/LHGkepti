@@ -1,5 +1,5 @@
 // Service Worker - Lentera Hati Gurindam PWA
-const CACHE_NAME = 'lhg-pwa-v77';
+const CACHE_NAME = 'lhg-pwa-v78';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

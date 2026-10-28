@@ -2036,6 +2036,25 @@ function renderVerifikasiTable(search) {
   if (search !== undefined) currentVerifikasiSearch = search;
   const rawList = DB.get('lhg_verifikasi', []);
 
+  // Migrasi otomatis data tersimpan: bersihkan kutip noHp dan koreksi tanggalLahir yang keliru
+  let dataUpdated = false;
+  rawList.forEach(item => {
+    if (item.noHp && /^['"`\s]+/.test(item.noHp)) {
+      item.noHp = item.noHp.replace(/^['"`\s]+|['"`\s]+$/g, '').trim();
+      dataUpdated = true;
+    }
+    // Jika tanggalLahir keliru sama persis dengan tempatLahir & tidak ada angka tanggal
+    if (item.tanggalLahir && item.tempatLahir && 
+        item.tanggalLahir.trim().toLowerCase() === item.tempatLahir.trim().toLowerCase() && 
+        !/\d/.test(item.tanggalLahir)) {
+      item.tanggalLahir = '-';
+      dataUpdated = true;
+    }
+  });
+  if (dataUpdated) {
+    DB.set('lhg_verifikasi', rawList);
+  }
+
   populateVerifikasiKelurahanFilter(rawList);
 
   const filtered = rawList.filter(item => {
@@ -2101,42 +2120,42 @@ function renderVerifikasiTable(search) {
   tbody.innerHTML = filtered.map((item, index) => {
     const isP = String(item.jenisKelamin).toUpperCase().startsWith('P');
     const jkBadge = isP 
-      ? '<span style="background: #FDF2F8; color: #BE185D; border: 1px solid #FBCFE8; padding: 3px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700;">👧 Perempuan</span>'
-      : '<span style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 3px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700;">👦 Laki-laki</span>';
+      ? '<span class="badge-jk-chip p">👧 Perempuan</span>'
+      : '<span class="badge-jk-chip l">👦 Laki-laki</span>';
 
-    const waNum = (item.noHp || '').replace(/[^0-9]/g, '');
+    const cleanHp = String(item.noHp || '').replace(/^['"`\s]+|['"`\s]+$/g, '').trim();
+    const waNum = cleanHp.replace(/[^0-9]/g, '');
     const waLink = waNum ? `
-      <a href="javascript:void(0)" onclick="openWhatsApp('${item.noHp}')" class="table-wa-link" title="Buka WhatsApp">
+      <a href="javascript:void(0)" onclick="openWhatsApp('${cleanHp}')" class="table-wa-link" title="Buka WhatsApp">
         <svg width="12" height="12" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        ${item.noHp}
+        ${cleanHp}
       </a>
-    ` : (item.noHp || '-');
+    ` : (cleanHp || '-');
 
     return `
       <tr>
         <td style="text-align: center; font-weight: 700; color: #64748B;">${index + 1}</td>
         <td>
-          <div style="font-weight: 800; color: #0F172A; font-size: 13px;">${item.nama}</div>
-          <div style="font-size: 10px; color: #94A3B8;">ID: ${item.id}</div>
+          <div style="font-weight: 700; color: #0F172A; font-size: 12.5px; line-height: 1.3;" title="${item.nama}">${item.nama}</div>
         </td>
-        <td style="color: #334155; font-weight: 600;">${item.tempatLahir || '-'}</td>
+        <td style="color: #334155; font-weight: 600; white-space: nowrap;">${item.tempatLahir || '-'}</td>
         <td style="text-align: center; color: #475569; font-weight: 600; white-space: nowrap;">${item.tanggalLahir || '-'}</td>
         <td style="color: #1E293B; font-weight: 600;">${item.namaAyah || '-'}</td>
         <td style="color: #1E293B; font-weight: 600;">${item.namaIbu || '-'}</td>
-        <td style="font-size: 11.5px; color: #475569; max-width: 200px; line-height: 1.35;">${item.alamat || '-'}</td>
+        <td style="font-size: 11.5px; color: #475569; line-height: 1.35; word-break: break-word;">${item.alamat || '-'}</td>
         <td>
           ${item.kelurahan && item.kelurahan !== '-' 
-            ? `<span style="background: #ECFDF5; color: #059669; font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px; border: 1px solid #A7F3D0; display: inline-block;">📍 ${item.kelurahan}</span>` 
+            ? `<span class="badge-kelurahan-chip">📍 ${item.kelurahan}</span>` 
             : '-'}
         </td>
         <td style="text-align: center;">
-          <span style="background: #F1F5F9; color: #334155; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;">${item.agama || '-'}</span>
+          <span class="badge-agama-chip">${item.agama || '-'}</span>
         </td>
         <td style="text-align: center; white-space: nowrap;">${jkBadge}</td>
         <td style="white-space: nowrap;">${waLink}</td>
-        <td style="font-size: 11px; color: #64748B; max-width: 170px;">${item.keterangan || '-'}</td>
-        <td style="text-align: center; white-space: nowrap;">
-          <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+        <td style="font-size: 11px; color: #64748B; line-height: 1.3; word-break: break-word;">${item.keterangan || '-'}</td>
+        <td class="col-sticky-action" style="text-align: center; white-space: nowrap;">
+          <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
             <button type="button" class="btn-table-verify" onclick="startVerifikasi('${item.id}')" title="Verifikasi & Lengkapi Data">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
               <span>Verifikasi</span>
@@ -2207,21 +2226,34 @@ function handleExcelImport(event) {
       }
 
       const rawHeaders = rows[0].map(h => String(h || '').trim().toLowerCase());
-      const findColIdx = (keywords) => {
-        return rawHeaders.findIndex(h => keywords.some(k => h.includes(k)));
+
+      // Helper pencocokan kolom cerdas: prioritaskan exact match & hindari bentrok keyword
+      const findCol = (exactList, includesList = [], excludeList = []) => {
+        // 1. Coba exact match terlebih dahulu
+        let idx = rawHeaders.findIndex(h => exactList.some(k => h === k));
+        if (idx !== -1) return idx;
+
+        // 2. Coba includes list tapi kecualikan yang mengandung excludeList
+        if (includesList.length > 0) {
+          idx = rawHeaders.findIndex(h => {
+            if (excludeList.some(ex => h.includes(ex))) return false;
+            return includesList.some(k => h.includes(k));
+          });
+        }
+        return idx;
       };
 
-      const colNama = findColIdx(['nama']);
-      const colTempat = findColIdx(['tempat lahir', 'tempat_lahir', 'tempat']);
-      const colTanggal = findColIdx(['tanggal lahir', 'tanggal_lahir', 'tgl lahir', 'tgl_lahir', 'lahir']);
-      const colAyah = findColIdx(['nama ayah', 'nama_ayah', 'ayah', 'bapak', 'wali']);
-      const colIbu = findColIdx(['nama ibu', 'nama_ibu', 'ibu']);
-      const colAlamat = findColIdx(['alamat', 'domisili', 'tempat tinggal']);
-      const colKelurahan = findColIdx(['kelurahan', 'desa', 'wilayah']);
-      const colAgama = findColIdx(['agama']);
-      const colJK = findColIdx(['jenis kelamin', 'jenis_kelamin', 'kelamin', 'jk', 'gender']);
-      const colHP = findColIdx(['no hp', 'no_hp', 'nohp', 'no wa', 'hp', 'telepon', 'telp', 'kontak', 'whatsapp']);
-      const colKet = findColIdx(['keterangan', 'ket', 'catatan']);
+      const colNama = findCol(['nama', 'nama lengkap', 'nama calon', 'nama anak', 'name'], ['nama'], ['ayah', 'ibu', 'wali', 'ortu']);
+      const colTempat = findCol(['tempat lahir', 'tempat_lahir', 'tmp lahir', 'tmp_lahir'], ['tempat', 'tmp lahir', 'kota lahir'], ['tanggal', 'tgl', 'date']);
+      const colTanggal = findCol(['tanggal lahir', 'tanggal_lahir', 'tgl lahir', 'tgl_lahir', 'tanggal', 'tgl'], ['tanggal', 'tgl lahir', 'tgl_lahir', 'birthdate', 'dob'], ['tempat', 'tmp', 'kota']);
+      const colAyah = findCol(['nama ayah', 'nama_ayah', 'ayah', 'bapak'], ['ayah', 'bapak', 'wali'], ['ibu', 'mama']);
+      const colIbu = findCol(['nama ibu', 'nama_ibu', 'ibu', 'mama'], ['ibu', 'mama'], ['ayah', 'bapak']);
+      const colAlamat = findCol(['alamat', 'domisili', 'tempat tinggal', 'alamat lengkap'], ['alamat', 'domisili'], []);
+      const colKelurahan = findCol(['kelurahan', 'desa', 'kel', 'wilayah'], ['kelurahan', 'desa'], []);
+      const colAgama = findCol(['agama', 'religi', 'religion'], ['agama'], []);
+      const colJK = findCol(['jenis kelamin', 'jenis_kelamin', 'kelamin', 'jk', 'gender', 'sex'], ['kelamin', 'jk', 'gender'], []);
+      const colHP = findCol(['no hp', 'no_hp', 'nohp', 'no wa', 'no_wa', 'hp', 'telepon', 'telp', 'kontak', 'whatsapp', 'phone'], ['hp', 'telepon', 'telp', 'wa', 'kontak', 'whatsapp'], []);
+      const colKet = findCol(['keterangan', 'ket', 'catatan', 'keterangan lain', 'notes'], ['keterangan', 'catatan'], []);
 
       if (colNama === -1) {
         showToast('Kolom "Nama" tidak ditemukan pada file Excel!', 'error');
@@ -2239,14 +2271,31 @@ function handleExcelImport(event) {
         const nama = String(colNama !== -1 ? row[colNama] : '').trim();
         if (!nama) continue;
 
-        let tglLahir = colTanggal !== -1 ? row[colTanggal] : '';
-        if (tglLahir instanceof Date) {
-          const y = tglLahir.getFullYear();
-          const m = String(tglLahir.getMonth() + 1).padStart(2, '0');
-          const d = String(tglLahir.getDate()).padStart(2, '0');
-          tglLahir = `${d}-${m}-${y}`;
-        } else {
-          tglLahir = String(tglLahir).trim();
+        let tglVal = colTanggal !== -1 ? row[colTanggal] : '';
+        let tglLahir = '-';
+        if (tglVal instanceof Date) {
+          if (!isNaN(tglVal.getTime())) {
+            const y = tglVal.getFullYear();
+            const m = String(tglVal.getMonth() + 1).padStart(2, '0');
+            const d = String(tglVal.getDate()).padStart(2, '0');
+            tglLahir = `${d}-${m}-${y}`;
+          }
+        } else if (typeof tglVal === 'number' && tglVal > 1000) {
+          try {
+            const dateObj = new Date(Math.round((tglVal - 25569) * 86400 * 1000));
+            if (!isNaN(dateObj.getTime())) {
+              const y = dateObj.getFullYear();
+              const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+              const d = String(dateObj.getDate()).padStart(2, '0');
+              tglLahir = `${d}-${m}-${y}`;
+            } else {
+              tglLahir = String(tglVal);
+            }
+          } catch (_) {
+            tglLahir = String(tglVal);
+          }
+        } else if (tglVal) {
+          tglLahir = String(tglVal).trim();
         }
 
         let jk = String(colJK !== -1 ? row[colJK] : '').trim();
@@ -2257,6 +2306,14 @@ function handleExcelImport(event) {
         } else {
           jk = 'Laki-laki';
         }
+
+        let rawHp = String(colHP !== -1 ? row[colHP] : '').trim();
+        // Bersihkan tanda petik atau petik dua yang sering ada dari Excel text formatting
+        rawHp = rawHp.replace(/^['"`\s]+|['"`\s]+$/g, '');
+        if (/^\d{9,13}$/.test(rawHp) && !rawHp.startsWith('0')) {
+          rawHp = '0' + rawHp;
+        }
+        const noHp = rawHp || '-';
 
         const newRecord = {
           id: 'VERIF-' + (nowTs + i) + '-' + Math.floor(Math.random() * 1000),
@@ -2269,7 +2326,7 @@ function handleExcelImport(event) {
           kelurahan: String(colKelurahan !== -1 ? row[colKelurahan] : '').trim() || '-',
           agama: String(colAgama !== -1 ? row[colAgama] : '').trim() || 'Islam',
           jenisKelamin: jk,
-          noHp: String(colHP !== -1 ? row[colHP] : '').trim() || '-',
+          noHp: noHp,
           keterangan: String(colKet !== -1 ? row[colKet] : '').trim() || '-',
           status: 'Menunggu Verifikasi',
           createdAt: new Date().toISOString().split('T')[0]
