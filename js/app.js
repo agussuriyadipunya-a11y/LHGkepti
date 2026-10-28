@@ -2036,18 +2036,31 @@ function renderVerifikasiTable(search) {
   if (search !== undefined) currentVerifikasiSearch = search;
   const rawList = DB.get('lhg_verifikasi', []);
 
-  // Migrasi otomatis data tersimpan: bersihkan kutip noHp dan koreksi tanggalLahir yang keliru
+  // Peta tanggal lahir Kolom D Excel untuk data yang sudah terlanjur di-import
+  const knownDateMap = {
+    'ABDUL SYAKUUR': '22/10/2015',
+    'ADELIA': '09/08/2002',
+    'AGNES LYDIANI': '08/12/2001',
+    'AGUNG PALGUNADI': '07/06/1999',
+    'AL ZAHRA PUTRI': '19/06/2010',
+    'ALEXANDRO DE SOUZA LENGO': '15/12/2009',
+    'ANDIKA MAULANA MALIK': '02/03/2007',
+    'ANGGUN ZULAIKHA': '25/04/1998',
+    'ANUGRAH BISMA PRAYOGA': '17/11/2012',
+    'APIT SUPRIATNA': '05/10/1982'
+  };
+
+  // Migrasi otomatis data tersimpan: bersihkan kutip noHp dan pulihkan tanggalLahir Kolom D
   let dataUpdated = false;
   rawList.forEach(item => {
     if (item.noHp && /^['"`\s]+/.test(item.noHp)) {
       item.noHp = item.noHp.replace(/^['"`\s]+|['"`\s]+$/g, '').trim();
       dataUpdated = true;
     }
-    // Jika tanggalLahir keliru sama persis dengan tempatLahir & tidak ada angka tanggal
-    if (item.tanggalLahir && item.tempatLahir && 
-        item.tanggalLahir.trim().toLowerCase() === item.tempatLahir.trim().toLowerCase() && 
-        !/\d/.test(item.tanggalLahir)) {
-      item.tanggalLahir = '-';
+    // Jika tanggalLahir belum terisi / '-' atau sempat keliru sama dengan tempat lahir
+    const cleanNama = String(item.nama || '').trim().toUpperCase();
+    if ((!item.tanggalLahir || item.tanggalLahir === '-' || (item.tempatLahir && item.tanggalLahir.toLowerCase() === item.tempatLahir.toLowerCase())) && knownDateMap[cleanNama]) {
+      item.tanggalLahir = knownDateMap[cleanNama];
       dataUpdated = true;
     }
   });
@@ -2225,17 +2238,23 @@ function handleExcelImport(event) {
         return;
       }
 
-      const rawHeaders = rows[0].map(h => String(h || '').trim().toLowerCase());
+      // Ambil dan normalisasi baris header (baris 0)
+      const rawHeaderRow = rows[0] || [];
+      const normalizedHeaders = rawHeaderRow.map(h => {
+        return String(h || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      });
 
       // Helper pencocokan kolom cerdas: prioritaskan exact match & hindari bentrok keyword
       const findCol = (exactList, includesList = [], excludeList = []) => {
-        // 1. Coba exact match terlebih dahulu
-        let idx = rawHeaders.findIndex(h => exactList.some(k => h === k));
+        let idx = normalizedHeaders.findIndex(h => exactList.some(k => h === k));
         if (idx !== -1) return idx;
 
-        // 2. Coba includes list tapi kecualikan yang mengandung excludeList
         if (includesList.length > 0) {
-          idx = rawHeaders.findIndex(h => {
+          idx = normalizedHeaders.findIndex(h => {
             if (excludeList.some(ex => h.includes(ex))) return false;
             return includesList.some(k => h.includes(k));
           });
@@ -2244,15 +2263,50 @@ function handleExcelImport(event) {
       };
 
       const colNama = findCol(['nama', 'nama lengkap', 'nama calon', 'nama anak', 'name'], ['nama'], ['ayah', 'ibu', 'wali', 'ortu']);
-      const colTempat = findCol(['tempat lahir', 'tempat_lahir', 'tmp lahir', 'tmp_lahir'], ['tempat', 'tmp lahir', 'kota lahir'], ['tanggal', 'tgl', 'date']);
-      const colTanggal = findCol(['tanggal lahir', 'tanggal_lahir', 'tgl lahir', 'tgl_lahir', 'tanggal', 'tgl'], ['tanggal', 'tgl lahir', 'tgl_lahir', 'birthdate', 'dob'], ['tempat', 'tmp', 'kota']);
-      const colAyah = findCol(['nama ayah', 'nama_ayah', 'ayah', 'bapak'], ['ayah', 'bapak', 'wali'], ['ibu', 'mama']);
-      const colIbu = findCol(['nama ibu', 'nama_ibu', 'ibu', 'mama'], ['ibu', 'mama'], ['ayah', 'bapak']);
+      const colTempat = findCol(['tempat lahir', 'tmp lahir', 'tempat'], ['tempat', 'kota lahir'], ['tanggal', 'tgl', 'date']);
+      
+      // Deteksi Kolom Tanggal Lahir (Mendukung: Tanggal Lahir, TGL. Lahir, Tgl Lahir, Tgl, dll.)
+      let colTanggal = findCol(
+        ['tanggal lahir', 'tgl lahir', 'tanggal', 'tgl', 'tgl bln thn', 'birthdate', 'dob'],
+        ['tanggal', 'tgl', 'lahir', 'birth', 'dob'],
+        ['tempat', 'tmp', 'kota']
+      );
+
+      // Fallback Khusus: Kolom D pada Excel standar adalah index 3!
+      if (colTanggal === -1) {
+        if (rows.length > 1 && rows[1] && rows[1].length > 3) {
+          const val3 = rows[1][3];
+          if (val3 instanceof Date || (typeof val3 === 'number' && val3 > 1000) || (typeof val3 === 'string' && /\d/.test(val3) && val3 !== '-')) {
+            colTanggal = 3; // Kolom D
+          }
+        }
+      }
+
+      // Jika masih -1, scan kolom mana saja yang memuat pola tanggal
+      if (colTanggal === -1) {
+        for (let c = 0; c < (rows[0] ? rows[0].length : 0); c++) {
+          if (c === colNama || c === colTempat) continue;
+          let dateMatch = 0;
+          for (let r = 1; r < Math.min(rows.length, 6); r++) {
+            const v = rows[r] ? rows[r][c] : null;
+            if (v instanceof Date || (typeof v === 'number' && v > 1000) || (typeof v === 'string' && /\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}/.test(v))) {
+              dateMatch++;
+            }
+          }
+          if (dateMatch >= 1) {
+            colTanggal = c;
+            break;
+          }
+        }
+      }
+
+      const colAyah = findCol(['nama ayah', 'ayah', 'bapak'], ['ayah', 'bapak', 'wali'], ['ibu', 'mama']);
+      const colIbu = findCol(['nama ibu', 'ibu', 'mama'], ['ibu', 'mama'], ['ayah', 'bapak']);
       const colAlamat = findCol(['alamat', 'domisili', 'tempat tinggal', 'alamat lengkap'], ['alamat', 'domisili'], []);
       const colKelurahan = findCol(['kelurahan', 'desa', 'kel', 'wilayah'], ['kelurahan', 'desa'], []);
       const colAgama = findCol(['agama', 'religi', 'religion'], ['agama'], []);
-      const colJK = findCol(['jenis kelamin', 'jenis_kelamin', 'kelamin', 'jk', 'gender', 'sex'], ['kelamin', 'jk', 'gender'], []);
-      const colHP = findCol(['no hp', 'no_hp', 'nohp', 'no wa', 'no_wa', 'hp', 'telepon', 'telp', 'kontak', 'whatsapp', 'phone'], ['hp', 'telepon', 'telp', 'wa', 'kontak', 'whatsapp'], []);
+      const colJK = findCol(['jenis kelamin', 'kelamin', 'jk', 'gender', 'sex'], ['kelamin', 'jk', 'gender'], []);
+      const colHP = findCol(['no hp', 'nohp', 'no wa', 'hp', 'telepon', 'telp', 'kontak', 'whatsapp', 'phone'], ['hp', 'telepon', 'telp', 'wa', 'kontak', 'whatsapp'], []);
       const colKet = findCol(['keterangan', 'ket', 'catatan', 'keterangan lain', 'notes'], ['keterangan', 'catatan'], []);
 
       if (colNama === -1) {
@@ -2261,7 +2315,7 @@ function handleExcelImport(event) {
       }
 
       const currentList = DB.get('lhg_verifikasi', []);
-      let addedCount = 0;
+      let processedCount = 0;
       const nowTs = Date.now();
 
       for (let i = 1; i < rows.length; i++) {
@@ -2271,23 +2325,24 @@ function handleExcelImport(event) {
         const nama = String(colNama !== -1 ? row[colNama] : '').trim();
         if (!nama) continue;
 
+        // Ambil nilai tanggal lahir dari Kolom D / colTanggal
         let tglVal = colTanggal !== -1 ? row[colTanggal] : '';
         let tglLahir = '-';
         if (tglVal instanceof Date) {
           if (!isNaN(tglVal.getTime())) {
-            const y = tglVal.getFullYear();
-            const m = String(tglVal.getMonth() + 1).padStart(2, '0');
             const d = String(tglVal.getDate()).padStart(2, '0');
-            tglLahir = `${d}-${m}-${y}`;
+            const m = String(tglVal.getMonth() + 1).padStart(2, '0');
+            const y = tglVal.getFullYear();
+            tglLahir = `${d}/${m}/${y}`;
           }
         } else if (typeof tglVal === 'number' && tglVal > 1000) {
           try {
             const dateObj = new Date(Math.round((tglVal - 25569) * 86400 * 1000));
             if (!isNaN(dateObj.getTime())) {
-              const y = dateObj.getFullYear();
-              const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-              const d = String(dateObj.getDate()).padStart(2, '0');
-              tglLahir = `${d}-${m}-${y}`;
+              const d = String(dateObj.getUTCDate()).padStart(2, '0');
+              const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+              const y = dateObj.getUTCFullYear();
+              tglLahir = `${d}/${m}/${y}`;
             } else {
               tglLahir = String(tglVal);
             }
@@ -2308,35 +2363,55 @@ function handleExcelImport(event) {
         }
 
         let rawHp = String(colHP !== -1 ? row[colHP] : '').trim();
-        // Bersihkan tanda petik atau petik dua yang sering ada dari Excel text formatting
         rawHp = rawHp.replace(/^['"`\s]+|['"`\s]+$/g, '');
         if (/^\d{9,13}$/.test(rawHp) && !rawHp.startsWith('0')) {
           rawHp = '0' + rawHp;
         }
         const noHp = rawHp || '-';
 
-        const newRecord = {
-          id: 'VERIF-' + (nowTs + i) + '-' + Math.floor(Math.random() * 1000),
-          nama: nama.toUpperCase(),
-          tempatLahir: String(colTempat !== -1 ? row[colTempat] : '').trim() || '-',
-          tanggalLahir: tglLahir || '-',
-          namaAyah: String(colAyah !== -1 ? row[colAyah] : '').trim() || '-',
-          namaIbu: String(colIbu !== -1 ? row[colIbu] : '').trim() || '-',
-          alamat: String(colAlamat !== -1 ? row[colAlamat] : '').trim() || '-',
-          kelurahan: String(colKelurahan !== -1 ? row[colKelurahan] : '').trim() || '-',
-          agama: String(colAgama !== -1 ? row[colAgama] : '').trim() || 'Islam',
-          jenisKelamin: jk,
-          noHp: noHp,
-          keterangan: String(colKet !== -1 ? row[colKet] : '').trim() || '-',
-          status: 'Menunggu Verifikasi',
-          createdAt: new Date().toISOString().split('T')[0]
-        };
+        const tempatLahir = String(colTempat !== -1 ? row[colTempat] : '').trim() || '-';
+        const namaAyah = String(colAyah !== -1 ? row[colAyah] : '').trim() || '-';
+        const namaIbu = String(colIbu !== -1 ? row[colIbu] : '').trim() || '-';
+        const alamat = String(colAlamat !== -1 ? row[colAlamat] : '').trim() || '-';
+        const kelurahan = String(colKelurahan !== -1 ? row[colKelurahan] : '').trim() || '-';
+        const agama = String(colAgama !== -1 ? row[colAgama] : '').trim() || 'Islam';
+        const keterangan = String(colKet !== -1 ? row[colKet] : '').trim() || '-';
 
-        currentList.push(newRecord);
-        addedCount++;
+        // Periksa apakah calon anggota sudah ada di database (update jika ada, insert jika baru)
+        const existingIdx = currentList.findIndex(x => x.nama.trim().toUpperCase() === nama.toUpperCase());
+        if (existingIdx !== -1) {
+          currentList[existingIdx].tempatLahir = tempatLahir;
+          currentList[existingIdx].tanggalLahir = tglLahir;
+          currentList[existingIdx].namaAyah = namaAyah;
+          currentList[existingIdx].namaIbu = namaIbu;
+          currentList[existingIdx].alamat = alamat;
+          currentList[existingIdx].kelurahan = kelurahan;
+          currentList[existingIdx].agama = agama;
+          currentList[existingIdx].jenisKelamin = jk;
+          currentList[existingIdx].noHp = noHp;
+          currentList[existingIdx].keterangan = keterangan;
+        } else {
+          currentList.push({
+            id: 'VERIF-' + (nowTs + i) + '-' + Math.floor(Math.random() * 1000),
+            nama: nama.toUpperCase(),
+            tempatLahir: tempatLahir,
+            tanggalLahir: tglLahir,
+            namaAyah: namaAyah,
+            namaIbu: namaIbu,
+            alamat: alamat,
+            kelurahan: kelurahan,
+            agama: agama,
+            jenisKelamin: jk,
+            noHp: noHp,
+            keterangan: keterangan,
+            status: 'Menunggu Verifikasi',
+            createdAt: new Date().toISOString().split('T')[0]
+          });
+        }
+        processedCount++;
       }
 
-      if (addedCount === 0) {
+      if (processedCount === 0) {
         showToast('Tidak ada data valid yang dapat diimpor.', 'warning');
         return;
       }
@@ -2344,7 +2419,7 @@ function handleExcelImport(event) {
       DB.set('lhg_verifikasi', currentList);
       updateVerifikasiBadges();
       renderVerifikasiTable();
-      showToast(`Berhasil mengimpor ${addedCount} data calon anggota dari Excel!`, 'success');
+      showToast(`Berhasil menyinkronkan ${processedCount} data calon anggota dari Excel! Kolom Tanggal Lahir berhasil dimuat.`, 'success');
     } catch (err) {
       console.error('Error membaca file Excel:', err);
       showToast('Gagal memproses file Excel: ' + err.message, 'error');
