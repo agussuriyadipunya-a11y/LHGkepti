@@ -7270,61 +7270,29 @@ body.drawer-open {
   border-color: #FDE68A;
 }
 
-/* ================= TABEL VERIFIKASI ANGGOTA (OPTIMIZED SAAS DENSITY & STICKY ACTION) ================= */
-.verifikasi-scroll-hint {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 14px;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
-  font-size: 11.5px;
-  color: #64748B;
-  font-weight: 600;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.verifikasi-scroll-hint .hint-sticky-tag {
-  color: #0D7A84;
-  font-weight: 700;
-  background: #E6F4F5;
-  border: 1px solid #B3DEE2;
-  padding: 2px 9px;
-  border-radius: 5px;
-  font-size: 11px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
+/* ================= TABEL VERIFIKASI ANGGOTA (ELEGANT, MODERN SAAS & ICON ACTIONS) ================= */
 .verifikasi-table-wrapper {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 0 0 14px 14px;
+  border-radius: 12px;
   overflow-x: auto;
-  overflow-y: visible;
-  position: relative;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   scrollbar-width: thin;
-  scrollbar-color: #94A3B8 #F1F5F9;
+  scrollbar-color: #CBD5E1 #F8FAFC;
 }
 
 .verifikasi-table-wrapper::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 
 .verifikasi-table-wrapper::-webkit-scrollbar-track {
   background: #F8FAFC;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .verifikasi-table-wrapper::-webkit-scrollbar-thumb {
   background: #CBD5E1;
-  border-radius: 4px;
-  border: 2px solid #F8FAFC;
+  border-radius: 3px;
 }
 
 .verifikasi-table-wrapper::-webkit-scrollbar-thumb:hover {
@@ -7333,10 +7301,10 @@ body.drawer-open {
 
 .table-verifikasi {
   width: 100%;
-  min-width: 1240px;
+  min-width: 1170px;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 .table-verifikasi thead tr {
@@ -7345,16 +7313,16 @@ body.drawer-open {
 }
 
 .table-verifikasi th {
-  padding: 10px 10px !important;
+  padding: 11px 8px !important;
   font-size: 10.5px !important;
-  font-weight: 800 !important;
+  font-weight: 750 !important;
   color: #475569 !important;
   background: #F8FAFC !important;
   border-bottom: 1.5px solid #E2E8F0 !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0.35px !important;
   text-transform: uppercase !important;
-  white-space: nowrap !important;
   vertical-align: middle !important;
+  white-space: nowrap !important;
 }
 
 .table-verifikasi tbody tr {
@@ -7371,41 +7339,22 @@ body.drawer-open {
 }
 
 .table-verifikasi td {
-  padding: 9px 10px !important;
-  font-size: 12px !important;
+  padding: 9px 8px !important;
+  font-size: 11.5px !important;
   vertical-align: middle !important;
   border-bottom: 1px solid #F1F5F9 !important;
   color: #334155;
   background: #FFFFFF;
 }
 
-/* STICKY ACTION COLUMN (AKSI) - PERMANEN DI SISI KANAN AGAR TIDAK TERPOTONG */
-.table-verifikasi th.col-sticky-action,
-.table-verifikasi td.col-sticky-action {
-  position: sticky !important;
-  right: 0 !important;
-  z-index: 5 !important;
-  background: #FFFFFF !important;
-  box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
-}
-
-.table-verifikasi thead th.col-sticky-action {
-  background: #F8FAFC !important;
-  z-index: 7 !important;
-}
-
-.table-verifikasi tbody tr:hover td.col-sticky-action {
-  background-color: #F8FAFC !important;
-}
-
-/* BADGES & CHIPS TABEL VERIFIKASI */
+/* BADGES & CHIPS TABEL VERIFIKASI (ELEGANT & MINIMALIST) */
 .badge-kelurahan-chip {
   background: #ECFDF5;
   color: #059669;
   font-weight: 700;
-  font-size: 10.5px;
-  padding: 2.5px 7px;
-  border-radius: 6px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 5px;
   border: 1px solid #A7F3D0;
   display: inline-flex;
   align-items: center;
@@ -7415,19 +7364,21 @@ body.drawer-open {
 
 .badge-agama-chip {
   background: #F1F5F9;
-  color: #334155;
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 6px;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid #E2E8F0;
   display: inline-block;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .badge-jk-chip {
-  padding: 2.5px 8px;
-  border-radius: 12px;
-  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -7445,7 +7396,89 @@ body.drawer-open {
   border: 1px solid #BFDBFE;
 }
 
-/* TOMBOL AKSI VERIFIKASI & CANCEL (SEMPURNA & KOMPAK) */
+.table-wa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #15803D;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.table-wa-chip:hover {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+  color: #166534;
+  transform: translateY(-1px);
+}
+
+/* ================= TOMBOL AKSI MODERN & ELEGAN (ICON ONLY) ================= */
+.table-actions-cell {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-action-verify {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.12);
+}
+.btn-action-verify:hover {
+  background: #10B981;
+  color: #FFFFFF;
+  border-color: #10B981;
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.35);
+}
+.btn-action-verify:active {
+  transform: translateY(0);
+}
+
+.btn-action-cancel {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.12);
+}
+.btn-action-cancel:hover {
+  background: #EF4444;
+  color: #FFFFFF;
+  border-color: #EF4444;
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35);
+}
+.btn-action-cancel:active {
+  transform: translateY(0);
+}
+
+/* Backward compatibility */
 .btn-table-verify {
   display: inline-flex;
   align-items: center;
@@ -7460,17 +7493,7 @@ body.drawer-open {
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
 }
-.btn-table-verify:hover {
-  background: #059669;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px -1px rgba(16, 185, 129, 0.35);
-}
-.btn-table-verify:active {
-  transform: translateY(0);
-}
-
 .btn-table-cancel {
   display: inline-flex;
   align-items: center;
@@ -7485,15 +7508,6 @@ body.drawer-open {
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
-}
-.btn-table-cancel:hover {
-  background: #DC2626;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 6px -1px rgba(239, 68, 68, 0.35);
-}
-.btn-table-cancel:active {
-  transform: translateY(0);
 }
 
 
