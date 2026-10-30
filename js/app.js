@@ -2573,6 +2573,11 @@ async function clearAllVerifikasi() {
   if (!confirmed) return;
 
   DB.set('lhg_verifikasi', []);
+  try {
+    if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
+      await fetch(`${FIREBASE_CONFIG.databaseURL}/lhg_verifikasi.json`, { method: 'DELETE' });
+    }
+  } catch(e) {}
   updateVerifikasiBadges();
   renderVerifikasiTable();
   showToast('Semua data verifikasi berhasil dibersihkan.', 'success');
@@ -10372,16 +10377,16 @@ function fromSupabaseRow(table, row) {
     return {
       id: row.id,
       nama: row.nama,
-      tempatLahir: row.tempat_lahir,
-      tanggalLahir: row.tanggal_lahir,
-      namaAyah: row.nama_ayah,
-      namaIbu: row.nama_ibu,
-      alamat: row.alamat,
-      kelurahan: row.kelurahan,
-      agama: row.agama,
-      jenisKelamin: row.jenis_kelamin,
-      noHp: row.no_hp,
-      keterangan: row.keterangan,
+      tempatLahir: row.tempat_lahir || row.tempatLahir || '-',
+      tanggalLahir: row.tanggal_lahir || row.tanggalLahir || '-',
+      namaAyah: row.nama_ayah || row.namaAyah || '-',
+      namaIbu: row.nama_ibu || row.namaIbu || '-',
+      alamat: row.alamat || '-',
+      kelurahan: row.kelurahan || '-',
+      agama: row.agama || 'Islam',
+      jenisKelamin: row.jenis_kelamin || row.jenisKelamin || 'Laki-laki',
+      noHp: row.no_hp || row.noHp || '-',
+      keterangan: row.keterangan || '-',
       status: row.status || 'Menunggu Verifikasi',
       createdAt: row.created_at ? row.created_at.split('T')[0] : (row.createdAt || '-')
     };
@@ -10491,6 +10496,12 @@ async function syncKeyToSupabase(key, val) {
   if (!validTables.includes(table)) return;
 
   try {
+    if (val.length === 0) {
+      if (table === 'lhg_verifikasi' && typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.databaseURL) {
+        await fetch(`${FIREBASE_CONFIG.databaseURL}/${table}.json`, { method: 'DELETE' });
+      }
+      return;
+    }
     const rows = val.map(item => toSupabaseRow(table, item));
     if (rows.length > 0) {
       await SupabaseAPI.upsert(table, rows);
@@ -10513,6 +10524,9 @@ async function syncWithSupabase(isManual) {
     setText('nav-badge-pelatihan', pList.length);
     const jList = DB.get('lhg_perjalanan', []);
     setText('nav-badge-perjalanan', jList.length);
+    const vList = DB.get('lhg_verifikasi', []);
+    setText('nav-badge-verifikasi', vList.length);
+    if (typeof updateVerifikasiBadges === 'function') updateVerifikasiBadges();
   } catch(e) {}
 
   if (isManual) {
@@ -10527,7 +10541,7 @@ async function syncWithSupabase(isManual) {
     return;
   }
 
-  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan'];
+  const tables = ['lhg_users', 'lhg_anggota', 'lhg_bantuan', 'lhg_kegiatan', 'lhg_surat_masuk', 'lhg_surat_keluar', 'lhg_foto', 'lhg_arsip', 'lhg_rencana_kegiatan', 'lhg_pelatihan', 'lhg_perjalanan', 'lhg_verifikasi'];
   let syncedCount = 0;
 
   for (const t of tables) {
@@ -10686,6 +10700,7 @@ async function syncWithSupabase(isManual) {
     const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
     const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : 'dashboard';
     if (activePage === 'dashboard') renderDashboard();
+    if (activePage === 'verifikasi-anggota' && typeof renderVerifikasiTable === 'function') renderVerifikasiTable();
     if (activePage === 'input-data') renderAnggotaTable();
     if (activePage === 'bantuan') renderBantuanPage();
     if (activePage === 'rencana-kegiatan') renderRencanaKegiatanPage();
@@ -10706,6 +10721,9 @@ async function syncWithSupabase(isManual) {
     setText('nav-badge-pelatihan', pList.length);
     const jList = DB.get('lhg_perjalanan', []);
     setText('nav-badge-perjalanan', jList.length);
+    const vList = DB.get('lhg_verifikasi', []);
+    setText('nav-badge-verifikasi', vList.length);
+    if (typeof updateVerifikasiBadges === 'function') updateVerifikasiBadges();
   } catch(e) {}
 
   if (isManual) {
@@ -10752,7 +10770,8 @@ function initRealtimeFirebaseSync() {
     'lhg_perjalanan',
     'lhg_kegiatan',
     'lhg_surat_masuk',
-    'lhg_surat_keluar'
+    'lhg_surat_keluar',
+    'lhg_verifikasi'
   ];
 
   tablesToListen.forEach(tableName => {
@@ -10820,6 +10839,11 @@ function initRealtimeFirebaseSync() {
             const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
             const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
             if (activePage === 'surat-menyurat') renderSurat();
+          } else if (tableName === 'lhg_verifikasi') {
+            if (typeof updateVerifikasiBadges === 'function') updateVerifikasiBadges();
+            const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+            const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+            if (activePage === 'verifikasi-anggota' && typeof renderVerifikasiTable === 'function') renderVerifikasiTable();
           }
         }
       });
@@ -10879,6 +10903,11 @@ function initRealtimeFirebaseSync() {
           const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
           const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
           if (activePage === 'surat-menyurat') renderSurat();
+        } else if (tableName === 'lhg_verifikasi') {
+          if (typeof updateVerifikasiBadges === 'function') updateVerifikasiBadges();
+          const activePageBtn = document.querySelector('.sidebar-nav .nav-item.active');
+          const activePage = activePageBtn ? activePageBtn.getAttribute('data-page') : '';
+          if (activePage === 'verifikasi-anggota' && typeof renderVerifikasiTable === 'function') renderVerifikasiTable();
         }
       });
     } catch(e) {
